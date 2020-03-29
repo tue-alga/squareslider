@@ -1,0 +1,29 @@
+{
+  "name": "bbcs",
+  "version": "0.0.1",
+  "description": "Billiard-ball computer simulator",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "start": "webpack-dev-server --open",
+    "test": "TESTBUILD=true webpack && mocha test-dist/main.js --require source-map-support/register && rm -rf test-dist"
+  },
+  "author": "Willem Sonke",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "pixi.js": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.11",
+    "@types/mocha": "^7.0.2",
+    "chai": "^4.2.0",
+    "mocha": "^7.1.1",
+    "source-map-support": "^0.5.16",
+    "ts-loader": "^6.2.2",
+    "typescript": "^3.8.3",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  }
+}
