@@ -1,9 +1,17 @@
 import {expect} from "chai";
 
-describe("test", function() {
-    it("does nothing", function() {
-        let a: number = 3;
-        expect(a).to.equal(3);
+import {Direction, Ball} from "../src/ball";
+
+describe("Direction", function() {
+    it("bounces correctly on the positive diagonal", function() {
+        expect(Direction.UP.bouncePositiveDiagonal)
+            .to.equal(Direction.RIGHT);
+        expect(Direction.RIGHT.bouncePositiveDiagonal)
+            .to.equal(Direction.UP);
+        expect(Direction.DOWN.bouncePositiveDiagonal)
+            .to.equal(Direction.LEFT);
+        expect(Direction.LEFT.bouncePositiveDiagonal)
+            .to.equal(Direction.DOWN);
     });
 });
 

@@ -1,17 +1,10 @@
 import * as PIXI from 'pixi.js'
+import {BBCS} from './bbcs'
 
-let type = "WebGL";
-if (!PIXI.utils.isWebGLSupported()) {
-	type = "canvas";
-}
-
-PIXI.utils.sayHello(type);
-
+// do the actual loading
 let app = new PIXI.Application({
-	width: 256,
-	height: 256,
 	antialias: true,
-	backgroundColor: 0xff0000,
+	backgroundColor: 0xffffff,
 	autoDensity: true
 });
 app.renderer.view.style.position = "absolute";
@@ -20,6 +13,6 @@ app.renderer.resize(window.innerWidth, window.innerHeight);
 window.addEventListener('resize', (event: UIEvent) => {
 	app.renderer.resize(window.innerWidth, window.innerHeight);
 });
-
 document.body.appendChild(app.view);
+let bbcs = new BBCS(app);
 
