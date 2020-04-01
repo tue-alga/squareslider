@@ -1,10 +1,9 @@
 import * as PIXI from 'pixi.js'
 import {BBCS} from './bbcs'
 
-// do the actual loading
 let app = new PIXI.Application({
 	antialias: true,
-	backgroundColor: 0xffffff,
+	backgroundColor: 0xfafafa,
 	autoDensity: true
 });
 app.renderer.view.style.position = "absolute";
@@ -14,5 +13,15 @@ window.addEventListener('resize', (event: UIEvent) => {
 	app.renderer.resize(window.innerWidth, window.innerHeight);
 });
 document.body.appendChild(app.view);
-let bbcs = new BBCS(app);
+
+PIXI.Loader.shared.add([
+	'icons/play.png',
+	'icons/pause.png',
+	'icons/select.png',
+	'icons/delete.png',
+	'icons/add-ball.png',
+	'icons/add-wall.png'
+]).load(() => {
+	let bbcs = new BBCS(app);
+});
 

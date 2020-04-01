@@ -61,12 +61,12 @@ class Ball {
 		this.g.drawCircle(0, 0, 40 * Math.SQRT2);
 		this.g.endFill();
 
-		this.updatePosition(0);
+		this.update(0);
 
 		field.addChild(this.g);
 	}
 
-	updatePosition(time: number) {
+	update(time: number) {
 		let [vx, vy] = this.d.toVector();
 		this.g.x = (this.x + time * vx) * 80 + 40;
 		this.g.y = -(this.y + time * vy) * 80 + 40;
