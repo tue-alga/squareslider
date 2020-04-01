@@ -24,39 +24,44 @@ class BBCS {
 	simulationMode: SimulationMode = SimulationMode.PAUSED;
 	timeSpeed: number = 0.02;
 
-	bottomBar: Toolbar;
+	private bottomBar: Toolbar;
+	private runButton: Button;
+	private pauseButton: Button;
 
 	constructor(app: PIXI.Application) {
 		this.app = app;
 
 		this.bottomBar = new Toolbar();
-		const runButton = new Button("play", "Run simulation");
-		const pauseButton = new Button("pause", "Pause simulation");
-		runButton.onClick(
+		this.runButton = new Button("play", "Run simulation");
+		this.pauseButton = new Button("pause", "Pause simulation");
+		this.runButton.onClick(
 			() => {
 				this.simulationMode = SimulationMode.RUNNING;
-				runButton.setPressed(true);
-				pauseButton.setPressed(false);
+				this.runButton.setPressed(true);
+				this.pauseButton.setPressed(false);
 			}
 		);
-		pauseButton.onClick(
+		this.pauseButton.onClick(
 			() => {
 				this.simulationMode = SimulationMode.PAUSED;
-				runButton.setPressed(false);
-				pauseButton.setPressed(true);
+				this.runButton.setPressed(false);
+				this.pauseButton.setPressed(true);
 			}
 		);
-		pauseButton.setPressed(true);
-		this.bottomBar.addChild(runButton);
-		this.bottomBar.addChild(pauseButton);
+		this.pauseButton.setPressed(true);
+		this.bottomBar.addChild(this.runButton);
+		this.bottomBar.addChild(this.pauseButton);
 
 		this.bottomBar.addChild(new Separator());
-		this.bottomBar.addChild(new Button(
+		const selectButton = new Button(
 			"select", "Select objects",
 			() => {
 				this.editMode = EditMode.SELECT;
 			}
-		));
+		);
+		selectButton.setPressed(true);
+		this.bottomBar.addChild(selectButton);
+
 		this.bottomBar.addChild(new Button(
 			"add-ball", "Add balls",
 			() => {
@@ -114,6 +119,9 @@ class BBCS {
 	renderFrame(delta: number) {
 		if (this.simulationMode == SimulationMode.RUNNING) {
 			this.time += this.timeSpeed * (1 + delta);
+			if (this.time - Math.floor(this.time) > 1 - Math.SQRT2 / 2) {
+				this.checkOverlapping();
+			}
 		}
 		while (Math.floor(this.time) > this.timeStep) {
 			this.nextStep();
@@ -127,6 +135,23 @@ class BBCS {
 		this.balls.forEach((ball) => {
 			ball.update(this.time - this.timeStep);
 		});
+	}
+
+	checkOverlapping() {
+		for (let i = 0; i < this.balls.length; i++) {
+			for (let j = i + 1; j < this.balls.length; j++) {
+				const ball1 = this.balls[i];
+				const ball2 = this.balls[j];
+				if (ball1.x + ball1.d.vx === ball2.x + ball2.d.vx &&
+						ball1.y + ball1.d.vy === ball2.y + ball2.d.vy) {
+					this.simulationMode = SimulationMode.PAUSED;
+					window.alert("Illegal operation: Two balls collided head-on");
+					this.runButton.setPressed(false);
+					this.pauseButton.setPressed(true);
+					this.time = this.timeStep + (1 - Math.SQRT2 / 2);
+				}
+			}
+		}
 	}
 
 	nextStep() {

@@ -75,20 +75,6 @@ class Ball {
 	handleCollisions(others: Ball[]): void {
 		others.forEach((other) => {
 
-			// horizontal / vertical collisions
-			/*if (other.x === this.x
-					&& other.y === this.y + 1
-					&& this.d.vy >= 0 && this.d.vy <= 0) {
-				this.d = this.d.bounceHorizontal();
-				other.d = other.d.bounceHorizontal();
-			}
-			if (other.x === this.x + 1
-					&& other.y === this.y
-					&& this.d.vx >= 0 && this.d.vx <= 0) {
-				this.d = this.d.bounceVertical();
-				other.d = other.d.bounceVertical();
-			}*/
-
 			// diagonal collisions
 			if (other.x === this.x + 1
 					&& other.y === this.y - 1
