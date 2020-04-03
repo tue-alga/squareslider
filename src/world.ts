@@ -19,6 +19,8 @@ class World {
 	private negWallPixi: PIXI.Graphics;
 
 	pixi = new PIXI.Container();
+	grid: PIXI.Graphics;
+	wallGrid: PIXI.Graphics;
 
 	balls: Ball[] = [];
 
@@ -36,15 +38,26 @@ class World {
 		this.pixi.addChild(this.negWallPixi);
 
 		// grid lines (TODO)
-		let grid = new PIXI.Graphics();
-		grid.lineStyle(3, 0xdddddd);
+		this.grid = new PIXI.Graphics();
+		this.grid.lineStyle(3, 0xdddddd);
 		for (let x = 0; x < 4000; x += 80) {
-			grid.moveTo(x, 0);
-			grid.lineTo(x, 4000);
-			grid.moveTo(0, x);
-			grid.lineTo(4000, x);
+			this.grid.moveTo(x, 0);
+			this.grid.lineTo(x, 4000);
+			this.grid.moveTo(0, x);
+			this.grid.lineTo(4000, x);
 		}
-		this.pixi.addChild(grid);
+		this.pixi.addChild(this.grid);
+
+		this.wallGrid = new PIXI.Graphics();
+		this.wallGrid.lineStyle(3, 0xdddddd);
+		for (let x = -2000; x < 2000; x += 80) {
+			this.wallGrid.moveTo(x, -x);
+			this.wallGrid.lineTo(x + 4000, -x + 4000);
+			this.wallGrid.moveTo(-x, -x + 4000);
+			this.wallGrid.lineTo(-x + 4000, -x);
+		}
+		this.pixi.addChild(this.wallGrid);
+		this.wallGrid.visible = false;
 	}
 
 	private getColumn(x: number): WorldCell[] {
@@ -173,6 +186,16 @@ class World {
 			ball.dotsLayer.removeChildren();
 			this.getCell(ball.p.x, ball.p.y).ball = ball;
 		});
+	}
+
+	showNormalGrid(): void {
+		this.grid.visible = true;
+		this.wallGrid.visible = false;
+	}
+
+	showWallGrid(): void {
+		this.grid.visible = false;
+		this.wallGrid.visible = true;
 	}
 }
 

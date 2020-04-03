@@ -28,6 +28,10 @@ class BBCS {
 	private runButton: Button;
 	private pauseButton: Button;
 
+	private selectButton: Button;
+	private addBallButton: Button;
+	private addWallButton: Button;
+
 	constructor(app: PIXI.Application) {
 		this.app = app;
 
@@ -55,27 +59,50 @@ class BBCS {
 		this.bottomBar.addChild(this.pauseButton);
 
 		this.bottomBar.addChild(new Separator());
-		const selectButton = new Button(
-			"select", "Select objects",
+
+		this.selectButton = new Button(
+			"select", "Select objects");
+		this.selectButton.setPressed(true);
+		this.selectButton.onClick(
 			() => {
 				this.editMode = EditMode.SELECT;
+				this.selectButton.setPressed(true);
+				this.addBallButton.setPressed(false);
+				this.addWallButton.setPressed(false);
+
+				this.world.showNormalGrid();
 			}
 		);
-		selectButton.setPressed(true);
-		this.bottomBar.addChild(selectButton);
+		this.bottomBar.addChild(this.selectButton);
 
-		this.bottomBar.addChild(new Button(
-			"add-ball", "Add balls",
+		this.addBallButton = new Button(
+			"add-ball", "Add balls");
+		this.addBallButton.onClick(
 			() => {
 				this.editMode = EditMode.ADD_BALL;
+				this.selectButton.setPressed(false);
+				this.addBallButton.setPressed(true);
+				this.addWallButton.setPressed(false);
+
+				this.world.showNormalGrid();
 			}
-		));
-		this.bottomBar.addChild(new Button(
-			"add-wall", "Add walls",
+		);
+		this.bottomBar.addChild(this.addBallButton);
+
+		this.addWallButton = new Button(
+			"add-wall", "Add walls");
+		this.addWallButton.onClick(
 			() => {
 				this.editMode = EditMode.ADD_WALL;
+				this.selectButton.setPressed(false);
+				this.addBallButton.setPressed(false);
+				this.addWallButton.setPressed(true);
+
+				this.world.showWallGrid();
 			}
-		));
+		);
+		this.bottomBar.addChild(this.addWallButton);
+
 		this.bottomBar.addChild(new Button(
 			"delete", "Delete objects",
 			() => {
@@ -115,10 +142,33 @@ class BBCS {
 		this.app.ticker.add((delta) => {
 			this.renderFrame(delta);
 		});
+
+		// click handler
+		this.world.pixi.interactive = true;
+		this.world.pixi.hitArea =
+				new PIXI.Rectangle(-10000, -10000, 20000, 20000);
+		this.world.pixi.on('click',
+				(e: PIXI.interaction.InteractionEvent) => {
+			const p = e.data.getLocalPosition(this.world.pixi);
+			let x = p.x / 80;
+			let y = -p.y / 80;
+			console.log(x, y);
+
+			if (this.editMode === EditMode.ADD_WALL) {
+				x = Math.floor(x);
+				y = Math.floor(y);
+
+				if ((x + y) % 2 === 0) {
+					this.world.addWall([x, y], [x + 1, y + 1]);
+				} else {
+					this.world.addWall([x + 1, y], [x, y + 1]);
+				}
+			}
+		});
 	}
 
 	renderFrame(delta: number) {
-		if (this.simulationMode == SimulationMode.RUNNING) {
+		if (this.simulationMode === SimulationMode.RUNNING) {
 			this.time += this.timeSpeed * (1 + delta);
 		}
 		while (Math.floor(this.time) > this.timeStep) {

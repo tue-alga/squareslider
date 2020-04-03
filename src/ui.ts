@@ -58,19 +58,6 @@ class Button extends Component {
 			Button.BUTTON_SIZE / 2);
 		background.endFill();
 		background.interactive = true;
-		/*if (this.hovering) {
-			background.on('mouseout', () => {
-				console.log('out');
-				this.hovering = false;
-				this.rebuildPixi();
-			});
-		} else {
-			background.on('mouseover', () => {
-				console.log('over');
-				this.hovering = true;
-				this.rebuildPixi();
-			});
-		}*/
 		if (this.clickHandler) {
 			background.on('click', this.clickHandler);
 		}
@@ -160,10 +147,7 @@ class Toolbar extends Component {
 			width, height + Toolbar.CORNER_RADIUS,
 			Toolbar.CORNER_RADIUS);
 		background.endFill();
-		/*background.interactive = true;
-		background.on('mouseover', () => {
-			console.log('hoi');
-		});*/
+		background.interactive = true;
 
 		// backdrop shadow
 		const shadow = new PIXI.Graphics();
