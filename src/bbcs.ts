@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 
 import {Direction, Ball} from './ball';
+import {World} from './world';
 import {Button, Separator, Toolbar} from './ui';
 
 enum EditMode {
@@ -12,10 +13,7 @@ enum SimulationMode {
 }
 
 class BBCS {
-
 	private app: PIXI.Application;
-	field = new PIXI.Container();
-	balls: Ball[] = [];
 
 	editMode: EditMode = EditMode.SELECT;
 	time: number = 0.0;
@@ -24,12 +22,16 @@ class BBCS {
 	simulationMode: SimulationMode = SimulationMode.PAUSED;
 	timeSpeed: number = 0.02;
 
+	world: World;
+
 	private bottomBar: Toolbar;
 	private runButton: Button;
 	private pauseButton: Button;
 
 	constructor(app: PIXI.Application) {
 		this.app = app;
+
+		this.world = new World();
 
 		this.bottomBar = new Toolbar();
 		this.runButton = new Button("play", "Run simulation");
@@ -85,28 +87,23 @@ class BBCS {
 	}
 
 	setup() {
-		this.app.stage.addChild(this.field);
+		this.app.stage.addChild(this.world.pixi);
+		this.world.pixi.scale.set(.6, .6);  // TODO
 
-		let grid = new PIXI.Graphics();
-		grid.lineStyle(3, 0xdddddd);
-		for (let x = 40; x < 2000; x += 80) {
-			grid.moveTo(x, 0);
-			grid.lineTo(x, 2000);
-			grid.moveTo(0, x);
-			grid.lineTo(2000, x);
-		}
-		this.field.addChild(grid);
-
-		this.field.scale.set(.6, .6);
-
-		this.balls.push(new Ball(this.field, 2, -2, Direction.RIGHT));
-		this.balls.push(new Ball(this.field, 4, -4, Direction.UP));
-		this.balls.push(new Ball(this.field, 8, -4, Direction.LEFT));
-		this.balls.push(new Ball(this.field, 10, -8, Direction.UP));
-		this.balls.push(new Ball(this.field, 7, -5, Direction.LEFT));
-		this.balls.push(new Ball(this.field, 6, -2, Direction.DOWN));
-		this.balls.push(new Ball(this.field, 12, -12, Direction.UP));
-		this.balls.push(new Ball(this.field, 12, 6, Direction.DOWN));
+		/*this.world.addBall(2, -2, Direction.RIGHT);
+		this.world.addBall(4, -4, Direction.UP);
+		this.world.addBall(8, -4, Direction.LEFT);
+		this.world.addBall(10, -8, Direction.UP);
+		this.world.addBall(7, -5, Direction.LEFT);
+		//this.world.addBall(6, -2, Direction.DOWN);
+		this.world.addBall(12, -12, Direction.UP);
+		//this.world.addBall(12, 6, Direction.DOWN);*/
+		
+		// and gate
+		this.world.addBall(4, -4, Direction.RIGHT);
+		this.world.addBall(6, -2, Direction.DOWN);
+		this.world.addWall([7, -2], [8, -3]);
+		this.world.addWall([4, -7], [5, -8]);
 
 		this.bottomBar.rebuildPixi();
 		this.app.stage.addChild(this.bottomBar.getPixi());
@@ -119,49 +116,28 @@ class BBCS {
 	renderFrame(delta: number) {
 		if (this.simulationMode == SimulationMode.RUNNING) {
 			this.time += this.timeSpeed * (1 + delta);
-			if (this.time - Math.floor(this.time) > 1 - Math.SQRT2 / 2) {
-				this.checkOverlapping();
-			}
 		}
 		while (Math.floor(this.time) > this.timeStep) {
-			this.nextStep();
+			this.timeStep++;
+			try {
+				this.world.nextStep();
+			} catch (e) {
+				window.alert(`Illegal move: ${e}. Resetting the simulation.`);
+				this.simulationMode = SimulationMode.PAUSED;
+				this.runButton.setPressed(false);
+				this.pauseButton.setPressed(true);
+				this.world.reset();
+				this.time = 0;
+				this.timeStep = 0;
+			}
 		}
-		// TODO also previousStep()
 		
 		this.bottomBar.setPosition(
 			window.innerWidth / 2 - this.bottomBar.getWidth() / 2,
 			window.innerHeight - this.bottomBar.getHeight());
 
-		this.balls.forEach((ball) => {
+		this.world.balls.forEach((ball) => {
 			ball.update(this.time - this.timeStep);
-		});
-	}
-
-	checkOverlapping() {
-		for (let i = 0; i < this.balls.length; i++) {
-			for (let j = i + 1; j < this.balls.length; j++) {
-				const ball1 = this.balls[i];
-				const ball2 = this.balls[j];
-				if (ball1.x + ball1.d.vx === ball2.x + ball2.d.vx &&
-						ball1.y + ball1.d.vy === ball2.y + ball2.d.vy) {
-					this.simulationMode = SimulationMode.PAUSED;
-					window.alert("Illegal operation: Two balls collided head-on");
-					this.runButton.setPressed(false);
-					this.pauseButton.setPressed(true);
-					this.time = this.timeStep + (1 - Math.SQRT2 / 2);
-				}
-			}
-		}
-	}
-
-	nextStep() {
-		this.timeStep++;
-		this.balls.forEach((ball) => {
-			ball.x += ball.d.vx;
-			ball.y += ball.d.vy;
-		});
-		this.balls.forEach((ball) => {
-			ball.handleCollisions(this.balls);
 		});
 	}
 }
