@@ -144,7 +144,7 @@ class World {
 		this.getCell(x2, y2).ball = ball;
 	}
 
-	nextStep(): void {
+	nextStep(step: number): void {
 		this.balls.forEach((ball) => {
 			const from: [number, number] =
 					[ball.p.x, ball.p.y];
@@ -158,6 +158,9 @@ class World {
 		this.balls.forEach((ball) => {
 			ball.handleBallCollisions(this);
 		});
+		this.balls.forEach((ball) => {
+			ball.placeDots(step);
+		});
 	}
 
 	reset(): void {
@@ -166,6 +169,8 @@ class World {
 			ball.p.x = ball.resetPosition.x;
 			ball.p.y = ball.resetPosition.y;
 			ball.d = ball.resetDirection;
+			ball.dots = [];
+			ball.dotsLayer.removeChildren();
 			this.getCell(ball.p.x, ball.p.y).ball = ball;
 		});
 	}

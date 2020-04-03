@@ -100,10 +100,10 @@ class BBCS {
 		//this.world.addBall(12, 6, Direction.DOWN);*/
 		
 		// and gate
-		this.world.addBall(4, -4, Direction.RIGHT);
+		this.world.addBall(3, -5, Direction.RIGHT);
 		this.world.addBall(6, -2, Direction.DOWN);
-		this.world.addWall([7, -2], [8, -3]);
-		this.world.addWall([4, -7], [5, -8]);
+		this.world.addWall([7, -3], [8, -4]);
+		this.world.addWall([4, -8], [5, -9]);
 
 		this.bottomBar.rebuildPixi();
 		this.app.stage.addChild(this.bottomBar.getPixi());
@@ -120,7 +120,7 @@ class BBCS {
 		while (Math.floor(this.time) > this.timeStep) {
 			this.timeStep++;
 			try {
-				this.world.nextStep();
+				this.world.nextStep(this.timeStep);
 			} catch (e) {
 				window.alert(`Illegal move: ${e}. Resetting the simulation.`);
 				this.simulationMode = SimulationMode.PAUSED;
@@ -137,7 +137,7 @@ class BBCS {
 			window.innerHeight - this.bottomBar.getHeight());
 
 		this.world.balls.forEach((ball) => {
-			ball.update(this.time - this.timeStep);
+			ball.update(this.time, this.timeStep);
 		});
 	}
 }

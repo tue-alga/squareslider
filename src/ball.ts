@@ -54,7 +54,10 @@ class Ball {
 	resetPosition: Position;
 	d: Direction;
 	resetDirection: Direction;
-	pixi: PIXI.Graphics;
+	pixi = new PIXI.Container();
+	circle = new PIXI.Graphics();
+	dots: [number, PIXI.Graphics][] = [];
+	dotsLayer = new PIXI.Container();
 
 	constructor(private world: World, x: number, y: number, d: Direction) {
 		this.p = new Position(x, y);
@@ -62,19 +65,32 @@ class Ball {
 		this.d = d;
 		this.resetDirection = d;
 
-		this.pixi = new PIXI.Graphics();
-		this.pixi.beginFill(0x44bbf8);
-		this.pixi.lineStyle(4, 0x222222);
-		this.pixi.drawCircle(0, 0, 40 * Math.SQRT2);
-		this.pixi.endFill();
+		this.pixi.addChild(this.dotsLayer);
 
-		this.update(0);
+		this.circle.beginFill(0x44bbf8);
+		this.circle.lineStyle(4, 0x222222);
+		this.circle.drawCircle(0, 0, 40 * Math.SQRT2);
+		this.circle.endFill();
+		this.pixi.addChild(this.circle);
+
+		this.update(0, 0);
 	}
 
-	update(time: number) {
+	update(time: number, timeStep: number) {
 		let [vx, vy] = this.d.toVector();
-		this.pixi.x = (this.p.x + time * vx) * 80;
-		this.pixi.y = -(this.p.y + time * vy) * 80;
+		this.circle.x = (this.p.x + (time - timeStep) * vx) * 80;
+		this.circle.y = -(this.p.y + (time - timeStep) * vy) * 80;
+
+		if (this.dots.length > 0) {
+			while (time - this.dots[0][0] > 8) {
+				this.dotsLayer.removeChild(this.dots[0][1]);
+				this.dots = this.dots.slice(1);
+			}
+			if (time - this.dots[0][0] > 7.5) {
+				const scaleFactor = 1 - 2 * (time - this.dots[0][0] - 7.5);
+				this.dots[0][1].scale.set(scaleFactor);
+			}
+		}
 	}
 
 	handleWallCollisions(world: World): void {
@@ -127,6 +143,23 @@ class Ball {
 				other.d = other.d.bounceNegativeDiagonal();
 			}
 		}
+	}
+
+	placeDots(time: number): void {
+		const dot = new PIXI.Graphics();
+		dot.beginFill(0x44bbf8);
+		dot.drawCircle(0, 0, 5 * Math.SQRT2);
+		dot.x = this.p.x * 80;
+		dot.y = -this.p.y * 80;
+		dot.endFill();
+		this.dotsLayer.addChild(dot);
+		this.dots.push([time, dot]);
+
+		const dot2 = new PIXI.Graphics(dot.geometry);
+		dot2.x = (this.p.x + this.d.vx / 2.0) * 80;
+		dot2.y = -(this.p.y + this.d.vy / 2.0) * 80;
+		this.dotsLayer.addChild(dot2);
+		this.dots.push([time + 0.5, dot2]);
 	}
 }
 
