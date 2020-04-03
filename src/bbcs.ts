@@ -108,6 +108,10 @@ class BBCS {
 		this.bottomBar.rebuildPixi();
 		this.app.stage.addChild(this.bottomBar.getPixi());
 
+		this.world.balls.forEach((ball) => {
+			ball.placeDots(0);
+		});
+
 		this.app.ticker.add((delta) => {
 			this.renderFrame(delta);
 		});
