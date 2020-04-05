@@ -180,6 +180,15 @@ class Ball {
 		this.dotsLayer.addChild(dot2);
 		this.dots.push([time + 0.5, dot2]);
 	}
+
+	rotateClockwise(): void {
+		this.d = this.d.rotateClockwise();
+
+		// also need to update the position of the last dot
+		const dot = this.dots[this.dots.length - 1][1];
+		dot.x = (this.p.x + this.d.vx / 2.0) * 80;
+		dot.y = -(this.p.y + this.d.vy / 2.0) * 80;
+	}
 }
 
 export {Direction, Ball};

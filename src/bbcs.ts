@@ -156,7 +156,7 @@ class BBCS {
 				if ((x + y) % 2 === 0) {
 					const ball = this.world.getBall(x, y);
 					if (ball) {
-						ball.d = ball.d.rotateClockwise();
+						ball.rotateClockwise();
 					} else {
 						this.world.addBall(x, y, Direction.RIGHT);
 					}
