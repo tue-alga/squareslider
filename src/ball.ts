@@ -44,6 +44,14 @@ class Direction {
 		return new Direction(-this.vy, -this.vx);
 	}
 
+	rotateClockwise(): Direction {
+		if (this.vy === 0) {
+			return new Direction(0, -this.vx);
+		} else {
+			return new Direction(this.vy, 0);
+		}
+	}
+
 	toVector(): [number, number] {
 		return [this.vx, this.vy];
 	}
