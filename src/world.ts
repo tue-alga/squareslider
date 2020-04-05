@@ -116,6 +116,10 @@ class World {
 		return this.getCell(x, y).ball;
 	}
 
+	hasBall(x: number, y: number): boolean {
+		return !!this.getBall(x, y);
+	}
+
 	addBall(x: number, y: number, d: Direction): void {
 		if (this.getBall(x, y)) {
 			throw `Tried to insert ball on top of another ball ` +

@@ -149,6 +149,17 @@ class BBCS {
 			let y = -p.y / 80;
 			console.log(x, y);
 
+			if (this.editMode === EditMode.ADD_BALL) {
+				x = Math.round(x);
+				y = Math.round(y);
+
+				if ((x + y) % 2 === 0) {
+					if (!this.world.hasBall(x, y)) {
+						this.world.addBall(x, y, Direction.RIGHT);
+					}
+				}
+			}
+
 			if (this.editMode === EditMode.ADD_WALL) {
 				x = Math.floor(x);
 				y = Math.floor(y);
