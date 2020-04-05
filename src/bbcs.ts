@@ -153,10 +153,14 @@ class BBCS {
 				x = Math.floor(x);
 				y = Math.floor(y);
 
+				let from: [number, number], to: [number, number];
 				if ((x + y) % 2 === 0) {
-					this.world.addWall([x, y], [x + 1, y + 1]);
+					[from, to] = [[x, y], [x + 1, y + 1]];
 				} else {
-					this.world.addWall([x + 1, y], [x, y + 1]);
+					[from, to] = [[x + 1, y], [x, y + 1]];
+				}
+				if (!this.world.hasWall(from, to)) {
+					this.world.addWall(from, to);
 				}
 			}
 		});

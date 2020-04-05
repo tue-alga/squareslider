@@ -90,7 +90,7 @@ class Ball {
 		let [vx, vy] = this.d.toVector();
 		this.circle.x = (this.p.x + (time - timeStep) * vx) * 80;
 		this.circle.y = -(this.p.y + (time - timeStep) * vy) * 80;
-		this.circle.rotation = -Math.atan2(this.d.vy, this.d.vx);  // TODO
+		this.circle.rotation = -Math.atan2(this.d.vy, this.d.vx);
 
 		if (this.dots.length > 0) {
 			while (time - this.dots[0][0] > 8) {
