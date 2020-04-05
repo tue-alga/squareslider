@@ -15,6 +15,8 @@ enum SimulationMode {
 class BBCS {
 	private app: PIXI.Application;
 
+	zoom = 0.6;
+
 	editMode: EditMode = EditMode.SELECT;
 	time: number = 0.0;
 	timeStep: number = 0;
@@ -69,8 +71,6 @@ class BBCS {
 				this.selectButton.setPressed(true);
 				this.addBallButton.setPressed(false);
 				this.addWallButton.setPressed(false);
-
-				this.world.showNormalGrid();
 			}
 		);
 		this.bottomBar.addChild(this.selectButton);
@@ -83,8 +83,6 @@ class BBCS {
 				this.selectButton.setPressed(false);
 				this.addBallButton.setPressed(true);
 				this.addWallButton.setPressed(false);
-
-				this.world.showNormalGrid();
 			}
 		);
 		this.bottomBar.addChild(this.addBallButton);
@@ -97,8 +95,6 @@ class BBCS {
 				this.selectButton.setPressed(false);
 				this.addBallButton.setPressed(false);
 				this.addWallButton.setPressed(true);
-
-				this.world.showWallGrid();
 			}
 		);
 		this.bottomBar.addChild(this.addWallButton);
@@ -115,7 +111,6 @@ class BBCS {
 
 	setup() {
 		this.app.stage.addChild(this.world.pixi);
-		this.world.pixi.scale.set(.6, .6);  // TODO
 
 		/*this.world.addBall(2, -2, Direction.RIGHT);
 		this.world.addBall(4, -4, Direction.UP);
@@ -127,10 +122,10 @@ class BBCS {
 		//this.world.addBall(12, 6, Direction.DOWN);*/
 		
 		// and gate
-		this.world.addBall(3, -5, Direction.RIGHT);
-		this.world.addBall(6, -2, Direction.DOWN);
-		this.world.addWall([7, -3], [8, -4]);
-		this.world.addWall([4, -8], [5, -9]);
+		this.world.addBall(-3, 1, Direction.RIGHT);
+		this.world.addBall(0, 4, Direction.DOWN);
+		this.world.addWall([1, 3], [2, 2]);
+		this.world.addWall([-2, -2], [-1, -3]);
 
 		this.bottomBar.rebuildPixi();
 		this.app.stage.addChild(this.bottomBar.getPixi());
@@ -165,9 +160,39 @@ class BBCS {
 				}
 			}
 		});
+
+		// we need to catch scroll events by adding a listener to the HTML
+		// canvas as, unfortunately, PIXI doesn't handle scroll events
+		this.app.view.addEventListener('wheel',
+				(e: WheelEvent) => {
+			if (e.deltaY > 0) {
+				this.zoom *= 0.8;
+			} else {
+				this.zoom /= 0.8;
+			}
+			if (this.zoom < 0.2) {
+				this.zoom = 0.2;
+			} else if (this.zoom > 3) {
+				this.zoom = 3;
+			}
+			this.update();
+		}, {passive: true});
+
+		this.update();
 	}
 
-	renderFrame(delta: number) {
+	update(): void {
+		this.world.pixi.scale.set(this.zoom);
+		this.world.pixi.rotation = -Math.PI / 4;
+
+		//if (this.editMode === EditMode.SELECT) {
+		//	this.world.showNormalGrid();
+		//} else {
+			this.world.showWallGrid();
+		//}
+	}
+
+	renderFrame(delta: number): void {
 		if (this.simulationMode === SimulationMode.RUNNING) {
 			this.time += this.timeSpeed * (1 + delta);
 		}
@@ -185,10 +210,13 @@ class BBCS {
 				this.timeStep = 0;
 			}
 		}
+
+		this.app.stage.x = window.innerWidth / 2;
+		this.app.stage.y = window.innerHeight / 2;
 		
 		this.bottomBar.setPosition(
-			window.innerWidth / 2 - this.bottomBar.getWidth() / 2,
-			window.innerHeight - this.bottomBar.getHeight());
+			-this.bottomBar.getWidth() / 2,
+			window.innerHeight / 2 - this.bottomBar.getHeight());
 
 		this.world.balls.forEach((ball) => {
 			ball.update(this.time, this.timeStep);

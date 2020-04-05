@@ -71,6 +71,16 @@ class Ball {
 		this.circle.lineStyle(4, 0x222222);
 		this.circle.drawCircle(0, 0, 40 * Math.SQRT2);
 		this.circle.endFill();
+		this.circle.beginFill(0x222222);
+		this.circle.moveTo(75, 0);
+		this.circle.lineTo(65, 10);
+		this.circle.lineTo(65.57, 5);
+		this.circle.lineTo(65.77, 0);
+		this.circle.lineTo(65.57, -5);
+		this.circle.lineTo(65, -10);
+		this.circle.closePath();
+
+		this.circle.endFill();
 		this.pixi.addChild(this.circle);
 
 		this.update(0, 0);
@@ -80,6 +90,7 @@ class Ball {
 		let [vx, vy] = this.d.toVector();
 		this.circle.x = (this.p.x + (time - timeStep) * vx) * 80;
 		this.circle.y = -(this.p.y + (time - timeStep) * vy) * 80;
+		this.circle.rotation = -Math.atan2(this.d.vy, this.d.vx);  // TODO
 
 		if (this.dots.length > 0) {
 			while (time - this.dots[0][0] > 8) {

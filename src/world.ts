@@ -15,9 +15,6 @@ class World {
 
 	world: WorldCell[][] = [];
 
-	private posWallPixi: PIXI.Graphics;
-	private negWallPixi: PIXI.Graphics;
-
 	pixi = new PIXI.Container();
 	grid: PIXI.Graphics;
 	wallGrid: PIXI.Graphics;
@@ -25,36 +22,24 @@ class World {
 	balls: Ball[] = [];
 
 	constructor() {
-		this.posWallPixi = new PIXI.Graphics;
-		this.posWallPixi.lineStyle(4, 0x222222);
-		this.posWallPixi.moveTo(0, 0);
-		this.posWallPixi.lineTo(80, -80);
-		this.pixi.addChild(this.posWallPixi);
-		
-		this.negWallPixi = new PIXI.Graphics;
-		this.negWallPixi.lineStyle(4, 0x222222);
-		this.negWallPixi.moveTo(0, -80);
-		this.negWallPixi.lineTo(80, 0);
-		this.pixi.addChild(this.negWallPixi);
-
 		// grid lines (TODO)
 		this.grid = new PIXI.Graphics();
 		this.grid.lineStyle(3, 0xdddddd);
-		for (let x = 0; x < 4000; x += 80) {
-			this.grid.moveTo(x, 0);
+		for (let x = -4000; x <= 4000; x += 80) {
+			this.grid.moveTo(x, -4000);
 			this.grid.lineTo(x, 4000);
-			this.grid.moveTo(0, x);
+			this.grid.moveTo(-4000, x);
 			this.grid.lineTo(4000, x);
 		}
 		this.pixi.addChild(this.grid);
 
 		this.wallGrid = new PIXI.Graphics();
 		this.wallGrid.lineStyle(3, 0xdddddd);
-		for (let x = -2000; x < 2000; x += 80) {
-			this.wallGrid.moveTo(x, -x);
+		for (let x = -4000; x <= 4000; x += 80) {
+			this.wallGrid.moveTo(x - 4000, -x - 4000);
 			this.wallGrid.lineTo(x + 4000, -x + 4000);
-			this.wallGrid.moveTo(-x, -x + 4000);
-			this.wallGrid.lineTo(-x + 4000, -x);
+			this.wallGrid.moveTo(-x - 4000, -x + 4000);
+			this.wallGrid.lineTo(-x + 4000, -x - 4000);
 		}
 		this.pixi.addChild(this.wallGrid);
 		this.wallGrid.visible = false;
@@ -107,13 +92,19 @@ class World {
 		const [x1, y1, x2, y2] = this.checkWallCoords(from, to);
 		const [x3, y3] = [Math.min(x1, x2), Math.min(y1, y2)];
 		if ((x3 === x1 && y3 === y1) || (x3 === x2 && y3 === y2)) {
-			const pixi = new PIXI.Graphics(this.posWallPixi.geometry);
+			const pixi = new PIXI.Graphics();
+			pixi.lineStyle(4, 0x222222);
+			pixi.moveTo(0, 0);
+			pixi.lineTo(80, -80);
 			pixi.x = x3 * 80;
 			pixi.y = -y3 * 80;
 			this.getCell(x3, y3).positiveWall = pixi;
 			this.pixi.addChild(pixi);
 		} else {
-			const pixi = new PIXI.Graphics(this.negWallPixi.geometry);
+			const pixi = new PIXI.Graphics();
+			pixi.lineStyle(4, 0x222222);
+			pixi.moveTo(0, -80);
+			pixi.lineTo(80, 0);
 			pixi.x = x3 * 80;
 			pixi.y = -y3 * 80;
 			this.getCell(x3, y3).negativeWall = pixi;
