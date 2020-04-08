@@ -9,7 +9,7 @@ enum EditMode {
 }
 
 enum SimulationMode {
-	RUNNING, PAUSED
+	RUNNING, PAUSED, RESET
 }
 
 class BBCS {
@@ -21,7 +21,7 @@ class BBCS {
 	time: number = 0.0;
 	timeStep: number = 0;
 
-	simulationMode: SimulationMode = SimulationMode.PAUSED;
+	simulationMode: SimulationMode = SimulationMode.RESET;
 	timeSpeed: number = 0.02;
 
 	world: World;
@@ -44,22 +44,37 @@ class BBCS {
 		this.runButton = new Button("play", "Run simulation");
 		this.runButton.onClick(
 			() => {
-				if (this.simulationMode === SimulationMode.PAUSED) {
-					this.simulationMode = SimulationMode.RUNNING;
-					this.runButton.setIcon("pause");
-				} else {
+				if (this.simulationMode === SimulationMode.RUNNING) {
 					this.simulationMode = SimulationMode.PAUSED;
 					this.runButton.setIcon("play");
+				} else {
+					this.simulationMode = SimulationMode.RUNNING;
+					this.runButton.setIcon("pause");
 				}
+
+				this.resetButton.setEnabled(true);
+
+				this.selectButton.setEnabled(false);
+				this.addBallButton.setEnabled(false);
+				this.addWallButton.setEnabled(false);
 			}
 		);
 		this.bottomBar.addChild(this.runButton);
 		this.resetButton = new Button("reset", "Reset the simulation");
 		this.resetButton.onClick(
 			() => {
+				this.simulationMode = SimulationMode.RESET;
 				this.world.reset();
+
+				this.runButton.setIcon("play");
+				this.resetButton.setEnabled(false);
+
+				this.selectButton.setEnabled(true);
+				this.addBallButton.setEnabled(true);
+				this.addWallButton.setEnabled(true);
 			}
 		);
+		this.resetButton.setEnabled(false);
 		this.bottomBar.addChild(this.resetButton);
 
 		this.bottomBar.addChild(new Separator());
