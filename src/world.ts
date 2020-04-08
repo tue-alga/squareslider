@@ -172,7 +172,9 @@ class World {
 	}
 
 	reset(): void {
-		this.world = [];
+		this.balls.forEach((ball) => {
+			this.getCell(ball.p.x, ball.p.y).ball = null;
+		});
 		this.balls.forEach((ball) => {
 			ball.p.x = ball.resetPosition.x;
 			ball.p.y = ball.resetPosition.y;
