@@ -26,13 +26,21 @@ class BBCS {
 
 	world: World;
 
+	private selectedBall: Ball | null = null;
+
+	// GUI elements
 	private bottomBar: Toolbar;
 
 	private runButton: Button;
 	private resetButton: Button;
+	
 	private selectButton: Button;
 	private addBallButton: Button;
 	private addWallButton: Button;
+
+	private rotateLeftButton: Button;
+	private rotateRightButton: Button;
+	private deleteButton: Button;
 
 	constructor(app: PIXI.Application) {
 		this.app = app;
@@ -56,6 +64,7 @@ class BBCS {
 
 				this.resetButton.setEnabled(true);
 
+				this.select(null);
 				this.selectButton.setEnabled(false);
 				this.addBallButton.setEnabled(false);
 				this.addWallButton.setEnabled(false);
@@ -106,6 +115,47 @@ class BBCS {
 		);
 		this.bottomBar.addChild(this.addWallButton);
 
+		this.bottomBar.addChild(new Separator());
+
+		this.rotateLeftButton = new Button(
+			"rotate-left", "Rotate left");
+		this.rotateLeftButton.onClick(
+			() => {
+				if (this.selectedBall) {
+					this.selectedBall.rotateCounterClockwise();
+				}
+			}
+		);
+		this.rotateLeftButton.setEnabled(false);
+		this.bottomBar.addChild(this.rotateLeftButton);
+
+		this.rotateRightButton = new Button(
+			"rotate-right", "Rotate right");
+		this.rotateRightButton.onClick(
+			() => {
+				if (this.selectedBall) {
+					this.selectedBall.rotateClockwise();
+				}
+			}
+		);
+		this.rotateRightButton.setEnabled(false);
+		this.bottomBar.addChild(this.rotateRightButton);
+
+		this.deleteButton = new Button(
+			"delete", "Delete");
+		this.deleteButton.onClick(
+			() => {
+				if (this.selectedBall) {
+					const [x, y] = [this.selectedBall.p.x,
+						this.selectedBall.p.y];
+					this.world.removeBall(x, y);
+					this.selectedBall = null;
+				}
+			}
+		);
+		this.deleteButton.setEnabled(false);
+		this.bottomBar.addChild(this.deleteButton);
+
 		this.setup();
 	}
 
@@ -150,15 +200,21 @@ class BBCS {
 			console.log(x, y);
 
 			if (this.simulationMode === SimulationMode.RESET) {
+
+				if (this.editMode === EditMode.SELECT) {
+					x = Math.round(x);
+					y = Math.round(y);
+					const ball = this.world.getBall(x, y);
+					this.select(ball);
+				}
+
 				if (this.editMode === EditMode.ADD_BALL) {
 					x = Math.round(x);
 					y = Math.round(y);
 
 					if ((x + y) % 2 === 0) {
 						const ball = this.world.getBall(x, y);
-						if (ball) {
-							ball.rotateClockwise();
-						} else {
+						if (!ball) {
 							this.world.addBall(x, y, Direction.RIGHT);
 						}
 					}
@@ -225,6 +281,24 @@ class BBCS {
 		this.world.reset();
 		this.time = 0;
 		this.timeStep = 0;
+	}
+
+	select(ball: Ball | null): void {
+		const oldSelection = this.selectedBall;
+		if (oldSelection) {
+			oldSelection.selected = false;
+			oldSelection.update(this.time, this.timeStep);
+		}
+
+		this.selectedBall = ball;
+		if (ball) {
+			ball.selected = true;
+			ball.update(this.time, this.timeStep);
+		}
+
+		this.rotateLeftButton.setEnabled(ball !== null);
+		this.rotateRightButton.setEnabled(ball !== null);
+		this.deleteButton.setEnabled(ball !== null);
 	}
 
 	renderFrame(delta: number): void {

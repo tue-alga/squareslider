@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE ipe SYSTEM "ipe.dtd">
 <ipe version="70212" creator="Ipe 7.2.13">
-<info created="D:20200331165146" modified="D:20200408143927"/>
+<info created="D:20200331165146" modified="D:20200408182949"/>
 <ipestyle name="bettinacolors">
 <color name="Bettina blue" value="0 0.4 0.796"/>
 <color name="Bettina green" value="0.282 0.557 0"/>
@@ -563,5 +563,75 @@ h
 6.16303 6.55873 6.55873 -6.16303 16 48 8.71458 53.2842 a
 h
 </path>
+<group matrix="1 0 0 1 0 -32">
+<path matrix="1 0 0 1 0 -4" fill="black">
+4 0 0 4 16 48 e
+</path>
+<path matrix="0.707138 0.485162 -0.485162 0.707138 23.8599 -12.6436" fill="black">
+24 72 m
+30 78 l
+30 66 l
+h
+</path>
+<path matrix="0.989991 -0.141132 0.141132 0.989991 -6.33192 0.718534" fill="black">
+22.4222 52.4222 m
+9.08242 0 0 9.08242 16 46 9.57776 52.4222 a
+7.51472 54.4853 l
+12 0 0 -12 16 46 24.4853 54.4853 a
+h
+</path>
+</group>
+<group matrix="-1 0 0 1 32 -32">
+<path matrix="1 0 0 1 0 -4" fill="black">
+4 0 0 4 16 48 e
+</path>
+<path matrix="0.707138 0.485162 -0.485162 0.707138 23.8599 -12.6436" fill="black">
+24 72 m
+30 78 l
+30 66 l
+h
+</path>
+<path matrix="0.989991 -0.141132 0.141132 0.989991 -6.33192 0.718534" fill="black">
+22.4222 52.4222 m
+9.08242 0 0 9.08242 16 46 9.57776 52.4222 a
+7.51472 54.4853 l
+12 0 0 -12 16 46 24.4853 54.4853 a
+h
+</path>
+</group>
+<group matrix="1 0 0 1 0 -32">
+<path matrix="1 0 0 1.4 0 -15.2" fill="black">
+12 48 m
+12 38 l
+20 38 l
+20 48 l
+h
+</path>
+<path matrix="1 0 0 1.4 0 -15.2" fill="black">
+22 48 m
+22 38 l
+24 38 l
+24 48 l
+h
+</path>
+<path matrix="1 0 0 1.4 0 -15.2" fill="black">
+8 48 m
+8 38 l
+10 38 l
+10 48 l
+h
+</path>
+<path matrix="1 0 0 1 0 4" fill="black">
+26 50 m
+6 50 l
+6 52 l
+14 52 l
+14 54 l
+18 54 l
+18 52 l
+26 52 l
+h
+</path>
+</group>
 </page>
 </ipe>

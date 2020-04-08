@@ -152,6 +152,17 @@ class World {
 		this.getCell(x2, y2).ball = ball;
 	}
 
+	removeBall(x: number, y: number): void {
+		const ball = this.getBall(x, y);
+		if (!ball) {
+			throw `Tried to remove non-existing ball ` +
+					`at (${x}, ${y})`;
+		}
+		this.pixi.removeChild(ball.pixi);
+		this.balls = this.balls.filter((b) => b !== ball);
+		this.getCell(x, y).ball = null;
+	}
+
 	nextStep(step: number): void {
 		this.balls.forEach((ball) => {
 			const from: [number, number] =

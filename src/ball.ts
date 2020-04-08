@@ -52,6 +52,14 @@ class Direction {
 		}
 	}
 
+	rotateCounterClockwise(): Direction {
+		if (this.vy === 0) {
+			return new Direction(0, this.vx);
+		} else {
+			return new Direction(-this.vy, 0);
+		}
+	}
+
 	toVector(): [number, number] {
 		return [this.vx, this.vy];
 	}
@@ -63,9 +71,11 @@ class Ball {
 	d: Direction;
 	resetDirection: Direction;
 	pixi = new PIXI.Container();
+	selectionCircle = new PIXI.Graphics();
 	circle = new PIXI.Graphics();
 	dots: [number, PIXI.Graphics][] = [];
 	dotsLayer = new PIXI.Container();
+	selected: boolean = false;
 
 	constructor(private world: World, x: number, y: number, d: Direction) {
 		this.p = new Position(x, y);
@@ -74,6 +84,11 @@ class Ball {
 		this.resetDirection = d;
 
 		this.pixi.addChild(this.dotsLayer);
+
+		this.selectionCircle.beginFill(0x2277bb);
+		this.selectionCircle.drawCircle(0, 0, 50 * Math.SQRT2);
+		this.selectionCircle.endFill();
+		this.pixi.addChild(this.selectionCircle);
 
 		this.circle.beginFill(0x44bbf8);
 		this.circle.lineStyle(4, 0x222222);
@@ -87,7 +102,6 @@ class Ball {
 		this.circle.lineTo(65.57, -5);
 		this.circle.lineTo(65, -10);
 		this.circle.closePath();
-
 		this.circle.endFill();
 		this.pixi.addChild(this.circle);
 
@@ -99,6 +113,10 @@ class Ball {
 		this.circle.x = (this.p.x + (time - timeStep) * vx) * 80;
 		this.circle.y = -(this.p.y + (time - timeStep) * vy) * 80;
 		this.circle.rotation = -Math.atan2(this.d.vy, this.d.vx);
+
+		this.selectionCircle.visible = this.selected;
+		this.selectionCircle.x = this.circle.x;
+		this.selectionCircle.y = this.circle.y;
 
 		if (this.dots.length > 0) {
 			while (time - this.dots[0][0] > 8) {
@@ -183,8 +201,15 @@ class Ball {
 
 	rotateClockwise(): void {
 		this.d = this.d.rotateClockwise();
+		this.updateLastDot();
+	}
 
-		// also need to update the position of the last dot
+	rotateCounterClockwise(): void {
+		this.d = this.d.rotateCounterClockwise();
+		this.updateLastDot();
+	}
+
+	updateLastDot(): void {
 		if (this.dots.length > 0) {
 			const dot = this.dots[this.dots.length - 1][1];
 			dot.x = (this.p.x + this.d.vx / 2.0) * 80;

@@ -24,9 +24,11 @@ PIXI.Loader.shared.add([
 	'icons/pause.png',
 	'icons/reset.png',
 	'icons/select.png',
-	'icons/delete.png',
 	'icons/add-ball.png',
-	'icons/add-wall.png'
+	'icons/add-wall.png',
+	'icons/rotate-left.png',
+	'icons/rotate-right.png',
+	'icons/delete.png'
 ]).load(() => {
 	let bbcs = new BBCS(app);
 });
