@@ -185,9 +185,11 @@ class Ball {
 		this.d = this.d.rotateClockwise();
 
 		// also need to update the position of the last dot
-		const dot = this.dots[this.dots.length - 1][1];
-		dot.x = (this.p.x + this.d.vx / 2.0) * 80;
-		dot.y = -(this.p.y + this.d.vy / 2.0) * 80;
+		if (this.dots.length > 0) {
+			const dot = this.dots[this.dots.length - 1][1];
+			dot.x = (this.p.x + this.d.vx / 2.0) * 80;
+			dot.y = -(this.p.y + this.d.vy / 2.0) * 80;
+		}
 	}
 }
 
