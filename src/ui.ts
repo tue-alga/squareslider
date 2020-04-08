@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import {DropShadowFilter} from 'pixi-filters';
+import {Constants} from './bbcs';
 
 abstract class Component {
 	protected readonly pixi = new PIXI.Container();
@@ -27,13 +27,16 @@ abstract class Component {
 
 class Button extends Component {
 	static readonly BUTTON_SIZE = 48;
+	static readonly BALLOON_WIDTH = 150;
+	static readonly BALLOON_HEIGHT = 34;
 
 	clickHandler: (() => void) | null = null;
 
-	//private hovering: boolean = false;
-	
 	private enabled: boolean = true;
 	private pressed: boolean = false;
+
+	private balloon = new PIXI.Container();
+	private hovered: boolean = false;
 
 	constructor(public icon: string,
 			public tooltip: string,
@@ -59,10 +62,20 @@ class Button extends Component {
 			Button.BUTTON_SIZE / 2);
 		background.endFill();
 		background.interactive = true;
+		background.hitArea = new PIXI.Rectangle(0, 0,
+			Button.BUTTON_SIZE, Button.BUTTON_SIZE);
 		background.on('click', () => {
 			if (this.enabled && this.clickHandler) {
 				this.clickHandler();
 			}
+		});
+		background.on('mousemove', () => {
+			this.hovered = true;
+			this.balloon.visible = true;
+		});
+		background.on('mouseout', () => {
+			this.hovered = false;
+			this.balloon.visible = false;
 		});
 		this.pixi.addChild(background);
 
@@ -75,6 +88,44 @@ class Button extends Component {
 			icon.alpha = 0.3;
 		}
 		this.pixi.addChild(icon);
+
+		this.balloon = new PIXI.Container();
+		this.pixi.addChild(this.balloon);
+		this.balloon.visible = this.hovered;
+		if (!this.enabled) {
+			this.balloon.alpha = 0.5;
+		}
+
+		const balloonShadow = new PIXI.Graphics();
+		balloonShadow.beginFill(0x000000);
+		balloonShadow.drawRoundedRect(
+			(-Button.BALLOON_WIDTH + Button.BUTTON_SIZE) / 2,
+			-Button.BALLOON_HEIGHT - 4,
+			Button.BALLOON_WIDTH,
+			Button.BALLOON_HEIGHT,
+			Button.BALLOON_HEIGHT / 2);
+		balloonShadow.endFill();
+		balloonShadow.filters = [new PIXI.filters.BlurFilter(10)];
+		balloonShadow.alpha = 0.3;
+		this.balloon.addChild(balloonShadow);
+
+		const balloonBackground = new PIXI.Graphics();
+		balloonBackground.beginFill(0x222222);
+		balloonBackground.drawRoundedRect(
+			(-Button.BALLOON_WIDTH + Button.BUTTON_SIZE) / 2,
+			-Button.BALLOON_HEIGHT - 4,
+			Button.BALLOON_WIDTH,
+			Button.BALLOON_HEIGHT,
+			Button.BALLOON_HEIGHT / 2);
+		balloonBackground.endFill();
+		this.balloon.addChild(balloonBackground);
+
+		const balloonText = new PIXI.Text(this.tooltip,
+			Constants.tooltipStyle);
+		balloonText.anchor.set(0.5, 0.5);
+		balloonText.x = Button.BUTTON_SIZE / 2;
+		balloonText.y = -Button.BALLOON_HEIGHT / 2 - 5;
+		this.balloon.addChild(balloonText);
 	}
 
 	getWidth(): number {
@@ -97,6 +148,11 @@ class Button extends Component {
 
 	setIcon(icon: string): void {
 		this.icon = icon;
+		this.rebuildPixi();
+	}
+
+	setTooltip(tooltip: string): void {
+		this.tooltip = tooltip;
 		this.rebuildPixi();
 	}
 

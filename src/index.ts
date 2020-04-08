@@ -9,6 +9,11 @@ let app = new PIXI.Application({
 app.renderer.view.style.position = "absolute";
 app.renderer.view.style.display = "block";
 app.renderer.resize(window.innerWidth, window.innerHeight);
+
+// set up the interaction manager such that it fires mousemove events only
+// when hovering over an object (why is this not default?)
+app.renderer.plugins.interaction.moveWhenInside = true;
+
 window.addEventListener('resize', (event: UIEvent) => {
 	app.renderer.resize(window.innerWidth, window.innerHeight);
 });

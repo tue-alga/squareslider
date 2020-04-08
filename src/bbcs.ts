@@ -47,9 +47,11 @@ class BBCS {
 				if (this.simulationMode === SimulationMode.RUNNING) {
 					this.simulationMode = SimulationMode.PAUSED;
 					this.runButton.setIcon("play");
+					this.runButton.setTooltip("Run simulation");
 				} else {
 					this.simulationMode = SimulationMode.RUNNING;
 					this.runButton.setIcon("pause");
+					this.runButton.setTooltip("Pause simulation");
 				}
 
 				this.resetButton.setEnabled(true);
@@ -60,7 +62,7 @@ class BBCS {
 			}
 		);
 		this.bottomBar.addChild(this.runButton);
-		this.resetButton = new Button("reset", "Reset the simulation");
+		this.resetButton = new Button("reset", "Reset simulation");
 		this.resetButton.onClick(this.reset.bind(this));
 		this.resetButton.setEnabled(false);
 		this.bottomBar.addChild(this.resetButton);
@@ -211,6 +213,7 @@ class BBCS {
 	reset(): void {
 		this.simulationMode = SimulationMode.RESET;
 		this.runButton.setIcon("play");
+		this.runButton.setTooltip("Run simulation");
 		this.resetButton.setEnabled(false);
 
 		this.selectButton.setEnabled(true);
@@ -249,5 +252,13 @@ class BBCS {
 	}
 }
 
-export {BBCS};
+class Constants {
+	static readonly tooltipStyle = new PIXI.TextStyle({
+		fontFamily: "Fira Sans",
+		fontSize: 16,
+		fill: "white"
+	});
+}
+
+export {BBCS, Constants};
 
