@@ -28,7 +28,6 @@ class BBCS {
 
 	private bottomBar: Toolbar;
 	private runButton: Button;
-	private pauseButton: Button;
 
 	private selectButton: Button;
 	private addBallButton: Button;
@@ -41,24 +40,18 @@ class BBCS {
 
 		this.bottomBar = new Toolbar();
 		this.runButton = new Button("play", "Run simulation");
-		this.pauseButton = new Button("pause", "Pause simulation");
 		this.runButton.onClick(
 			() => {
-				this.simulationMode = SimulationMode.RUNNING;
-				this.runButton.setPressed(true);
-				this.pauseButton.setPressed(false);
+				if (this.simulationMode === SimulationMode.PAUSED) {
+					this.simulationMode = SimulationMode.RUNNING;
+					this.runButton.setIcon("pause");
+				} else {
+					this.simulationMode = SimulationMode.PAUSED;
+					this.runButton.setIcon("play");
+				}
 			}
 		);
-		this.pauseButton.onClick(
-			() => {
-				this.simulationMode = SimulationMode.PAUSED;
-				this.runButton.setPressed(false);
-				this.pauseButton.setPressed(true);
-			}
-		);
-		this.pauseButton.setPressed(true);
 		this.bottomBar.addChild(this.runButton);
-		this.bottomBar.addChild(this.pauseButton);
 
 		this.bottomBar.addChild(new Separator());
 
@@ -221,8 +214,7 @@ class BBCS {
 			} catch (e) {
 				window.alert(`Illegal move: ${e}. Resetting the simulation.`);
 				this.simulationMode = SimulationMode.PAUSED;
-				this.runButton.setPressed(false);
-				this.pauseButton.setPressed(true);
+				this.runButton.setIcon("play");
 				this.world.reset();
 				this.time = 0;
 				this.timeStep = 0;

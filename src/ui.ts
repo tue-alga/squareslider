@@ -79,12 +79,17 @@ class Button extends Component {
 		return Button.BUTTON_SIZE;
 	}
 
-	setPressed(pressed: boolean) {
+	setPressed(pressed: boolean): void {
 		this.pressed = pressed;
 		this.rebuildPixi();
 	}
 
-	onClick(handler: () => void) {
+	setIcon(icon: string): void {
+		this.icon = icon;
+		this.rebuildPixi();
+	}
+
+	onClick(handler: () => void): void {
 		this.clickHandler = handler;
 		this.rebuildPixi();
 	}
