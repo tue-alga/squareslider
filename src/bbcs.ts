@@ -61,19 +61,7 @@ class BBCS {
 		);
 		this.bottomBar.addChild(this.runButton);
 		this.resetButton = new Button("reset", "Reset the simulation");
-		this.resetButton.onClick(
-			() => {
-				this.simulationMode = SimulationMode.RESET;
-				this.world.reset();
-
-				this.runButton.setIcon("play");
-				this.resetButton.setEnabled(false);
-
-				this.selectButton.setEnabled(true);
-				this.addBallButton.setEnabled(true);
-				this.addWallButton.setEnabled(true);
-			}
-		);
+		this.resetButton.onClick(this.reset.bind(this));
 		this.resetButton.setEnabled(false);
 		this.bottomBar.addChild(this.resetButton);
 
@@ -220,6 +208,20 @@ class BBCS {
 		//}
 	}
 
+	reset(): void {
+		this.simulationMode = SimulationMode.RESET;
+		this.runButton.setIcon("play");
+		this.resetButton.setEnabled(false);
+
+		this.selectButton.setEnabled(true);
+		this.addBallButton.setEnabled(true);
+		this.addWallButton.setEnabled(true);
+
+		this.world.reset();
+		this.time = 0;
+		this.timeStep = 0;
+	}
+
 	renderFrame(delta: number): void {
 		if (this.simulationMode === SimulationMode.RUNNING) {
 			this.time += this.timeSpeed * (1 + delta);
@@ -230,11 +232,7 @@ class BBCS {
 				this.world.nextStep(this.timeStep);
 			} catch (e) {
 				window.alert(`Illegal move: ${e}. Resetting the simulation.`);
-				this.simulationMode = SimulationMode.PAUSED;
-				this.runButton.setIcon("play");
-				this.world.reset();
-				this.time = 0;
-				this.timeStep = 0;
+				this.reset();
 			}
 		}
 
