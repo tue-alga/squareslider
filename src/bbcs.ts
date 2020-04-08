@@ -149,32 +149,34 @@ class BBCS {
 			let y = -p.y / 80;
 			console.log(x, y);
 
-			if (this.editMode === EditMode.ADD_BALL) {
-				x = Math.round(x);
-				y = Math.round(y);
+			if (this.simulationMode === SimulationMode.RESET) {
+				if (this.editMode === EditMode.ADD_BALL) {
+					x = Math.round(x);
+					y = Math.round(y);
 
-				if ((x + y) % 2 === 0) {
-					const ball = this.world.getBall(x, y);
-					if (ball) {
-						ball.rotateClockwise();
-					} else {
-						this.world.addBall(x, y, Direction.RIGHT);
+					if ((x + y) % 2 === 0) {
+						const ball = this.world.getBall(x, y);
+						if (ball) {
+							ball.rotateClockwise();
+						} else {
+							this.world.addBall(x, y, Direction.RIGHT);
+						}
 					}
 				}
-			}
 
-			if (this.editMode === EditMode.ADD_WALL) {
-				x = Math.floor(x);
-				y = Math.floor(y);
+				if (this.editMode === EditMode.ADD_WALL) {
+					x = Math.floor(x);
+					y = Math.floor(y);
 
-				let from: [number, number], to: [number, number];
-				if ((x + y) % 2 === 0) {
-					[from, to] = [[x, y], [x + 1, y + 1]];
-				} else {
-					[from, to] = [[x + 1, y], [x, y + 1]];
-				}
-				if (!this.world.hasWall(from, to)) {
-					this.world.addWall(from, to);
+					let from: [number, number], to: [number, number];
+					if ((x + y) % 2 === 0) {
+						[from, to] = [[x, y], [x + 1, y + 1]];
+					} else {
+						[from, to] = [[x + 1, y], [x, y + 1]];
+					}
+					if (!this.world.hasWall(from, to)) {
+						this.world.addWall(from, to);
+					}
 				}
 			}
 		});
