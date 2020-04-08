@@ -5,7 +5,7 @@ import {World} from './world';
 import {Button, Separator, Toolbar} from './ui';
 
 enum EditMode {
-	SELECT, ADD_BALL, ADD_WALL, DELETE
+	SELECT, ADD_BALL, ADD_WALL
 }
 
 enum SimulationMode {
@@ -27,8 +27,9 @@ class BBCS {
 	world: World;
 
 	private bottomBar: Toolbar;
-	private runButton: Button;
 
+	private runButton: Button;
+	private resetButton: Button;
 	private selectButton: Button;
 	private addBallButton: Button;
 	private addWallButton: Button;
@@ -39,6 +40,7 @@ class BBCS {
 		this.world = new World();
 
 		this.bottomBar = new Toolbar();
+
 		this.runButton = new Button("play", "Run simulation");
 		this.runButton.onClick(
 			() => {
@@ -52,6 +54,13 @@ class BBCS {
 			}
 		);
 		this.bottomBar.addChild(this.runButton);
+		this.resetButton = new Button("reset", "Reset the simulation");
+		this.resetButton.onClick(
+			() => {
+				this.world.reset();
+			}
+		);
+		this.bottomBar.addChild(this.resetButton);
 
 		this.bottomBar.addChild(new Separator());
 
@@ -91,13 +100,6 @@ class BBCS {
 			}
 		);
 		this.bottomBar.addChild(this.addWallButton);
-
-		this.bottomBar.addChild(new Button(
-			"delete", "Delete objects",
-			() => {
-				this.editMode = EditMode.DELETE;
-			}
-		));
 
 		this.setup();
 	}

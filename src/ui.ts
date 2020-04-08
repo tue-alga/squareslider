@@ -32,6 +32,7 @@ class Button extends Component {
 
 	//private hovering: boolean = false;
 	
+	private enabled: boolean = true;
 	private pressed: boolean = false;
 
 	constructor(public icon: string,
@@ -58,9 +59,11 @@ class Button extends Component {
 			Button.BUTTON_SIZE / 2);
 		background.endFill();
 		background.interactive = true;
-		if (this.clickHandler) {
-			background.on('click', this.clickHandler);
-		}
+		background.on('click', () => {
+			if (this.enabled && this.clickHandler) {
+				this.clickHandler();
+			}
+		});
 		this.pixi.addChild(background);
 
 		const icon = new PIXI.Sprite(
@@ -68,6 +71,9 @@ class Button extends Component {
 				resources['icons/' + this.icon + '.png'].texture);
 		icon.width = Button.BUTTON_SIZE;
 		icon.height = Button.BUTTON_SIZE;
+		if (!this.enabled) {
+			icon.alpha = 0.3;
+		}
 		this.pixi.addChild(icon);
 	}
 
@@ -77,6 +83,11 @@ class Button extends Component {
 
 	getHeight(): number {
 		return Button.BUTTON_SIZE;
+	}
+
+	setEnabled(enabled: boolean): void {
+		this.enabled = enabled;
+		this.rebuildPixi();
 	}
 
 	setPressed(pressed: boolean): void {

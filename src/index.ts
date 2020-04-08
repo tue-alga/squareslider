@@ -17,6 +17,7 @@ document.body.appendChild(app.view);
 PIXI.Loader.shared.add([
 	'icons/play.png',
 	'icons/pause.png',
+	'icons/reset.png',
 	'icons/select.png',
 	'icons/delete.png',
 	'icons/add-ball.png',
