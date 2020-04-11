@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import {Viewport} from 'pixi-viewport';
 
 import {Ball, Direction} from './ball';
 
@@ -15,6 +16,7 @@ class World {
 
 	world: WorldCell[][] = [];
 
+	viewport = new Viewport();
 	pixi = new PIXI.Container();
 	grid: PIXI.Graphics;
 	wallGrid: PIXI.Graphics;
@@ -22,6 +24,19 @@ class World {
 	balls: Ball[] = [];
 
 	constructor() {
+		this.viewport.addChild(this.pixi);
+
+		this.viewport.drag();
+		this.viewport.pinch();
+		this.viewport.wheel();
+		this.viewport.clampZoom({
+			"minScale": 0.1,
+			"maxScale": 2,
+		});
+		this.viewport.zoomPercent(-0.5, true);
+
+		this.pixi.rotation = -Math.PI / 4;
+
 		// grid lines (TODO do this in a shader)
 		this.grid = new PIXI.Graphics();
 		this.grid.lineStyle(3, 0xdddddd);

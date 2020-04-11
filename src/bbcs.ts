@@ -15,8 +15,6 @@ enum SimulationMode {
 class BBCS {
 	private app: PIXI.Application;
 
-	zoom = 0.6;
-
 	editMode: EditMode = EditMode.SELECT;
 	time: number = 0.0;
 	timeStep: number = 0;
@@ -160,7 +158,7 @@ class BBCS {
 	}
 
 	setup() {
-		this.app.stage.addChild(this.world.pixi);
+		this.app.stage.addChild(this.world.viewport);
 
 		/*this.world.addBall(2, -2, Direction.RIGHT);
 		this.world.addBall(4, -4, Direction.UP);
@@ -190,34 +188,15 @@ class BBCS {
 
 		// click handler
 		this.world.pixi.interactive = true;
-		this.world.pixi.hitArea =
-				new PIXI.Rectangle(-10000, -10000, 20000, 20000);
+		this.world.pixi.hitArea = new PIXI.Rectangle(-10000, -10000, 20000, 20000);
 		this.world.pixi.on('click', this.worldClickHandler.bind(this));
 		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
-
-		// we need to catch scroll events by adding a listener to the HTML
-		// canvas as, unfortunately, PIXI doesn't handle scroll events
-		this.app.view.addEventListener('wheel',
-				(e: WheelEvent) => {
-			if (e.deltaY > 0) {
-				this.zoom *= 0.8;
-			} else {
-				this.zoom /= 0.8;
-			}
-			if (this.zoom < 0.2) {
-				this.zoom = 0.2;
-			} else if (this.zoom > 3) {
-				this.zoom = 3;
-			}
-			this.update();
-		}, {passive: true});
 
 		this.update();
 	}
 
 	update(): void {
-		this.world.pixi.scale.set(this.zoom);
-		this.world.pixi.rotation = -Math.PI / 4;
+		//this.world.pixi.rotation = -Math.PI / 4;
 
 		//if (this.editMode === EditMode.SELECT) {
 		//	this.world.showNormalGrid();
@@ -278,12 +257,12 @@ class BBCS {
 			}
 		}
 
-		this.app.stage.x = window.innerWidth / 2;
-		this.app.stage.y = window.innerHeight / 2;
+		this.world.pixi.x = window.innerWidth / 2;
+		this.world.pixi.y = window.innerHeight / 2;
 		
 		this.bottomBar.setPosition(
-			-this.bottomBar.getWidth() / 2,
-			window.innerHeight / 2 - this.bottomBar.getHeight());
+			window.innerWidth / 2 - this.bottomBar.getWidth() / 2,
+			window.innerHeight - this.bottomBar.getHeight());
 
 		this.world.balls.forEach((ball) => {
 			ball.update(this.time, this.timeStep);
