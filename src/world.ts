@@ -22,7 +22,7 @@ class World {
 	balls: Ball[] = [];
 
 	constructor() {
-		// grid lines (TODO)
+		// grid lines (TODO do this in a shader)
 		this.grid = new PIXI.Graphics();
 		this.grid.lineStyle(3, 0xdddddd);
 		for (let x = -4000; x <= 4000; x += 80) {

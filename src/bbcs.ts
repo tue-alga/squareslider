@@ -26,7 +26,7 @@ class BBCS {
 
 	world: World;
 
-	private selectedBall: Ball | null = null;
+	private selection: Ball[] = [];
 
 	// GUI elements
 	private bottomBar: Toolbar;
@@ -64,7 +64,7 @@ class BBCS {
 
 				this.resetButton.setEnabled(true);
 
-				this.select(null);
+				this.deselect();
 				this.selectButton.setEnabled(false);
 				this.addBallButton.setEnabled(false);
 				this.addWallButton.setEnabled(false);
@@ -121,9 +121,9 @@ class BBCS {
 			"rotate-left", "Rotate left");
 		this.rotateLeftButton.onClick(
 			() => {
-				if (this.selectedBall) {
-					this.selectedBall.rotateCounterClockwise();
-				}
+				this.selection.forEach((ball) => {
+					ball.rotateCounterClockwise();
+				});
 			}
 		);
 		this.rotateLeftButton.setEnabled(false);
@@ -133,9 +133,9 @@ class BBCS {
 			"rotate-right", "Rotate right");
 		this.rotateRightButton.onClick(
 			() => {
-				if (this.selectedBall) {
-					this.selectedBall.rotateClockwise();
-				}
+				this.selection.forEach((ball) => {
+					ball.rotateCounterClockwise();
+				});
 			}
 		);
 		this.rotateRightButton.setEnabled(false);
@@ -145,12 +145,12 @@ class BBCS {
 			"delete", "Delete");
 		this.deleteButton.onClick(
 			() => {
-				if (this.selectedBall) {
-					const [x, y] = [this.selectedBall.p.x,
-						this.selectedBall.p.y];
+				this.selection.forEach((ball) => {
+					const [x, y] = [ball.p.x,
+						ball.p.y];
 					this.world.removeBall(x, y);
-					this.select(null);
-				}
+					this.deselect();
+				});
 			}
 		);
 		this.deleteButton.setEnabled(false);
@@ -205,7 +205,11 @@ class BBCS {
 					x = Math.round(x);
 					y = Math.round(y);
 					const ball = this.world.getBall(x, y);
-					this.select(ball);
+					if (ball) {
+						this.selectBall(ball);
+					} else {
+						this.deselect();
+					}
 				}
 
 				if (this.editMode === EditMode.ADD_BALL) {
@@ -216,7 +220,7 @@ class BBCS {
 						const ball = this.world.getBall(x, y);
 						if (!ball) {
 							const newBall = this.world.addBall(x, y, Direction.RIGHT);
-							this.select(newBall);
+							this.selectBall(newBall);
 						}
 					}
 				}
@@ -233,6 +237,7 @@ class BBCS {
 					}
 					if (!this.world.hasWall(from, to)) {
 						this.world.addWall(from, to);
+						//this.selectWall(from, to);
 					}
 				}
 			}
@@ -284,22 +289,31 @@ class BBCS {
 		this.timeStep = 0;
 	}
 
-	select(ball: Ball | null): void {
-		const oldSelection = this.selectedBall;
-		if (oldSelection) {
-			oldSelection.selected = false;
-			oldSelection.update(this.time, this.timeStep);
-		}
-
-		this.selectedBall = ball;
-		if (ball) {
-			ball.selected = true;
+	selectBall(ball: Ball): void {
+		this.selection.forEach((ball) => {
+			ball.selected = false;
 			ball.update(this.time, this.timeStep);
-		}
+		});
 
-		this.rotateLeftButton.setEnabled(ball !== null);
-		this.rotateRightButton.setEnabled(ball !== null);
-		this.deleteButton.setEnabled(ball !== null);
+		this.selection = [ball];
+		ball.selected = true;
+		ball.update(this.time, this.timeStep);
+
+		this.rotateLeftButton.setEnabled(true);
+		this.rotateRightButton.setEnabled(true);
+		this.deleteButton.setEnabled(true);
+	}
+
+	deselect(): void {
+		this.selection.forEach((ball) => {
+			ball.selected = false;
+			ball.update(this.time, this.timeStep);
+		});
+
+		this.selection = [];
+		this.rotateLeftButton.setEnabled(false);
+		this.rotateRightButton.setEnabled(false);
+		this.deleteButton.setEnabled(false);
 	}
 
 	renderFrame(delta: number): void {
