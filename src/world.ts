@@ -120,7 +120,7 @@ class World {
 		return !!this.getBall(x, y);
 	}
 
-	addBall(x: number, y: number, d: Direction): void {
+	addBall(x: number, y: number, d: Direction): Ball {
 		if (this.getBall(x, y)) {
 			throw `Tried to insert ball on top of another ball ` +
 					`at (${x}, ${y})`;
@@ -129,6 +129,7 @@ class World {
 		this.getCell(x, y).ball = ball;
 		this.balls.push(ball);
 		this.pixi.addChild(ball.pixi);
+		return ball;
 	}
 
 	moveBall(from: [number, number], to: [number, number]): void {

@@ -149,7 +149,7 @@ class BBCS {
 					const [x, y] = [this.selectedBall.p.x,
 						this.selectedBall.p.y];
 					this.world.removeBall(x, y);
-					this.selectedBall = null;
+					this.select(null);
 				}
 			}
 		);
@@ -215,7 +215,8 @@ class BBCS {
 					if ((x + y) % 2 === 0) {
 						const ball = this.world.getBall(x, y);
 						if (!ball) {
-							this.world.addBall(x, y, Direction.RIGHT);
+							const newBall = this.world.addBall(x, y, Direction.RIGHT);
+							this.select(newBall);
 						}
 					}
 				}
