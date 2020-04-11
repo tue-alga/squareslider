@@ -204,11 +204,10 @@ class BBCS {
 				if (this.editMode === EditMode.SELECT) {
 					x = Math.round(x);
 					y = Math.round(y);
+					this.deselect();
 					const ball = this.world.getBall(x, y);
 					if (ball) {
 						this.selectBall(ball);
-					} else {
-						this.deselect();
 					}
 				}
 
@@ -290,18 +289,10 @@ class BBCS {
 	}
 
 	selectBall(ball: Ball): void {
-		this.selection.forEach((ball) => {
-			ball.selected = false;
-			ball.update(this.time, this.timeStep);
-		});
-
-		this.selection = [ball];
+		this.selection.push(ball);
 		ball.selected = true;
 		ball.update(this.time, this.timeStep);
-
-		this.rotateLeftButton.setEnabled(true);
-		this.rotateRightButton.setEnabled(true);
-		this.deleteButton.setEnabled(true);
+		this.updateEditButtons();
 	}
 
 	deselect(): void {
@@ -311,9 +302,13 @@ class BBCS {
 		});
 
 		this.selection = [];
-		this.rotateLeftButton.setEnabled(false);
-		this.rotateRightButton.setEnabled(false);
-		this.deleteButton.setEnabled(false);
+		this.updateEditButtons();
+	}
+
+	private updateEditButtons(): void {
+		this.rotateLeftButton.setEnabled(this.selection.length > 0);
+		this.rotateRightButton.setEnabled(this.selection.length > 0);
+		this.deleteButton.setEnabled(this.selection.length > 0);
 	}
 
 	renderFrame(delta: number): void {
