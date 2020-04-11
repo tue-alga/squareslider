@@ -192,55 +192,8 @@ class BBCS {
 		this.world.pixi.interactive = true;
 		this.world.pixi.hitArea =
 				new PIXI.Rectangle(-10000, -10000, 20000, 20000);
-		this.world.pixi.on('click',
-				(e: PIXI.interaction.InteractionEvent) => {
-			const p = e.data.getLocalPosition(this.world.pixi);
-			let x = p.x / 80;
-			let y = -p.y / 80;
-			console.log(x, y);
-
-			if (this.simulationMode === SimulationMode.RESET) {
-
-				if (this.editMode === EditMode.SELECT) {
-					x = Math.round(x);
-					y = Math.round(y);
-					this.deselect();
-					const ball = this.world.getBall(x, y);
-					if (ball) {
-						this.selectBall(ball);
-					}
-				}
-
-				if (this.editMode === EditMode.ADD_BALL) {
-					x = Math.round(x);
-					y = Math.round(y);
-
-					if ((x + y) % 2 === 0) {
-						const ball = this.world.getBall(x, y);
-						if (!ball) {
-							const newBall = this.world.addBall(x, y, Direction.RIGHT);
-							this.selectBall(newBall);
-						}
-					}
-				}
-
-				if (this.editMode === EditMode.ADD_WALL) {
-					x = Math.floor(x);
-					y = Math.floor(y);
-
-					let from: [number, number], to: [number, number];
-					if ((x + y) % 2 === 0) {
-						[from, to] = [[x, y], [x + 1, y + 1]];
-					} else {
-						[from, to] = [[x + 1, y], [x, y + 1]];
-					}
-					if (!this.world.hasWall(from, to)) {
-						this.world.addWall(from, to);
-						//this.selectWall(from, to);
-					}
-				}
-			}
-		});
+		this.world.pixi.on('click', this.worldClickHandler.bind(this));
+		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
 
 		// we need to catch scroll events by adding a listener to the HTML
 		// canvas as, unfortunately, PIXI doesn't handle scroll events
@@ -335,6 +288,55 @@ class BBCS {
 		this.world.balls.forEach((ball) => {
 			ball.update(this.time, this.timeStep);
 		});
+	}
+	
+	worldClickHandler(e: PIXI.interaction.InteractionEvent): void {
+		const p = e.data.getLocalPosition(this.world.pixi);
+		let x = p.x / 80;
+		let y = -p.y / 80;
+		console.log(x, y);
+
+		if (this.simulationMode === SimulationMode.RESET) {
+
+			if (this.editMode === EditMode.SELECT) {
+				x = Math.round(x);
+				y = Math.round(y);
+				this.deselect();
+				const ball = this.world.getBall(x, y);
+				if (ball) {
+					this.selectBall(ball);
+				}
+			}
+
+			if (this.editMode === EditMode.ADD_BALL) {
+				x = Math.round(x);
+				y = Math.round(y);
+
+				if ((x + y) % 2 === 0) {
+					const ball = this.world.getBall(x, y);
+					if (!ball) {
+						const newBall = this.world.addBall(x, y, Direction.RIGHT);
+						this.selectBall(newBall);
+					}
+				}
+			}
+
+			if (this.editMode === EditMode.ADD_WALL) {
+				x = Math.floor(x);
+				y = Math.floor(y);
+
+				let from: [number, number], to: [number, number];
+				if ((x + y) % 2 === 0) {
+					[from, to] = [[x, y], [x + 1, y + 1]];
+				} else {
+					[from, to] = [[x + 1, y], [x, y + 1]];
+				}
+				if (!this.world.hasWall(from, to)) {
+					this.world.addWall(from, to);
+					//this.selectWall(from, to);
+				}
+			}
+		}
 	}
 }
 

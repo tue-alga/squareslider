@@ -69,6 +69,11 @@ class Button extends Component {
 				this.clickHandler();
 			}
 		});
+		background.on('tap', () => {
+			if (this.enabled && this.clickHandler) {
+				this.clickHandler();
+			}
+		});
 		background.on('mousemove', () => {
 			this.hovered = true;
 			this.balloon.visible = true;
