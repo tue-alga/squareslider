@@ -132,7 +132,7 @@ class BBCS {
 		this.rotateRightButton.onClick(
 			() => {
 				this.selection.forEach((ball) => {
-					ball.rotateCounterClockwise();
+					ball.rotateClockwise();
 				});
 			}
 		);
@@ -188,7 +188,7 @@ class BBCS {
 
 		// click handler
 		this.world.pixi.interactive = true;
-		this.world.pixi.hitArea = new PIXI.Rectangle(-10000, -10000, 20000, 20000);
+		this.world.pixi.hitArea = new PIXI.Rectangle(-10000, -10000, 20000, 20000);  // TODO should be infinite ...
 		this.world.pixi.on('click', this.worldClickHandler.bind(this));
 		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
 
@@ -196,8 +196,6 @@ class BBCS {
 	}
 
 	update(): void {
-		//this.world.pixi.rotation = -Math.PI / 4;
-
 		//if (this.editMode === EditMode.SELECT) {
 		//	this.world.showNormalGrid();
 		//} else {
