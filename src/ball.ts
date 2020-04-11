@@ -201,11 +201,13 @@ class Ball {
 
 	rotateClockwise(): void {
 		this.d = this.d.rotateClockwise();
+		this.resetDirection = this.d;
 		this.updateLastDot();
 	}
 
 	rotateCounterClockwise(): void {
 		this.d = this.d.rotateCounterClockwise();
+		this.resetDirection = this.d;
 		this.updateLastDot();
 	}
 
