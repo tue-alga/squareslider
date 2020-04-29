@@ -22,7 +22,7 @@ class BBCS {
 	runUntil: number = Infinity;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
-	timeSpeed: number = 0.02;
+	timeSpeed: number = 0.05;
 
 	world: World;
 
@@ -285,7 +285,7 @@ class BBCS {
 
 	renderFrame(delta: number): void {
 		if (this.simulationMode === SimulationMode.RUNNING) {
-			this.time += this.timeSpeed * (1 + delta);
+			this.time += this.timeSpeed * delta;
 
 			if (this.time > this.runUntil) {
 				this.time = this.runUntil;
