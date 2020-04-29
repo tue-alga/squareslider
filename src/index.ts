@@ -21,6 +21,7 @@ document.body.appendChild(app.view);
 
 PIXI.Loader.shared.add([
 	'icons/play.png',
+	'icons/step.png',
 	'icons/pause.png',
 	'icons/reset.png',
 	'icons/select.png',

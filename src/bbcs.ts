@@ -18,6 +18,7 @@ class BBCS {
 	editMode: EditMode = EditMode.SELECT;
 	time: number = 0.0;
 	timeStep: number = 0;
+	runUntil: number = Infinity;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
 	timeSpeed: number = 0.02;
@@ -30,6 +31,7 @@ class BBCS {
 	private bottomBar: Toolbar;
 
 	private runButton: Button;
+	private stepButton: Button;
 	private resetButton: Button;
 	
 	private selectButton: Button;
@@ -54,21 +56,42 @@ class BBCS {
 					this.simulationMode = SimulationMode.PAUSED;
 					this.runButton.setIcon("play");
 					this.runButton.setTooltip("Run simulation");
+					this.stepButton.setEnabled(true);
 				} else {
+					this.runUntil = Infinity;
 					this.simulationMode = SimulationMode.RUNNING;
 					this.runButton.setIcon("pause");
 					this.runButton.setTooltip("Pause simulation");
+					this.stepButton.setEnabled(false);
 				}
 
-				this.resetButton.setEnabled(true);
-
 				this.deselect();
+				this.resetButton.setEnabled(true);
 				this.selectButton.setEnabled(false);
 				this.addBallButton.setEnabled(false);
 				this.addWallButton.setEnabled(false);
 			}
 		);
 		this.bottomBar.addChild(this.runButton);
+
+		this.stepButton = new Button("step", "Run one step");
+		this.stepButton.onClick(
+			() => {
+				this.runUntil = Math.floor(this.time) + 1;
+				this.simulationMode = SimulationMode.RUNNING;
+				this.runButton.setIcon("pause");
+				this.runButton.setTooltip("Pause simulation");
+
+				this.deselect();
+				this.stepButton.setEnabled(false);
+				this.resetButton.setEnabled(true);
+				this.selectButton.setEnabled(false);
+				this.addBallButton.setEnabled(false);
+				this.addWallButton.setEnabled(false);
+			}
+		);
+		this.bottomBar.addChild(this.stepButton);
+
 		this.resetButton = new Button("reset", "Reset simulation");
 		this.resetButton.onClick(this.reset.bind(this));
 		this.resetButton.setEnabled(false);
@@ -169,11 +192,11 @@ class BBCS {
 		this.world.addBall(12, -12, Direction.UP);
 		//this.world.addBall(12, 6, Direction.DOWN);*/
 		
-		// and gate
+		/*// and gate
 		this.world.addBall(-3, 1, Direction.RIGHT);
 		this.world.addBall(0, 4, Direction.DOWN);
 		this.world.addWall([1, 3], [2, 2]);
-		this.world.addWall([-2, -2], [-1, -3]);
+		this.world.addWall([-2, -2], [-1, -3]);*/
 
 		this.bottomBar.rebuildPixi();
 		this.app.stage.addChild(this.bottomBar.getPixi());
@@ -216,6 +239,7 @@ class BBCS {
 		this.world.reset();
 		this.time = 0;
 		this.timeStep = 0;
+		this.runUntil = Infinity;
 	}
 
 	selectBall(ball: Ball): void {
@@ -244,7 +268,16 @@ class BBCS {
 	renderFrame(delta: number): void {
 		if (this.simulationMode === SimulationMode.RUNNING) {
 			this.time += this.timeSpeed * (1 + delta);
+
+			if (this.time > this.runUntil) {
+				this.time = this.runUntil;
+				this.simulationMode = SimulationMode.PAUSED;
+				this.runButton.setIcon("play");
+				this.runButton.setTooltip("Run simulation");
+				this.stepButton.setEnabled(true);
+			}
 		}
+
 		while (Math.floor(this.time) > this.timeStep) {
 			this.timeStep++;
 			try {
