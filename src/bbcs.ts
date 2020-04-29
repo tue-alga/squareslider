@@ -314,6 +314,7 @@ class BBCS {
 				this.deselect();
 				const ball = this.world.getBall(x, y);
 				if (ball) {
+					this.deselect();
 					this.selectBall(ball);
 				}
 			}
@@ -326,6 +327,7 @@ class BBCS {
 					const ball = this.world.getBall(x, y);
 					if (!ball) {
 						const newBall = this.world.addBall(x, y, Direction.RIGHT);
+						this.deselect();
 						this.selectBall(newBall);
 					}
 				}
@@ -343,6 +345,7 @@ class BBCS {
 				}
 				if (!this.world.hasWall(from, to)) {
 					this.world.addWall(from, to);
+					this.deselect();
 					//this.selectWall(from, to);
 				}
 			}
