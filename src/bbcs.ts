@@ -43,6 +43,8 @@ class BBCS {
 	private rotateRightButton: Button;
 	private deleteButton: Button;
 
+	private saveButton: Button;
+
 	constructor(app: PIXI.Application) {
 		this.app = app;
 
@@ -184,6 +186,13 @@ class BBCS {
 		);
 		this.deleteButton.setEnabled(false);
 		this.bottomBar.addChild(this.deleteButton);
+
+		this.bottomBar.addChild(new Separator());
+
+		this.saveButton = new Button(
+			"save", "Save construction");
+		this.saveButton.onClick(this.save.bind(this));
+		this.bottomBar.addChild(this.saveButton);
 
 		this.setup();
 	}
@@ -368,6 +377,11 @@ class BBCS {
 		} else {
 			return [[x + 1, y], [x, y + 1]];
 		}
+	}
+
+	save(): void {
+		const file = this.world.serialize();
+		console.log(file);
 	}
 }
 

@@ -23,6 +23,7 @@ class World {
 	wallGrid: PIXI.Graphics;
 
 	balls: Ball[] = [];
+	walls: Wall[] = [];
 
 	constructor() {
 		this.viewport.addChild(this.pixi);
@@ -117,6 +118,7 @@ class World {
 		} else {
 			this.getCell(x3, y3).negativeWall = wall;
 		}
+		this.walls.push(wall);
 		this.pixi.addChild(wall.pixi);
 		return wall;
 	}
@@ -128,6 +130,7 @@ class World {
 		} else {
 			this.getCell(wall.p.x, wall.p.y).negativeWall = null;
 		}
+		this.walls = this.walls.filter((w) => w !== wall);
 	}
 
 	getBall(x: number, y: number): Ball | null {
@@ -223,6 +226,32 @@ class World {
 	showWallGrid(): void {
 		this.grid.visible = false;
 		this.wallGrid.visible = true;
+	}
+
+	serialize(): string {
+		let balls: any = [];
+		this.balls.forEach((ball) => {
+			balls.push({
+				'x': ball.p.x,
+				'y': ball.p.y,
+				'vx': ball.d.vx,
+				'vy': ball.d.vy
+			});
+		});
+		let walls: any = [];
+		this.walls.forEach((wall) => {
+			walls.push({
+				'x': wall.p.x,
+				'y': wall.p.y,
+				'p': wall.positive
+			});
+		});
+		let obj: any = {
+			'_version': 1,
+			'balls': balls,
+			'walls': walls
+		};
+		return JSON.stringify(obj);
 	}
 }
 
