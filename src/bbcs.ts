@@ -238,6 +238,7 @@ class BBCS {
 		this.simulationMode = SimulationMode.RESET;
 		this.runButton.setIcon("play");
 		this.runButton.setTooltip("Run simulation");
+		this.stepButton.setEnabled(true);
 		this.resetButton.setEnabled(false);
 
 		this.selectButton.setEnabled(true);
