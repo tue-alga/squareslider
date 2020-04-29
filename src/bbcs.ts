@@ -171,10 +171,13 @@ class BBCS {
 			"delete", "Delete");
 		this.deleteButton.onClick(
 			() => {
-				this.selection.forEach((ball) => {
-					const [x, y] = [ball.p.x,
-						ball.p.y];
-					this.world.removeBall(x, y);
+				this.selection.forEach((obj) => {
+					if (obj instanceof Ball) {
+						const [x, y] = [obj.p.x, obj.p.y];
+						this.world.removeBall(x, y);
+					} else if (obj instanceof Wall) {
+						this.world.removeWall(obj);
+					}
 					this.deselect();
 				});
 			}

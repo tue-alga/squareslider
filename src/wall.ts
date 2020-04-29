@@ -15,7 +15,7 @@ class Wall {
 	line = new PIXI.Graphics();
 	selected: boolean = false;
 
-	constructor(private world: World, x: number, y: number, private positive:boolean) {
+	constructor(private world: World, x: number, y: number, public positive:boolean) {
 		this.p = new Position(x, y);
 
 		this.pixi.x = x * 80;

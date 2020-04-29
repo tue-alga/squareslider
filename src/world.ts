@@ -118,6 +118,15 @@ class World {
 		return wall;
 	}
 
+	removeWall(wall: Wall): void {
+		this.pixi.removeChild(wall.pixi);
+		if (wall.positive) {
+			this.getCell(wall.p.x, wall.p.y).positiveWall = null;
+		} else {
+			this.getCell(wall.p.x, wall.p.y).negativeWall = null;
+		}
+	}
+
 	getBall(x: number, y: number): Ball | null {
 		return this.getCell(x, y).ball;
 	}
