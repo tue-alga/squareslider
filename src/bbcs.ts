@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 
 import {Direction, Ball} from './ball';
+import {Wall} from './wall';
 import {World} from './world';
 import {Button, Separator, Toolbar} from './ui';
 
@@ -25,7 +26,7 @@ class BBCS {
 
 	world: World;
 
-	private selection: Ball[] = [];
+	private selection: (Ball | Wall) [] = [];
 
 	// GUI elements
 	private bottomBar: Toolbar;
@@ -143,7 +144,9 @@ class BBCS {
 		this.rotateLeftButton.onClick(
 			() => {
 				this.selection.forEach((ball) => {
-					ball.rotateCounterClockwise();
+					if (ball instanceof Ball) {
+						ball.rotateCounterClockwise();
+					}
 				});
 			}
 		);
@@ -155,7 +158,9 @@ class BBCS {
 		this.rotateRightButton.onClick(
 			() => {
 				this.selection.forEach((ball) => {
-					ball.rotateClockwise();
+					if (ball instanceof Ball) {
+						ball.rotateClockwise();
+					}
 				});
 			}
 		);
@@ -242,10 +247,10 @@ class BBCS {
 		this.runUntil = Infinity;
 	}
 
-	selectBall(ball: Ball): void {
-		this.selection.push(ball);
-		ball.selected = true;
-		ball.update(this.time, this.timeStep);
+	select(obj: Ball | Wall): void {
+		this.selection.push(obj);
+		obj.selected = true;
+		obj.update(this.time, this.timeStep);
 		this.updateEditButtons();
 	}
 
@@ -315,7 +320,7 @@ class BBCS {
 				const ball = this.world.getBall(x, y);
 				if (ball) {
 					this.deselect();
-					this.selectBall(ball);
+					this.select(ball);
 				}
 			}
 
@@ -328,7 +333,7 @@ class BBCS {
 					if (!ball) {
 						const newBall = this.world.addBall(x, y, Direction.RIGHT);
 						this.deselect();
-						this.selectBall(newBall);
+						this.select(newBall);
 					}
 				}
 			}
@@ -344,9 +349,9 @@ class BBCS {
 					[from, to] = [[x + 1, y], [x, y + 1]];
 				}
 				if (!this.world.hasWall(from, to)) {
-					this.world.addWall(from, to);
+					let newWall = this.world.addWall(from, to);
 					this.deselect();
-					//this.selectWall(from, to);
+					this.select(newWall);
 				}
 			}
 		}

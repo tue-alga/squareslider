@@ -2,11 +2,12 @@ import * as PIXI from 'pixi.js';
 import {Viewport} from 'pixi-viewport';
 
 import {Ball, Direction} from './ball';
+import {Wall} from './wall';
 
 type WorldCell = {
 	ball: Ball | null;
-	positiveWall: PIXI.Graphics | null;
-	negativeWall: PIXI.Graphics | null;
+	positiveWall: Wall | null;
+	negativeWall: Wall | null;
 };
 
 /**
@@ -103,28 +104,18 @@ class World {
 		return hasWall;
 	}
 
-	addWall(from: [number, number], to: [number, number]): void {
+	addWall(from: [number, number], to: [number, number]): Wall {
 		const [x1, y1, x2, y2] = this.checkWallCoords(from, to);
 		const [x3, y3] = [Math.min(x1, x2), Math.min(y1, y2)];
-		if ((x3 === x1 && y3 === y1) || (x3 === x2 && y3 === y2)) {
-			const pixi = new PIXI.Graphics();
-			pixi.lineStyle(4, 0x222222);
-			pixi.moveTo(0, 0);
-			pixi.lineTo(80, -80);
-			pixi.x = x3 * 80;
-			pixi.y = -y3 * 80;
-			this.getCell(x3, y3).positiveWall = pixi;
-			this.pixi.addChild(pixi);
+		let wallIsPositive = (x3 === x1 && y3 === y1) || (x3 === x2 && y3 === y2);
+		let wall = new Wall(this, x3, y3, wallIsPositive);
+		if (wallIsPositive) {
+			this.getCell(x3, y3).positiveWall = wall;
 		} else {
-			const pixi = new PIXI.Graphics();
-			pixi.lineStyle(4, 0x222222);
-			pixi.moveTo(0, -80);
-			pixi.lineTo(80, 0);
-			pixi.x = x3 * 80;
-			pixi.y = -y3 * 80;
-			this.getCell(x3, y3).negativeWall = pixi;
-			this.pixi.addChild(pixi);
+			this.getCell(x3, y3).negativeWall = wall;
 		}
+		this.pixi.addChild(wall.pixi);
+		return wall;
 	}
 
 	getBall(x: number, y: number): Ball | null {
