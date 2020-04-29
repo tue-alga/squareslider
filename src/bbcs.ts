@@ -317,13 +317,18 @@ class BBCS {
 		if (this.simulationMode === SimulationMode.RESET) {
 
 			if (this.editMode === EditMode.SELECT) {
-				x = Math.round(x);
-				y = Math.round(y);
 				this.deselect();
-				const ball = this.world.getBall(x, y);
+				const ball = this.world.getBall(Math.round(x), Math.round(y));
 				if (ball) {
 					this.deselect();
 					this.select(ball);
+				} else {
+					const [from, to] = this.getWallCoordinates(Math.floor(x), Math.floor(y));
+					const wall = this.world.getWall(from, to);
+					if (wall) {
+						this.deselect();
+						this.select(wall);
+					}
 				}
 			}
 
@@ -345,18 +350,22 @@ class BBCS {
 				x = Math.floor(x);
 				y = Math.floor(y);
 
-				let from: [number, number], to: [number, number];
-				if ((x + y) % 2 === 0) {
-					[from, to] = [[x, y], [x + 1, y + 1]];
-				} else {
-					[from, to] = [[x + 1, y], [x, y + 1]];
-				}
+				const [from, to] = this.getWallCoordinates(x, y);
 				if (!this.world.hasWall(from, to)) {
 					let newWall = this.world.addWall(from, to);
 					this.deselect();
 					this.select(newWall);
 				}
 			}
+		}
+	}
+
+	private getWallCoordinates(x: number, y: number):
+			[[number, number], [number, number]] {
+		if ((x + y) % 2 === 0) {
+			return [[x, y], [x + 1, y + 1]];
+		} else {
+			return [[x + 1, y], [x, y + 1]];
 		}
 	}
 }

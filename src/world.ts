@@ -92,16 +92,19 @@ class World {
 		return [x1, y1, x2, y2];
 	}
 
-	hasWall(from: [number, number], to: [number, number]): boolean {
+	getWall(from: [number, number], to: [number, number]): Wall | null {
 		const [x1, y1, x2, y2] = this.checkWallCoords(from, to);
 		const [x3, y3] = [Math.min(x1, x2), Math.min(y1, y2)];
 		let hasWall: boolean;
 		if ((x3 === x1 && y3 === y1) || (x3 === x2 && y3 === y2)) {
-			hasWall = !!(this.getCell(x3, y3).positiveWall);
+			return this.getCell(x3, y3).positiveWall;
 		} else {
-			hasWall = !!(this.getCell(x3, y3).negativeWall);
+			return this.getCell(x3, y3).negativeWall;
 		}
-		return hasWall;
+	}
+
+	hasWall(from: [number, number], to: [number, number]): boolean {
+		return !!this.getWall(from, to);
 	}
 
 	addWall(from: [number, number], to: [number, number]): Wall {
