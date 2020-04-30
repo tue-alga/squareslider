@@ -112,11 +112,15 @@ class World {
 		const [x1, y1, x2, y2] = this.checkWallCoords(from, to);
 		const [x3, y3] = [Math.min(x1, x2), Math.min(y1, y2)];
 		let wallIsPositive = (x3 === x1 && y3 === y1) || (x3 === x2 && y3 === y2);
-		let wall = new Wall(this, x3, y3, wallIsPositive);
-		if (wallIsPositive) {
-			this.getCell(x3, y3).positiveWall = wall;
+		return this.addWallTopLeft(x3, y3, wallIsPositive);
+	}
+	
+	private addWallTopLeft(x: number, y: number, positive: boolean): Wall {
+		let wall = new Wall(this, x, y, positive);
+		if (positive) {
+			this.getCell(x, y).positiveWall = wall;
 		} else {
-			this.getCell(x3, y3).negativeWall = wall;
+			this.getCell(x, y).negativeWall = wall;
 		}
 		this.walls.push(wall);
 		this.pixi.addChild(wall.pixi);
@@ -252,6 +256,24 @@ class World {
 			'walls': walls
 		};
 		return JSON.stringify(obj);
+	}
+
+	deserialize(data: string): void {
+		let obj: any = JSON.parse(data);
+
+		if (obj['_version'] !== 1) {
+			throw 'Save file with incorrect version';
+		}
+
+		let balls: any[] = obj['balls'];
+		balls.forEach((ball: any) => {
+			this.addBall(ball['x'], ball['y'], new Direction(ball['vx'], ball['vy']));
+		});
+
+		let walls: any[] = obj['walls'];
+		walls.forEach((wall: any) => {
+			this.addWallTopLeft(wall['x'], wall['y'], wall['p']);
+		});
 	}
 }
 

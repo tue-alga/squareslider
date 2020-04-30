@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE ipe SYSTEM "ipe.dtd">
 <ipe version="70212" creator="Ipe 7.2.13">
-<info created="D:20200331165146" modified="D:20200429171636"/>
+<info created="D:20200331165146" modified="D:20200430011041"/>
 <ipestyle name="bettinacolors">
 <color name="Bettina blue" value="0 0.4 0.796"/>
 <color name="Bettina green" value="0.282 0.557 0"/>
@@ -653,6 +653,21 @@ h
 22 52 l
 16 46 l
 10 52 l
+h
+</path>
+<path matrix="1 0 0 1 0 -40" fill="black">
+6.4 51.24 m
+6.4 47.4 l
+25.6 47.4 l
+25.6 51.24 l
+h
+17.92 60.84 m
+17.92 53.16 l
+14.08 53.16 l
+14.08 60.84 l
+10.24 60.84 l
+16 66.6 l
+21.76 60.84 l
 h
 </path>
 </page>

@@ -17,7 +17,10 @@ app.renderer.plugins.interaction.moveWhenInside = true;
 window.addEventListener('resize', (event: UIEvent) => {
 	app.renderer.resize(window.innerWidth, window.innerHeight);
 });
-document.body.appendChild(app.view);
+const child = document.body.firstChild;
+if (child) {
+	document.body.insertBefore(app.view, child);
+}
 
 PIXI.Loader.shared.add([
 	'icons/play.png',
@@ -30,7 +33,8 @@ PIXI.Loader.shared.add([
 	'icons/rotate-left.png',
 	'icons/rotate-right.png',
 	'icons/delete.png',
-	'icons/save.png'
+	'icons/save.png',
+	'icons/load.png'
 ]).load(() => {
 	let bbcs = new BBCS(app);
 });

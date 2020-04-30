@@ -45,6 +45,8 @@ class BBCS {
 
 	private saveButton: Button;
 
+	private textArea = document.getElementById('save-textarea') as HTMLTextAreaElement;
+
 	constructor(app: PIXI.Application) {
 		this.app = app;
 
@@ -190,9 +192,23 @@ class BBCS {
 		this.bottomBar.addChild(new Separator());
 
 		this.saveButton = new Button(
-			"save", "Save construction");
+			"save", "Save & load");
 		this.saveButton.onClick(this.save.bind(this));
 		this.bottomBar.addChild(this.saveButton);
+
+
+		// set up event handlers for dialog buttons
+		const loadButton = document.getElementById('load-button');
+		loadButton!.addEventListener('click', () => {
+			document.getElementById('dialogs')!.style.display = 'none';
+			this.load(this.textArea.value);
+		});
+
+		const closeButton = document.getElementById('close-button');
+		closeButton!.addEventListener('click', () => {
+			document.getElementById('dialogs')!.style.display = 'none';
+		});
+
 
 		this.setup();
 	}
@@ -381,7 +397,22 @@ class BBCS {
 
 	save(): void {
 		const file = this.world.serialize();
-		console.log(file);
+		const dialogs = document.getElementById('dialogs');
+		dialogs!.style.display = 'block';
+		this.textArea.value = file;
+	}
+
+	load(data: string): void {
+		const newWorld = new World();
+		try {
+			newWorld.deserialize(data);
+		} catch (e) {
+			window.alert('Could not read JSON data: ' + e);
+			return;
+		}
+		this.world = newWorld;
+		this.app.stage.removeChildren();
+		this.setup();
 	}
 }
 
