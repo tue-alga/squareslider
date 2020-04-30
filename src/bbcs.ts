@@ -210,6 +210,11 @@ class BBCS {
 		});
 
 
+		this.app.ticker.add((delta) => {
+			this.renderFrame(delta);
+		});
+
+
 		this.setup();
 	}
 
@@ -236,10 +241,6 @@ class BBCS {
 
 		this.world.balls.forEach((ball) => {
 			ball.placeDots(0);
-		});
-
-		this.app.ticker.add((delta) => {
-			this.renderFrame(delta);
 		});
 
 		// click handler
