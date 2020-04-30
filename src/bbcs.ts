@@ -75,6 +75,7 @@ class BBCS {
 				this.selectButton.setEnabled(false);
 				this.addBallButton.setEnabled(false);
 				this.addWallButton.setEnabled(false);
+				this.saveButton.setEnabled(false);
 			}
 		);
 		this.bottomBar.addChild(this.runButton);
@@ -93,6 +94,7 @@ class BBCS {
 				this.selectButton.setEnabled(false);
 				this.addBallButton.setEnabled(false);
 				this.addWallButton.setEnabled(false);
+				this.saveButton.setEnabled(false);
 			}
 		);
 		this.bottomBar.addChild(this.stepButton);
@@ -270,6 +272,7 @@ class BBCS {
 		this.selectButton.setEnabled(true);
 		this.addBallButton.setEnabled(true);
 		this.addWallButton.setEnabled(true);
+		this.saveButton.setEnabled(true);
 
 		this.world.reset();
 		this.time = 0;

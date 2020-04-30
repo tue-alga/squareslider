@@ -236,10 +236,10 @@ class World {
 		let balls: any = [];
 		this.balls.forEach((ball) => {
 			balls.push({
-				'x': ball.p.x,
-				'y': ball.p.y,
-				'vx': ball.d.vx,
-				'vy': ball.d.vy
+				'x': ball.resetPosition.x,
+				'y': ball.resetPosition.y,
+				'vx': ball.resetDirection.vx,
+				'vy': ball.resetDirection.vy
 			});
 		});
 		let walls: any = [];
