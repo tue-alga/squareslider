@@ -32,6 +32,7 @@ PIXI.Loader.shared.add([
 	'icons/add-wall.png',
 	'icons/rotate-left.png',
 	'icons/rotate-right.png',
+	'icons/color.png',
 	'icons/delete.png',
 	'icons/save.png',
 	'icons/load.png'

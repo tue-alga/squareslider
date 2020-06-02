@@ -65,11 +65,34 @@ class Direction {
 	}
 }
 
+class Color {
+	static readonly BLUE = new Color(68, 187, 248);
+	static readonly RED = new Color(248, 78, 94);
+	static readonly YELLOW = new Color(248, 230, 110);
+	static readonly PURPLE = new Color(200, 90, 220);
+	static readonly ORANGE = new Color(248, 160, 80);
+	static readonly GREEN = new Color(140, 218, 90);
+
+	constructor(public r: number, public g: number, public b: number) {
+	}
+
+	toHexColor(): number {
+		return (this.r << 16) | (this.g << 8) | this.b;
+	}
+
+	equals(other: Color): boolean {
+		return this.r === other.r &&
+				this.g === other.g &&
+				this.b === other.b;
+	}
+}
+
 class Ball {
 	p: Position;
 	resetPosition: Position;
 	d: Direction;
 	resetDirection: Direction;
+	color: Color;
 	pixi = new PIXI.Container();
 	selectionCircle = new PIXI.Graphics();
 	circle = new PIXI.Graphics();
@@ -77,20 +100,29 @@ class Ball {
 	dotsLayer = new PIXI.Container();
 	selected: boolean = false;
 
-	constructor(private world: World, x: number, y: number, d: Direction) {
+	constructor(private world: World, x: number, y: number, d: Direction, color: Color) {
 		this.p = new Position(x, y);
 		this.resetPosition = new Position(x, y);
 		this.d = d;
 		this.resetDirection = d;
+		this.color = color;
 
 		this.pixi.addChild(this.dotsLayer);
+		this.pixi.addChild(this.selectionCircle);
+		this.pixi.addChild(this.circle);
+		this.updatePixi();
 
+		this.updatePosition(0, 0);
+	}
+
+	updatePixi(): void {
+		this.selectionCircle.clear();
 		this.selectionCircle.beginFill(0x2277bb);
 		this.selectionCircle.drawCircle(0, 0, 50 * Math.SQRT2);
 		this.selectionCircle.endFill();
-		this.pixi.addChild(this.selectionCircle);
 
-		this.circle.beginFill(0x44bbf8);
+		this.circle.clear();
+		this.circle.beginFill(this.color.toHexColor());
 		this.circle.lineStyle(4, 0x222222);
 		this.circle.drawCircle(0, 0, 40 * Math.SQRT2);
 		this.circle.endFill();
@@ -103,12 +135,9 @@ class Ball {
 		this.circle.lineTo(65, -10);
 		this.circle.closePath();
 		this.circle.endFill();
-		this.pixi.addChild(this.circle);
-
-		this.update(0, 0);
 	}
 
-	update(time: number, timeStep: number) {
+	updatePosition(time: number, timeStep: number): void {
 		let [vx, vy] = this.d.toVector();
 		this.circle.x = (this.p.x + (time - timeStep) * vx) * 80;
 		this.circle.y = -(this.p.y + (time - timeStep) * vy) * 80;
@@ -184,7 +213,7 @@ class Ball {
 
 	placeDots(time: number): void {
 		const dot = new PIXI.Graphics();
-		dot.beginFill(0x44bbf8);
+		dot.beginFill(this.color.toHexColor());
 		dot.drawCircle(0, 0, 5 * Math.SQRT2);
 		dot.x = this.p.x * 80;
 		dot.y = -this.p.y * 80;
@@ -218,7 +247,28 @@ class Ball {
 			dot.y = -(this.p.y + this.d.vy / 2.0) * 80;
 		}
 	}
+
+	setColor(color: Color): void {
+		this.color = color;
+		this.updatePixi();
+	}
+
+	nextColor(): void {
+		if (this.color.equals(Color.BLUE)) {
+			this.setColor(Color.RED);
+		} else if (this.color.equals(Color.RED)) {
+			this.setColor(Color.YELLOW);
+		} else if (this.color.equals(Color.YELLOW)) {
+			this.setColor(Color.PURPLE);
+		} else if (this.color.equals(Color.PURPLE)) {
+			this.setColor(Color.ORANGE);
+		} else if (this.color.equals(Color.ORANGE)) {
+			this.setColor(Color.GREEN);
+		} else {
+			this.setColor(Color.BLUE);
+		}
+	}
 }
 
-export {Direction, Ball};
+export {Direction, Ball, Color};
 

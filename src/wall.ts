@@ -41,10 +41,10 @@ class Wall {
 		}
 		this.pixi.addChild(this.line);
 
-		this.update(0, 0);
+		this.updatePosition(0, 0);
 	}
 
-	update(time: number, timeStep: number) {
+	updatePosition(time: number, timeStep: number) {
 		this.selectionLine.visible = this.selected;
 	}
 }

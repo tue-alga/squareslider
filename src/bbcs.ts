@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 
-import {Direction, Ball} from './ball';
+import {Direction, Ball, Color} from './ball';
 import {Wall} from './wall';
 import {World} from './world';
 import {Button, Separator, Toolbar} from './ui';
@@ -41,6 +41,7 @@ class BBCS {
 
 	private rotateLeftButton: Button;
 	private rotateRightButton: Button;
+	private colorButton: Button;
 	private deleteButton: Button;
 
 	private saveButton: Button;
@@ -173,6 +174,20 @@ class BBCS {
 		this.rotateRightButton.setEnabled(false);
 		this.bottomBar.addChild(this.rotateRightButton);
 
+		this.colorButton = new Button(
+			"color", "Change color");
+		this.colorButton.onClick(
+			() => {
+				this.selection.forEach((ball) => {
+					if (ball instanceof Ball) {
+						ball.nextColor();
+					}
+				});
+			}
+		);
+		this.colorButton.setEnabled(false);
+		this.bottomBar.addChild(this.colorButton);
+
 		this.deleteButton = new Button(
 			"delete", "Delete");
 		this.deleteButton.onClick(
@@ -283,14 +298,14 @@ class BBCS {
 	select(obj: Ball | Wall): void {
 		this.selection.push(obj);
 		obj.selected = true;
-		obj.update(this.time, this.timeStep);
+		obj.updatePosition(this.time, this.timeStep);
 		this.updateEditButtons();
 	}
 
 	deselect(): void {
 		this.selection.forEach((ball) => {
 			ball.selected = false;
-			ball.update(this.time, this.timeStep);
+			ball.updatePosition(this.time, this.timeStep);
 		});
 
 		this.selection = [];
@@ -300,6 +315,7 @@ class BBCS {
 	private updateEditButtons(): void {
 		this.rotateLeftButton.setEnabled(this.selection.length > 0);
 		this.rotateRightButton.setEnabled(this.selection.length > 0);
+		this.colorButton.setEnabled(this.selection.length > 0);
 		this.deleteButton.setEnabled(this.selection.length > 0);
 	}
 
@@ -334,7 +350,7 @@ class BBCS {
 			window.innerHeight - this.bottomBar.getHeight());
 
 		this.world.balls.forEach((ball) => {
-			ball.update(this.time, this.timeStep);
+			ball.updatePosition(this.time, this.timeStep);
 		});
 	}
 	
@@ -369,7 +385,7 @@ class BBCS {
 				if ((x + y) % 2 === 0) {
 					const ball = this.world.getBall(x, y);
 					if (!ball) {
-						const newBall = this.world.addBall(x, y, Direction.RIGHT);
+						const newBall = this.world.addBall(x, y, Direction.RIGHT, Color.BLUE);
 						this.deselect();
 						this.select(newBall);
 					}

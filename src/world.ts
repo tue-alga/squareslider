@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import {Viewport} from 'pixi-viewport';
 
-import {Ball, Direction} from './ball';
+import {Ball, Direction, Color} from './ball';
 import {Wall} from './wall';
 
 type WorldCell = {
@@ -145,12 +145,12 @@ class World {
 		return !!this.getBall(x, y);
 	}
 
-	addBall(x: number, y: number, d: Direction): Ball {
+	addBall(x: number, y: number, d: Direction, color: Color): Ball {
 		if (this.getBall(x, y)) {
 			throw `Tried to insert ball on top of another ball ` +
 					`at (${x}, ${y})`;
 		}
-		const ball = new Ball(this, x, y, d);
+		const ball = new Ball(this, x, y, d, color);
 		this.getCell(x, y).ball = ball;
 		this.balls.push(ball);
 		this.pixi.addChild(ball.pixi);
@@ -239,7 +239,8 @@ class World {
 				'x': ball.resetPosition.x,
 				'y': ball.resetPosition.y,
 				'vx': ball.resetDirection.vx,
-				'vy': ball.resetDirection.vy
+				'vy': ball.resetDirection.vy,
+				'color': [ball.color.r, ball.color.g, ball.color.b]
 			});
 		});
 		let walls: any = [];
@@ -251,7 +252,7 @@ class World {
 			});
 		});
 		let obj: any = {
-			'_version': 1,
+			'_version': 2,
 			'balls': balls,
 			'walls': walls
 		};
@@ -261,13 +262,18 @@ class World {
 	deserialize(data: string): void {
 		let obj: any = JSON.parse(data);
 
-		if (obj['_version'] !== 1) {
+		if (obj['_version'] > 2) {
 			throw 'Save file with incorrect version';
 		}
 
 		let balls: any[] = obj['balls'];
 		balls.forEach((ball: any) => {
-			this.addBall(ball['x'], ball['y'], new Direction(ball['vx'], ball['vy']));
+			let color = Color.BLUE;
+			if (ball.hasOwnProperty('color')) {
+				color = new Color(ball['color'][0],
+					ball['color'][1], ball['color'][2]);
+			}
+			this.addBall(ball['x'], ball['y'], new Direction(ball['vx'], ball['vy']), color);
 		});
 
 		let walls: any[] = obj['walls'];
