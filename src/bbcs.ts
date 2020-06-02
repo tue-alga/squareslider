@@ -55,52 +55,15 @@ class BBCS {
 
 		this.bottomBar = new Toolbar();
 
-		this.runButton = new Button("play", "Run simulation");
-		this.runButton.onClick(
-			() => {
-				if (this.simulationMode === SimulationMode.RUNNING) {
-					this.simulationMode = SimulationMode.PAUSED;
-					this.runButton.setIcon("play");
-					this.runButton.setTooltip("Run simulation");
-					this.stepButton.setEnabled(true);
-				} else {
-					this.runUntil = Infinity;
-					this.simulationMode = SimulationMode.RUNNING;
-					this.runButton.setIcon("pause");
-					this.runButton.setTooltip("Pause simulation");
-					this.stepButton.setEnabled(false);
-				}
-
-				this.deselect();
-				this.resetButton.setEnabled(true);
-				this.selectButton.setEnabled(false);
-				this.addBallButton.setEnabled(false);
-				this.addWallButton.setEnabled(false);
-				this.saveButton.setEnabled(false);
-			}
-		);
+		this.runButton = new Button("play", "Run simulation", "Space");
+		this.runButton.onClick(this.run.bind(this));
 		this.bottomBar.addChild(this.runButton);
 
 		this.stepButton = new Button("step", "Run one step");
-		this.stepButton.onClick(
-			() => {
-				this.runUntil = Math.floor(this.time) + 1;
-				this.simulationMode = SimulationMode.RUNNING;
-				this.runButton.setIcon("pause");
-				this.runButton.setTooltip("Pause simulation");
-
-				this.deselect();
-				this.stepButton.setEnabled(false);
-				this.resetButton.setEnabled(true);
-				this.selectButton.setEnabled(false);
-				this.addBallButton.setEnabled(false);
-				this.addWallButton.setEnabled(false);
-				this.saveButton.setEnabled(false);
-			}
-		);
+		this.stepButton.onClick(this.step.bind(this));
 		this.bottomBar.addChild(this.stepButton);
 
-		this.resetButton = new Button("reset", "Reset simulation");
+		this.resetButton = new Button("reset", "Reset simulation", "R");
 		this.resetButton.onClick(this.reset.bind(this));
 		this.resetButton.setEnabled(false);
 		this.bottomBar.addChild(this.resetButton);
@@ -108,40 +71,19 @@ class BBCS {
 		this.bottomBar.addChild(new Separator());
 
 		this.selectButton = new Button(
-			"select", "Select objects");
+			"select", "Select objects", "S");
 		this.selectButton.setPressed(true);
-		this.selectButton.onClick(
-			() => {
-				this.editMode = EditMode.SELECT;
-				this.selectButton.setPressed(true);
-				this.addBallButton.setPressed(false);
-				this.addWallButton.setPressed(false);
-			}
-		);
+		this.selectButton.onClick(this.selectMode.bind(this));
 		this.bottomBar.addChild(this.selectButton);
 
 		this.addBallButton = new Button(
-			"add-ball", "Add balls");
-		this.addBallButton.onClick(
-			() => {
-				this.editMode = EditMode.ADD_BALL;
-				this.selectButton.setPressed(false);
-				this.addBallButton.setPressed(true);
-				this.addWallButton.setPressed(false);
-			}
-		);
+			"add-ball", "Add balls", "B");
+		this.addBallButton.onClick(this.addBallsMode.bind(this));
 		this.bottomBar.addChild(this.addBallButton);
 
 		this.addWallButton = new Button(
-			"add-wall", "Add walls");
-		this.addWallButton.onClick(
-			() => {
-				this.editMode = EditMode.ADD_WALL;
-				this.selectButton.setPressed(false);
-				this.addBallButton.setPressed(false);
-				this.addWallButton.setPressed(true);
-			}
-		);
+			"add-wall", "Add walls", "W");
+		this.addWallButton.onClick(this.addWallsMode.bind(this));
 		this.bottomBar.addChild(this.addWallButton);
 
 		this.bottomBar.addChild(new Separator());
@@ -189,20 +131,8 @@ class BBCS {
 		this.bottomBar.addChild(this.colorButton);
 
 		this.deleteButton = new Button(
-			"delete", "Delete");
-		this.deleteButton.onClick(
-			() => {
-				this.selection.forEach((obj) => {
-					if (obj instanceof Ball) {
-						const [x, y] = [obj.p.x, obj.p.y];
-						this.world.removeBall(x, y);
-					} else if (obj instanceof Wall) {
-						this.world.removeWall(obj);
-					}
-					this.deselect();
-				});
-			}
-		);
+			"delete", "Delete selected", "Delete");
+		this.deleteButton.onClick(this.delete.bind(this));
 		this.deleteButton.setEnabled(false);
 		this.bottomBar.addChild(this.deleteButton);
 
@@ -266,6 +196,23 @@ class BBCS {
 		this.world.pixi.on('click', this.worldClickHandler.bind(this));
 		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
 
+		// key handlers
+		window.addEventListener("keydown", (event: KeyboardEvent) => {
+			if (event.key === " ") {
+				this.run();
+			} else if (event.key === "r") {
+				this.reset();
+			} else if (event.key === "s") {
+				this.selectMode();
+			} else if (event.key === "b") {
+				this.addBallsMode();
+			} else if (event.key === "w") {
+				this.addWallsMode();
+			} else if (event.key === "Delete") {
+				this.delete();
+			}
+		});
+
 		this.update();
 	}
 
@@ -275,24 +222,6 @@ class BBCS {
 		//} else {
 			this.world.showWallGrid();
 		//}
-	}
-
-	reset(): void {
-		this.simulationMode = SimulationMode.RESET;
-		this.runButton.setIcon("play");
-		this.runButton.setTooltip("Run simulation");
-		this.stepButton.setEnabled(true);
-		this.resetButton.setEnabled(false);
-
-		this.selectButton.setEnabled(true);
-		this.addBallButton.setEnabled(true);
-		this.addWallButton.setEnabled(true);
-		this.saveButton.setEnabled(true);
-
-		this.world.reset();
-		this.time = 0;
-		this.timeStep = 0;
-		this.runUntil = Infinity;
 	}
 
 	select(obj: Ball | Wall): void {
@@ -415,6 +344,96 @@ class BBCS {
 		}
 	}
 
+	// button handlers
+
+	run(): void {
+		if (this.simulationMode === SimulationMode.RUNNING) {
+			this.simulationMode = SimulationMode.PAUSED;
+			this.runButton.setIcon("play");
+			this.runButton.setTooltip("Run simulation");
+			this.stepButton.setEnabled(true);
+		} else {
+			this.runUntil = Infinity;
+			this.simulationMode = SimulationMode.RUNNING;
+			this.runButton.setIcon("pause");
+			this.runButton.setTooltip("Pause simulation");
+			this.stepButton.setEnabled(false);
+		}
+
+		this.deselect();
+		this.resetButton.setEnabled(true);
+		this.selectButton.setEnabled(false);
+		this.addBallButton.setEnabled(false);
+		this.addWallButton.setEnabled(false);
+		this.saveButton.setEnabled(false);
+	}
+
+	step(): void {
+		this.runUntil = Math.floor(this.time) + 1;
+		this.simulationMode = SimulationMode.RUNNING;
+		this.runButton.setIcon("pause");
+		this.runButton.setTooltip("Pause simulation");
+
+		this.deselect();
+		this.stepButton.setEnabled(false);
+		this.resetButton.setEnabled(true);
+		this.selectButton.setEnabled(false);
+		this.addBallButton.setEnabled(false);
+		this.addWallButton.setEnabled(false);
+		this.saveButton.setEnabled(false);
+	}
+
+	reset(): void {
+		this.simulationMode = SimulationMode.RESET;
+		this.runButton.setIcon("play");
+		this.runButton.setTooltip("Run simulation");
+		this.stepButton.setEnabled(true);
+		this.resetButton.setEnabled(false);
+
+		this.selectButton.setEnabled(true);
+		this.addBallButton.setEnabled(true);
+		this.addWallButton.setEnabled(true);
+		this.saveButton.setEnabled(true);
+
+		this.world.reset();
+		this.time = 0;
+		this.timeStep = 0;
+		this.runUntil = Infinity;
+	}
+
+	selectMode(): void {
+		this.editMode = EditMode.SELECT;
+		this.selectButton.setPressed(true);
+		this.addBallButton.setPressed(false);
+		this.addWallButton.setPressed(false);
+	}
+
+	addBallsMode(): void {
+		this.editMode = EditMode.ADD_BALL;
+		this.selectButton.setPressed(false);
+		this.addBallButton.setPressed(true);
+		this.addWallButton.setPressed(false);
+	}
+	
+	addWallsMode(): void {
+		this.editMode = EditMode.ADD_WALL;
+		this.selectButton.setPressed(false);
+		this.addBallButton.setPressed(false);
+		this.addWallButton.setPressed(true);
+	}
+
+	delete(): void {
+		this.selection.forEach((obj) => {
+			if (obj instanceof Ball) {
+				const [x, y] = [obj.p.x, obj.p.y];
+				this.world.removeBall(x, y);
+			} else if (obj instanceof Wall) {
+				this.world.removeWall(obj);
+			}
+			this.deselect();
+		});
+	}
+
 	save(): void {
 		const file = this.world.serialize();
 		const dialogs = document.getElementById('dialogs');
@@ -440,6 +459,11 @@ class Constants {
 	static readonly tooltipStyle = new PIXI.TextStyle({
 		fontFamily: "Fira Sans",
 		fontSize: 16,
+		fill: "white"
+	});
+	static readonly tooltipSmallStyle = new PIXI.TextStyle({
+		fontFamily: "Fira Sans",
+		fontSize: 12,
 		fill: "white"
 	});
 }

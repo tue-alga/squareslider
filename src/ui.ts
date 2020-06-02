@@ -40,6 +40,7 @@ class Button extends Component {
 
 	constructor(public icon: string,
 			public tooltip: string,
+			public shortcut?: string,
 			clickHandler?: () => void) {
 		super();
 		if (clickHandler) {
@@ -101,14 +102,19 @@ class Button extends Component {
 			this.balloon.alpha = 0.5;
 		}
 
+		let height = Button.BALLOON_HEIGHT;
+		if (this.shortcut) {
+			height += 12;
+		}
+
 		const balloonShadow = new PIXI.Graphics();
 		balloonShadow.beginFill(0x000000);
 		balloonShadow.drawRoundedRect(
 			(-Button.BALLOON_WIDTH + Button.BUTTON_SIZE) / 2,
-			-Button.BALLOON_HEIGHT - 4,
+			-height - 4,
 			Button.BALLOON_WIDTH,
-			Button.BALLOON_HEIGHT,
-			Button.BALLOON_HEIGHT / 2);
+			height,
+			height / 2);
 		balloonShadow.endFill();
 		balloonShadow.filters = [new PIXI.filters.BlurFilter(10)];
 		balloonShadow.alpha = 0.3;
@@ -118,10 +124,10 @@ class Button extends Component {
 		balloonBackground.beginFill(0x222222);
 		balloonBackground.drawRoundedRect(
 			(-Button.BALLOON_WIDTH + Button.BUTTON_SIZE) / 2,
-			-Button.BALLOON_HEIGHT - 4,
+			-height - 4,
 			Button.BALLOON_WIDTH,
-			Button.BALLOON_HEIGHT,
-			Button.BALLOON_HEIGHT / 2);
+			height,
+			height / 2);
 		balloonBackground.endFill();
 		this.balloon.addChild(balloonBackground);
 
@@ -129,8 +135,18 @@ class Button extends Component {
 			Constants.tooltipStyle);
 		balloonText.anchor.set(0.5, 0.5);
 		balloonText.x = Button.BUTTON_SIZE / 2;
-		balloonText.y = -Button.BALLOON_HEIGHT / 2 - 5;
+		balloonText.y = -height / 2 - 5;
 		this.balloon.addChild(balloonText);
+
+		if (this.shortcut) {
+			const shortcutText = new PIXI.Text("[" + this.shortcut + "]",
+				Constants.tooltipSmallStyle);
+			shortcutText.anchor.set(0.5, 0.5);
+			shortcutText.x = Button.BUTTON_SIZE / 2;
+			balloonText.y = -height / 2 - 12;
+			shortcutText.y = -height / 2 + 6;
+			this.balloon.addChild(shortcutText);
+		}
 	}
 
 	getWidth(): number {
