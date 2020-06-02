@@ -26,7 +26,13 @@ class BBCS {
 
 	world: World;
 
+	// selected objects
 	private selection: (Ball | Wall) [] = [];
+
+	// direction and color of last-edited ball
+	// (remembered to insert new balls with the same direction and color)
+	private lastDirection = Direction.RIGHT;
+	private lastColor = Color.BLUE;
 
 	// GUI elements
 	private bottomBar: Toolbar;
@@ -95,6 +101,9 @@ class BBCS {
 				this.selection.forEach((ball) => {
 					if (ball instanceof Ball) {
 						ball.rotateCounterClockwise();
+						if (this.selection.length === 1) {
+							this.lastDirection = ball.d;
+						}
 					}
 				});
 			}
@@ -109,6 +118,9 @@ class BBCS {
 				this.selection.forEach((ball) => {
 					if (ball instanceof Ball) {
 						ball.rotateClockwise();
+						if (this.selection.length === 1) {
+							this.lastDirection = ball.d;
+						}
 					}
 				});
 			}
@@ -123,6 +135,9 @@ class BBCS {
 				this.selection.forEach((ball) => {
 					if (ball instanceof Ball) {
 						ball.nextColor();
+						if (this.selection.length === 1) {
+							this.lastColor = ball.color;
+						}
 					}
 				});
 			}
@@ -314,7 +329,7 @@ class BBCS {
 				if ((x + y) % 2 === 0) {
 					const ball = this.world.getBall(x, y);
 					if (!ball) {
-						const newBall = this.world.addBall(x, y, Direction.RIGHT, Color.BLUE);
+						const newBall = this.world.addBall(x, y, this.lastDirection, this.lastColor);
 						this.deselect();
 						this.select(newBall);
 					}
