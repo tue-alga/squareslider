@@ -19,8 +19,7 @@ class World {
 
 	viewport = new Viewport();
 	pixi = new PIXI.Container();
-	grid: PIXI.Graphics;
-	wallGrid: PIXI.Graphics;
+	grid: PIXI.Mesh;
 
 	balls: Ball[] = [];
 	walls: Wall[] = [];
@@ -39,27 +38,50 @@ class World {
 
 		this.pixi.rotation = -Math.PI / 4;
 
-		// grid lines (TODO do this in a shader)
-		this.grid = new PIXI.Graphics();
-		this.grid.lineStyle(3, 0xdddddd);
-		for (let x = -4000; x <= 4000; x += 80) {
-			this.grid.moveTo(x, -4000);
-			this.grid.lineTo(x, 4000);
-			this.grid.moveTo(-4000, x);
-			this.grid.lineTo(4000, x);
-		}
-		this.pixi.addChild(this.grid);
+		const gridLineShader = `
+		uniform mat3 projectionMatrix;
+		`;
 
-		this.wallGrid = new PIXI.Graphics();
-		this.wallGrid.lineStyle(3, 0xdddddd);
-		for (let x = -4000; x <= 4000; x += 80) {
-			this.wallGrid.moveTo(x - 4000, -x - 4000);
-			this.wallGrid.lineTo(x + 4000, -x + 4000);
-			this.wallGrid.moveTo(-x - 4000, -x + 4000);
-			this.wallGrid.lineTo(-x + 4000, -x - 4000);
-		}
-		this.pixi.addChild(this.wallGrid);
-		this.wallGrid.visible = false;
+		const gridGeometry = new PIXI.Geometry().addAttribute('aVertexPosition',
+			[
+				-1e6, -1e6, 1e6, -1e6, 1e6, 1e6,
+				1e6, 1e6, -1e6, 1e6, -1e6, -1e6
+			]);
+		const gridShader = PIXI.Shader.from(`
+			precision mediump float;
+			attribute vec2 aVertexPosition;
+
+			uniform mat3 translationMatrix;
+			uniform mat3 projectionMatrix;
+
+			varying vec2 uv;
+
+			void main() {
+				gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
+				uv = aVertexPosition;
+			}`,
+			`precision mediump float;
+
+			uniform mat3 translationMatrix;
+
+			varying vec2 uv;
+
+			float gridValue(float coord, float lineWidth) {
+				return clamp(-abs(mod(coord - 80.0, 160.0) - 80.0) + lineWidth, 0.0, 1.0);
+			}
+
+			void main() {
+				float zoom = translationMatrix[1][1];
+				float width = 3.0 / sqrt(zoom);
+				float base = clamp(1.1 - zoom, 0.9, 1.0);
+				float xMod = gridValue(uv.x + uv.y, width);
+				float yMod = gridValue(uv.y - uv.x, width);
+				float gray = base + (1.0 - max(xMod, yMod)) * (1.0 - base);
+				gl_FragColor = vec4(gray, gray, gray, 1.0);
+			}
+			`);
+		this.grid = new PIXI.Mesh(gridGeometry, gridShader);
+		this.pixi.addChild(this.grid);
 	}
 
 	private getColumn(x: number): WorldCell[] {
@@ -220,16 +242,6 @@ class World {
 			ball.dotsLayer.removeChildren();
 			this.getCell(ball.p.x, ball.p.y).ball = ball;
 		});
-	}
-
-	showNormalGrid(): void {
-		this.grid.visible = true;
-		this.wallGrid.visible = false;
-	}
-
-	showWallGrid(): void {
-		this.grid.visible = false;
-		this.wallGrid.visible = true;
 	}
 
 	serialize(): string {

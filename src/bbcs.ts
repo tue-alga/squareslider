@@ -232,11 +232,6 @@ class BBCS {
 	}
 
 	update(): void {
-		//if (this.editMode === EditMode.SELECT) {
-		//	this.world.showNormalGrid();
-		//} else {
-			this.world.showWallGrid();
-		//}
 	}
 
 	select(obj: Ball | Wall): void {
