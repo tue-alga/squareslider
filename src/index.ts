@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import {BBCS} from './bbcs'
+import {CubesSimulator} from './cubes-simulator'
 
 let app = new PIXI.Application({
 	antialias: true,
@@ -37,6 +37,6 @@ PIXI.Loader.shared.add([
 	'icons/save.png',
 	'icons/load.png'
 ]).load(() => {
-	let bbcs = new BBCS(app);
+	let simulator = new CubesSimulator(app);
 });
 

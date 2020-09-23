@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import {Constants} from './bbcs';
+import {Constants} from './cubes-simulator';
 
 abstract class Component {
 	protected readonly pixi = new PIXI.Container();

@@ -2,12 +2,9 @@ import * as PIXI from 'pixi.js';
 import {Viewport} from 'pixi-viewport';
 
 import {Ball, Direction, Color} from './ball';
-import {Wall} from './wall';
 
 type WorldCell = {
 	ball: Ball | null;
-	positiveWall: Wall | null;
-	negativeWall: Wall | null;
 };
 
 /**
@@ -22,7 +19,6 @@ class World {
 	grid: PIXI.Mesh;
 
 	balls: Ball[] = [];
-	walls: Wall[] = [];
 
 	constructor() {
 		this.viewport.addChild(this.pixi);
@@ -35,8 +31,6 @@ class World {
 			"maxScale": 2,
 		});
 		this.viewport.zoomPercent(-0.5, true);
-
-		this.pixi.rotation = -Math.PI / 4;
 
 		const gridLineShader = `
 		uniform mat3 projectionMatrix;
@@ -67,15 +61,15 @@ class World {
 			varying vec2 uv;
 
 			float gridValue(float coord, float lineWidth) {
-				return clamp(-abs(mod(coord - 80.0, 160.0) - 80.0) + lineWidth, 0.0, 1.0);
+				return clamp(-abs(mod(coord - 0.0, 160.0) - 80.0) + lineWidth, 0.0, 1.0);
 			}
 
 			void main() {
 				float zoom = translationMatrix[1][1];
 				float width = 3.0 / sqrt(zoom);
 				float base = clamp(1.1 - zoom, 0.9, 1.0);
-				float xMod = gridValue(uv.x + uv.y, width);
-				float yMod = gridValue(uv.y - uv.x, width);
+				float xMod = gridValue(uv.x * 2.0, width);
+				float yMod = gridValue(uv.y * 2.0, width);
 				float gray = base + (1.0 - max(xMod, yMod)) * (1.0 - base);
 				gl_FragColor = vec4(gray, gray, gray, 1.0);
 			}
@@ -95,68 +89,10 @@ class World {
 		let column = this.getColumn(x);
 		if (!column[y]) {
 			column[y] = {
-				ball: null,
-				positiveWall: null,
-				negativeWall: null,
+				ball: null
 			};
 		}
 		return column[y];
-	}
-
-	private checkWallCoords(from: [number, number], to: [number, number]):
-			[number, number, number, number] {
-		const [x1, y1] = from;
-		const [x2, y2] = to;
-		if (Math.abs(x2 - x1) !== 1 || Math.abs(y2 - y1) !== 1) {
-			throw `Illegal wall check from (${x1}, ${y1}) to (${y1}, ${y2}) ` +
-					`(should be diagonal, one apart)`;
-		}
-
-		return [x1, y1, x2, y2];
-	}
-
-	getWall(from: [number, number], to: [number, number]): Wall | null {
-		const [x1, y1, x2, y2] = this.checkWallCoords(from, to);
-		const [x3, y3] = [Math.min(x1, x2), Math.min(y1, y2)];
-		let hasWall: boolean;
-		if ((x3 === x1 && y3 === y1) || (x3 === x2 && y3 === y2)) {
-			return this.getCell(x3, y3).positiveWall;
-		} else {
-			return this.getCell(x3, y3).negativeWall;
-		}
-	}
-
-	hasWall(from: [number, number], to: [number, number]): boolean {
-		return !!this.getWall(from, to);
-	}
-
-	addWall(from: [number, number], to: [number, number]): Wall {
-		const [x1, y1, x2, y2] = this.checkWallCoords(from, to);
-		const [x3, y3] = [Math.min(x1, x2), Math.min(y1, y2)];
-		let wallIsPositive = (x3 === x1 && y3 === y1) || (x3 === x2 && y3 === y2);
-		return this.addWallTopLeft(x3, y3, wallIsPositive);
-	}
-	
-	private addWallTopLeft(x: number, y: number, positive: boolean): Wall {
-		let wall = new Wall(this, x, y, positive);
-		if (positive) {
-			this.getCell(x, y).positiveWall = wall;
-		} else {
-			this.getCell(x, y).negativeWall = wall;
-		}
-		this.walls.push(wall);
-		this.pixi.addChild(wall.pixi);
-		return wall;
-	}
-
-	removeWall(wall: Wall): void {
-		this.pixi.removeChild(wall.pixi);
-		if (wall.positive) {
-			this.getCell(wall.p.x, wall.p.y).positiveWall = null;
-		} else {
-			this.getCell(wall.p.x, wall.p.y).negativeWall = null;
-		}
-		this.walls = this.walls.filter((w) => w !== wall);
 	}
 
 	getBall(x: number, y: number): Ball | null {
@@ -212,21 +148,15 @@ class World {
 	}
 
 	nextStep(step: number): void {
-		this.balls.forEach((ball) => {
+		this.balls.forEach((cube) => {
 			const from: [number, number] =
-					[ball.p.x, ball.p.y];
+					[cube.p.x, cube.p.y];
 			const to: [number, number] =
-					[ball.p.x + ball.d.vx, ball.p.y + ball.d.vy];
+					[cube.p.x + cube.d.vx, cube.p.y + cube.d.vy];
 			this.moveBall(from, to);
 		});
-		this.balls.forEach((ball) => {
-			ball.handleWallCollisions(this);
-		});
-		this.balls.forEach((ball) => {
-			ball.handleBallCollisions(this);
-		});
-		this.balls.forEach((ball) => {
-			ball.placeDots(step);
+		this.balls.forEach((cube) => {
+			cube.placeDots(step);
 		});
 	}
 
@@ -245,28 +175,17 @@ class World {
 	}
 
 	serialize(): string {
-		let balls: any = [];
-		this.balls.forEach((ball) => {
-			balls.push({
-				'x': ball.resetPosition.x,
-				'y': ball.resetPosition.y,
-				'vx': ball.resetDirection.vx,
-				'vy': ball.resetDirection.vy,
-				'color': [ball.color.r, ball.color.g, ball.color.b]
-			});
-		});
-		let walls: any = [];
-		this.walls.forEach((wall) => {
-			walls.push({
-				'x': wall.p.x,
-				'y': wall.p.y,
-				'p': wall.positive
+		let cubes: any = [];
+		this.balls.forEach((cube) => {
+			cubes.push({
+				'x': cube.resetPosition.x,
+				'y': cube.resetPosition.y,
+				'color': [cube.color.r, cube.color.g, cube.color.b]
 			});
 		});
 		let obj: any = {
-			'_version': 2,
-			'balls': balls,
-			'walls': walls
+			'_version': 1,
+			'cubes': cubes
 		};
 		return JSON.stringify(obj);
 	}
@@ -274,23 +193,18 @@ class World {
 	deserialize(data: string): void {
 		let obj: any = JSON.parse(data);
 
-		if (obj['_version'] > 2) {
+		if (obj['_version'] > 1) {
 			throw 'Save file with incorrect version';
 		}
 
-		let balls: any[] = obj['balls'];
-		balls.forEach((ball: any) => {
+		let cubes: any[] = obj['cubes'];
+		cubes.forEach((cube: any) => {
 			let color = Color.BLUE;
-			if (ball.hasOwnProperty('color')) {
-				color = new Color(ball['color'][0],
-					ball['color'][1], ball['color'][2]);
+			if (cube.hasOwnProperty('color')) {
+				color = new Color(cube['color'][0],
+					cube['color'][1], cube['color'][2]);
 			}
-			this.addBall(ball['x'], ball['y'], new Direction(ball['vx'], ball['vy']), color);
-		});
-
-		let walls: any[] = obj['walls'];
-		walls.forEach((wall: any) => {
-			this.addWallTopLeft(wall['x'], wall['y'], wall['p']);
+			this.addBall(cube['x'], cube['y'], new Direction(0, 0), color);
 		});
 	}
 }

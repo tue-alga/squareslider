@@ -1,13 +1,13 @@
 {
-  "name": "bbcs",
+  "name": "cubes-simulator",
   "version": "0.0.1",
-  "description": "Billiard-ball computer simulator",
+  "description": "Simulator for our cubes algorithms",
   "main": "index.js",
   "scripts": {
     "build": "webpack",
     "watch": "webpack --watch",
     "start": "webpack-dev-server --open",
-    "test": "TESTBUILD=true webpack && mocha test-dist/main.js --require source-map-support/register && rm -rf test-dist"
+    "test": "TESTBUILD=true webpack && mocha test-dist/cubes-simulator.js --require source-map-support/register && rm -rf test-dist"
   },
   "author": "Willem Sonke",
   "license": "GPL-3.0",

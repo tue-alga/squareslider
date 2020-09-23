@@ -1,19 +1,18 @@
 import * as PIXI from 'pixi.js';
 
 import {Direction, Ball, Color} from './ball';
-import {Wall} from './wall';
 import {World} from './world';
 import {Button, Separator, Toolbar} from './ui';
 
 enum EditMode {
-	SELECT, ADD_BALL, ADD_WALL
+	SELECT, ADD_BALL
 }
 
 enum SimulationMode {
 	RUNNING, PAUSED, RESET
 }
 
-class BBCS {
+class CubesSimulator {
 	private app: PIXI.Application;
 
 	editMode: EditMode = EditMode.SELECT;
@@ -27,12 +26,12 @@ class BBCS {
 	world: World;
 
 	// selected objects
-	private selection: (Ball | Wall) [] = [];
+	private selection: Ball[] = [];
 
 	// direction and color of last-edited ball
 	// (remembered to insert new balls with the same direction and color)
 	private lastDirection = Direction.RIGHT;
-	private lastColor = Color.BLUE;
+	private lastColor = Color.GRAY;
 
 	// GUI elements
 	private bottomBar: Toolbar;
@@ -43,10 +42,6 @@ class BBCS {
 	
 	private selectButton: Button;
 	private addBallButton: Button;
-	private addWallButton: Button;
-
-	private rotateLeftButton: Button;
-	private rotateRightButton: Button;
 	private colorButton: Button;
 	private deleteButton: Button;
 
@@ -63,18 +58,18 @@ class BBCS {
 
 		this.runButton = new Button("play", "Run simulation", "Space");
 		this.runButton.onClick(this.run.bind(this));
-		this.bottomBar.addChild(this.runButton);
+		//this.bottomBar.addChild(this.runButton);
 
 		this.stepButton = new Button("step", "Run one step");
 		this.stepButton.onClick(this.step.bind(this));
-		this.bottomBar.addChild(this.stepButton);
+		//this.bottomBar.addChild(this.stepButton);
 
 		this.resetButton = new Button("reset", "Reset simulation", "R");
 		this.resetButton.onClick(this.reset.bind(this));
 		this.resetButton.setEnabled(false);
-		this.bottomBar.addChild(this.resetButton);
+		//this.bottomBar.addChild(this.resetButton);
 
-		this.bottomBar.addChild(new Separator());
+		//this.bottomBar.addChild(new Separator());
 
 		this.selectButton = new Button(
 			"select", "Select objects", "S");
@@ -83,50 +78,9 @@ class BBCS {
 		this.bottomBar.addChild(this.selectButton);
 
 		this.addBallButton = new Button(
-			"add-ball", "Add balls", "B");
+			"add-ball", "Add/remove cubes", "C");
 		this.addBallButton.onClick(this.addBallsMode.bind(this));
 		this.bottomBar.addChild(this.addBallButton);
-
-		this.addWallButton = new Button(
-			"add-wall", "Add walls", "W");
-		this.addWallButton.onClick(this.addWallsMode.bind(this));
-		this.bottomBar.addChild(this.addWallButton);
-
-		this.bottomBar.addChild(new Separator());
-
-		this.rotateLeftButton = new Button(
-			"rotate-left", "Rotate left");
-		this.rotateLeftButton.onClick(
-			() => {
-				this.selection.forEach((ball) => {
-					if (ball instanceof Ball) {
-						ball.rotateCounterClockwise();
-						if (this.selection.length === 1) {
-							this.lastDirection = ball.d;
-						}
-					}
-				});
-			}
-		);
-		this.rotateLeftButton.setEnabled(false);
-		this.bottomBar.addChild(this.rotateLeftButton);
-
-		this.rotateRightButton = new Button(
-			"rotate-right", "Rotate right");
-		this.rotateRightButton.onClick(
-			() => {
-				this.selection.forEach((ball) => {
-					if (ball instanceof Ball) {
-						ball.rotateClockwise();
-						if (this.selection.length === 1) {
-							this.lastDirection = ball.d;
-						}
-					}
-				});
-			}
-		);
-		this.rotateRightButton.setEnabled(false);
-		this.bottomBar.addChild(this.rotateRightButton);
 
 		this.colorButton = new Button(
 			"color", "Change color");
@@ -219,10 +173,8 @@ class BBCS {
 				this.reset();
 			} else if (event.key === "s") {
 				this.selectMode();
-			} else if (event.key === "b") {
+			} else if (event.key === "c") {
 				this.addBallsMode();
-			} else if (event.key === "w") {
-				this.addWallsMode();
 			} else if (event.key === "Delete") {
 				this.delete();
 			}
@@ -234,7 +186,7 @@ class BBCS {
 	update(): void {
 	}
 
-	select(obj: Ball | Wall): void {
+	select(obj: Ball): void {
 		this.selection.push(obj);
 		obj.selected = true;
 		obj.updatePosition(this.time, this.timeStep);
@@ -252,8 +204,6 @@ class BBCS {
 	}
 
 	private updateEditButtons(): void {
-		this.rotateLeftButton.setEnabled(this.selection.length > 0);
-		this.rotateRightButton.setEnabled(this.selection.length > 0);
 		this.colorButton.setEnabled(this.selection.length > 0);
 		this.deleteButton.setEnabled(this.selection.length > 0);
 	}
@@ -307,13 +257,6 @@ class BBCS {
 				if (ball) {
 					this.deselect();
 					this.select(ball);
-				} else {
-					const [from, to] = this.getWallCoordinates(Math.floor(x), Math.floor(y));
-					const wall = this.world.getWall(from, to);
-					if (wall) {
-						this.deselect();
-						this.select(wall);
-					}
 				}
 			}
 
@@ -321,36 +264,15 @@ class BBCS {
 				x = Math.round(x);
 				y = Math.round(y);
 
-				if ((x + y) % 2 === 0) {
-					const ball = this.world.getBall(x, y);
-					if (!ball) {
-						const newBall = this.world.addBall(x, y, this.lastDirection, this.lastColor);
-						this.deselect();
-						this.select(newBall);
-					}
-				}
-			}
-
-			if (this.editMode === EditMode.ADD_WALL) {
-				x = Math.floor(x);
-				y = Math.floor(y);
-
-				const [from, to] = this.getWallCoordinates(x, y);
-				if (!this.world.hasWall(from, to)) {
-					let newWall = this.world.addWall(from, to);
+				const ball = this.world.getBall(x, y);
+				if (!ball) {
+					const newBall = this.world.addBall(x, y, this.lastDirection, this.lastColor);
 					this.deselect();
-					this.select(newWall);
+					this.select(newBall);
+				} else {
+					this.world.removeBall(ball.p.x, ball.p.y);
 				}
 			}
-		}
-	}
-
-	private getWallCoordinates(x: number, y: number):
-			[[number, number], [number, number]] {
-		if ((x + y) % 2 === 0) {
-			return [[x, y], [x + 1, y + 1]];
-		} else {
-			return [[x + 1, y], [x, y + 1]];
 		}
 	}
 
@@ -374,7 +296,6 @@ class BBCS {
 		this.resetButton.setEnabled(true);
 		this.selectButton.setEnabled(false);
 		this.addBallButton.setEnabled(false);
-		this.addWallButton.setEnabled(false);
 		this.saveButton.setEnabled(false);
 	}
 
@@ -389,7 +310,6 @@ class BBCS {
 		this.resetButton.setEnabled(true);
 		this.selectButton.setEnabled(false);
 		this.addBallButton.setEnabled(false);
-		this.addWallButton.setEnabled(false);
 		this.saveButton.setEnabled(false);
 	}
 
@@ -402,7 +322,6 @@ class BBCS {
 
 		this.selectButton.setEnabled(true);
 		this.addBallButton.setEnabled(true);
-		this.addWallButton.setEnabled(true);
 		this.saveButton.setEnabled(true);
 
 		this.world.reset();
@@ -415,30 +334,19 @@ class BBCS {
 		this.editMode = EditMode.SELECT;
 		this.selectButton.setPressed(true);
 		this.addBallButton.setPressed(false);
-		this.addWallButton.setPressed(false);
 	}
 
 	addBallsMode(): void {
 		this.editMode = EditMode.ADD_BALL;
 		this.selectButton.setPressed(false);
 		this.addBallButton.setPressed(true);
-		this.addWallButton.setPressed(false);
 	}
 	
-	addWallsMode(): void {
-		this.editMode = EditMode.ADD_WALL;
-		this.selectButton.setPressed(false);
-		this.addBallButton.setPressed(false);
-		this.addWallButton.setPressed(true);
-	}
-
 	delete(): void {
 		this.selection.forEach((obj) => {
 			if (obj instanceof Ball) {
 				const [x, y] = [obj.p.x, obj.p.y];
 				this.world.removeBall(x, y);
-			} else if (obj instanceof Wall) {
-				this.world.removeWall(obj);
 			}
 			this.deselect();
 		});
@@ -478,5 +386,5 @@ class Constants {
 	});
 }
 
-export {BBCS, Constants};
+export {CubesSimulator, Constants};
 

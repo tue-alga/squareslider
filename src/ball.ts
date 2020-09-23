@@ -66,6 +66,7 @@ class Direction {
 }
 
 class Color {
+	static readonly GRAY = new Color(230, 230, 230);
 	static readonly BLUE = new Color(68, 187, 248);
 	static readonly RED = new Color(248, 78, 94);
 	static readonly YELLOW = new Color(248, 230, 110);
@@ -118,21 +119,20 @@ class Ball {
 	updatePixi(): void {
 		this.selectionCircle.clear();
 		this.selectionCircle.beginFill(0x2277bb);
-		this.selectionCircle.drawCircle(0, 0, 50 * Math.SQRT2);
+		this.selectionCircle.moveTo(-50, -50);
+		this.selectionCircle.lineTo(50, -50);
+		this.selectionCircle.lineTo(50, 50);
+		this.selectionCircle.lineTo(-50, 50);
+		this.selectionCircle.closePath();
 		this.selectionCircle.endFill();
 
 		this.circle.clear();
 		this.circle.beginFill(this.color.toHexColor());
 		this.circle.lineStyle(4, 0x222222);
-		this.circle.drawCircle(0, 0, 40 * Math.SQRT2);
-		this.circle.endFill();
-		this.circle.beginFill(0x222222);
-		this.circle.moveTo(75, 0);
-		this.circle.lineTo(65, 10);
-		this.circle.lineTo(65.57, 5);
-		this.circle.lineTo(65.77, 0);
-		this.circle.lineTo(65.57, -5);
-		this.circle.lineTo(65, -10);
+		this.circle.moveTo(-40, -40);
+		this.circle.lineTo(40, -40);
+		this.circle.lineTo(40, 40);
+		this.circle.lineTo(-40, 40);
 		this.circle.closePath();
 		this.circle.endFill();
 	}
@@ -156,31 +156,6 @@ class Ball {
 				const scaleFactor = 1 - 2 * (time - this.dots[0][0] - 7.5);
 				this.dots[0][1].scale.set(scaleFactor);
 			}
-		}
-	}
-
-	handleWallCollisions(world: World): void {
-		const [x, y] = [this.p.x, this.p.y];
-		const [vx, vy] = [this.d.vx, this.d.vy];
-
-		// positive-diagonal collisions
-		if (world.hasWall([x, y - 1], [x + 1, y])
-					&& vx >= 0 && vy <= 0) {
-			this.d = this.d.bouncePositiveDiagonal();
-		}
-		if (world.hasWall([x - 1, y], [x, y + 1])
-					&& vx <= 0 && vy >= 0) {
-			this.d = this.d.bouncePositiveDiagonal();
-		}
-
-		// negative-diagonal collisions
-		if (world.hasWall([x, y + 1], [x + 1, y])
-					&& vx >= 0 && vy >= 0) {
-			this.d = this.d.bounceNegativeDiagonal();
-		}
-		if (world.hasWall([x - 1, y], [x, y - 1])
-					&& vx <= 0 && vy <= 0) {
-			this.d = this.d.bounceNegativeDiagonal();
 		}
 	}
 
@@ -254,7 +229,9 @@ class Ball {
 	}
 
 	nextColor(): void {
-		if (this.color.equals(Color.BLUE)) {
+		if (this.color.equals(Color.GRAY)) {
+			this.setColor(Color.BLUE);
+		} else if (this.color.equals(Color.BLUE)) {
 			this.setColor(Color.RED);
 		} else if (this.color.equals(Color.RED)) {
 			this.setColor(Color.YELLOW);
@@ -265,7 +242,7 @@ class Ball {
 		} else if (this.color.equals(Color.ORANGE)) {
 			this.setColor(Color.GREEN);
 		} else {
-			this.setColor(Color.BLUE);
+			this.setColor(Color.GRAY);
 		}
 	}
 }
