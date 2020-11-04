@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 	<head>
-		<title>BBCS</title>
+		<title>Cubes Simulator</title>
 		<meta name=”viewport” content=”width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no” />
 		<style>
 			* {
@@ -79,5 +79,16 @@
 			</div>
 		</div>
 		<script src="main.js"></script>
+		<script>
+			// ugly hack: declare print functions here in the global scope
+			// to avoid the line numbers changing
+			// (see https://stackoverflow.com/questions/13815640/a-proper-wrapper-for-console-log-with-correct-line-number?noredirect=1&lq=1)
+			let printStep = function() {
+				return console.log.bind(console, "%c%s", "margin-top: 10px; font-size: 150%; font-weight: bold;");
+			}();
+			let printMiniStep = function() {
+				return console.log.bind(console, "%c%s", "font-weight: bold;");
+			}();
+		</script>
 	</body>
 </html>

@@ -40,3 +40,28 @@ PIXI.Loader.shared.add([
 	let simulator = new CubesSimulator(app);
 });
 
+declare global {
+	interface Array<T> {
+		min(): number;
+		max(): number;
+	}
+	function printStep(text: string): void;
+	function printMiniStep(text: string): void;
+}
+
+Array.prototype.min = function<T extends number>(): number {
+	let minimum = Infinity;
+	for (let i = 0; i < this.length; i++) {
+		minimum = Math.min(minimum, this[i]);
+	}
+	return minimum;
+}
+
+Array.prototype.max = function<T extends number>(): number {
+	let maximum = -Infinity;
+	for (let i = 0; i < this.length; i++) {
+		maximum = Math.max(maximum, this[i]);
+	}
+	return maximum;
+}
+

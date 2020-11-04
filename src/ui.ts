@@ -162,6 +162,10 @@ class Button extends Component {
 		this.rebuildPixi();
 	}
 
+	isEnabled(): boolean {
+		return this.enabled;
+	}
+
 	setPressed(pressed: boolean): void {
 		this.pressed = pressed;
 		this.rebuildPixi();

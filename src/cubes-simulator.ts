@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 
-import {Direction, Ball, Color} from './ball';
-import {World} from './world';
+import {Ball, Color} from './ball';
+import {World, Move} from './world';
 import {Button, Separator, Toolbar} from './ui';
 
 enum EditMode {
@@ -21,16 +21,16 @@ class CubesSimulator {
 	runUntil: number = Infinity;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
-	timeSpeed: number = 0.05;
+	timeSpeed: number = 0.2;
 
 	world: World;
+	algorithm: Generator<Move> | null = null;
 
 	// selected objects
 	private selection: Ball[] = [];
 
-	// direction and color of last-edited ball
-	// (remembered to insert new balls with the same direction and color)
-	private lastDirection = Direction.RIGHT;
+	// color of last-edited ball
+	// (remembered to insert new balls with the same color)
 	private lastColor = Color.GRAY;
 
 	// GUI elements
@@ -58,18 +58,18 @@ class CubesSimulator {
 
 		this.runButton = new Button("play", "Run simulation", "Space");
 		this.runButton.onClick(this.run.bind(this));
-		//this.bottomBar.addChild(this.runButton);
+		this.bottomBar.addChild(this.runButton);
 
 		this.stepButton = new Button("step", "Run one step");
 		this.stepButton.onClick(this.step.bind(this));
-		//this.bottomBar.addChild(this.stepButton);
+		this.bottomBar.addChild(this.stepButton);
 
 		this.resetButton = new Button("reset", "Reset simulation", "R");
 		this.resetButton.onClick(this.reset.bind(this));
 		this.resetButton.setEnabled(false);
-		//this.bottomBar.addChild(this.resetButton);
+		this.bottomBar.addChild(this.resetButton);
 
-		//this.bottomBar.addChild(new Separator());
+		this.bottomBar.addChild(new Separator());
 
 		this.selectButton = new Button(
 			"select", "Select objects", "S");
@@ -137,33 +137,88 @@ class CubesSimulator {
 	setup() {
 		this.app.stage.addChild(this.world.viewport);
 
-		/*this.world.addBall(2, -2, Direction.RIGHT);
-		this.world.addBall(4, -4, Direction.UP);
-		this.world.addBall(8, -4, Direction.LEFT);
-		this.world.addBall(10, -8, Direction.UP);
-		this.world.addBall(7, -5, Direction.LEFT);
-		//this.world.addBall(6, -2, Direction.DOWN);
-		this.world.addBall(12, -12, Direction.UP);
-		//this.world.addBall(12, 6, Direction.DOWN);*/
-		
-		/*// and gate
-		this.world.addBall(-3, 1, Direction.RIGHT);
-		this.world.addBall(0, 4, Direction.DOWN);
-		this.world.addWall([1, 3], [2, 2]);
-		this.world.addWall([-2, -2], [-1, -3]);*/
-
 		this.bottomBar.rebuildPixi();
 		this.app.stage.addChild(this.bottomBar.getPixi());
 
-		this.world.balls.forEach((ball) => {
-			ball.placeDots(0);
-		});
-
 		// click handler
 		this.world.pixi.interactive = true;
-		this.world.pixi.hitArea = new PIXI.Rectangle(-10000, -10000, 20000, 20000);  // TODO should be infinite ...
+		this.world.pixi.hitArea = new PIXI.Rectangle(-100000, -100000, 200000, 200000);  // TODO should be infinite ...
 		this.world.pixi.on('click', this.worldClickHandler.bind(this));
 		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
+
+		// TODO debug data
+		/*this.world.addBall(0, 0, Color.GRAY);
+		this.world.addBall(1, 0, Color.GRAY);
+		this.world.addBall(2, 0, Color.GRAY);
+		this.world.addBall(3, 0, Color.GRAY);
+		this.world.addBall(0, 1, Color.GRAY);
+		this.world.addBall(3, 1, Color.GRAY);
+		this.world.addBall(0, 2, Color.GRAY);
+		this.world.addBall(3, 2, Color.GRAY);
+		this.world.addBall(0, 3, Color.GRAY);
+		this.world.addBall(1, 3, Color.GRAY);
+		this.world.addBall(2, 3, Color.GRAY);
+		this.world.addBall(3, 3, Color.GRAY);
+		// extra
+		this.world.addBall(4, 2, Color.GRAY);
+		this.world.addBall(5, 2, Color.GRAY);
+		this.world.addBall(6, 2, Color.GRAY);
+		this.world.addBall(4, 1, Color.GRAY);
+		this.world.addBall(5, 1, Color.GRAY);*/
+		/*this.world.addBall(0, 0, Color.GRAY);
+		this.world.addBall(0, 1, Color.GRAY);
+		this.world.addBall(-2, 2, Color.GRAY);
+		this.world.addBall(-1, 2, Color.GRAY);
+		this.world.addBall(0, 2, Color.GRAY);
+		this.world.addBall(1, 2, Color.GRAY);
+		this.world.addBall(2, 2, Color.GRAY);
+		this.world.addBall(3, 2, Color.GRAY);
+		this.world.addBall(-2, 3, Color.GRAY);
+		this.world.addBall(3, 3, Color.GRAY);
+		this.world.addBall(-2, 4, Color.GRAY);
+		this.world.addBall(1, 4, Color.GRAY);
+		this.world.addBall(2, 4, Color.GRAY);
+		this.world.addBall(3, 4, Color.GRAY);
+		this.world.addBall(4, 4, Color.GRAY);
+		this.world.addBall(-2, 5, Color.GRAY);
+		this.world.addBall(-1, 5, Color.GRAY);
+		this.world.addBall(0, 5, Color.GRAY);
+		this.world.addBall(1, 5, Color.GRAY);
+		this.world.addBall(4, 5, Color.GRAY);
+		this.world.addBall(0, 6, Color.GRAY);
+		this.world.addBall(3, 6, Color.GRAY);
+		this.world.addBall(4, 6, Color.GRAY);
+		this.world.addBall(0, 7, Color.GRAY);
+		this.world.addBall(1, 7, Color.GRAY);
+		this.world.addBall(2, 7, Color.GRAY);
+		this.world.addBall(3, 7, Color.GRAY);
+		this.world.addBall(1, 8, Color.GRAY);
+		this.world.addBall(1, 9, Color.GRAY);
+		this.world.addBall(-1, 10, Color.GRAY);
+		this.world.addBall(0, 10, Color.GRAY);
+		this.world.addBall(1, 10, Color.GRAY);
+		this.world.addBall(2, 10, Color.GRAY);
+		this.world.addBall(-1, 11, Color.GRAY);
+		this.world.addBall(2, 11, Color.GRAY);
+		this.world.addBall(-1, 12, Color.GRAY);
+		this.world.addBall(1, 12, Color.GRAY);
+		this.world.addBall(2, 12, Color.GRAY);
+		this.world.addBall(-1, 13, Color.GRAY);
+		this.world.addBall(0, 13, Color.GRAY);
+		this.world.addBall(1, 13, Color.GRAY);
+		// tail
+		this.world.addBall(5, 5, Color.GRAY);
+		this.world.addBall(6, 5, Color.GRAY);
+		this.world.addBall(7, 5, Color.GRAY);
+		this.world.addBall(8, 5, Color.GRAY);
+		this.world.addBall(9, 5, Color.GRAY);
+		this.world.addBall(7, 6, Color.GRAY);
+		this.world.addBall(8, 6, Color.GRAY);
+		this.world.addBall(9, 6, Color.GRAY);
+		this.world.addBall(7, 7, Color.GRAY);
+		this.world.addBall(8, 7, Color.GRAY);
+		this.world.addBall(9, 7, Color.GRAY);*/
+		// TODO debug data until here
 
 		// key handlers
 		window.addEventListener("keydown", (event: KeyboardEvent) => {
@@ -189,14 +244,12 @@ class CubesSimulator {
 	select(obj: Ball): void {
 		this.selection.push(obj);
 		obj.selected = true;
-		obj.updatePosition(this.time, this.timeStep);
 		this.updateEditButtons();
 	}
 
 	deselect(): void {
 		this.selection.forEach((ball) => {
 			ball.selected = false;
-			ball.updatePosition(this.time, this.timeStep);
 		});
 
 		this.selection = [];
@@ -221,13 +274,24 @@ class CubesSimulator {
 			}
 		}
 
-		while (Math.floor(this.time) > this.timeStep) {
+		while (this.time > this.timeStep) {
 			this.timeStep++;
 			try {
-				this.world.nextStep(this.timeStep);
+				this.world.nextStep(this.algorithm!, this.timeStep);
 			} catch (e) {
-				window.alert(`Illegal move: ${e}. Resetting the simulation.`);
-				this.reset();
+				const cryEmoji = String.fromCodePoint(parseInt('1F622', 16));
+				console.log(`Time step ${this.timeStep}. Threw exception: ${e}. Pausing the simulation ${cryEmoji}`);
+				this.run();  // pause
+				break;
+			}
+			if (this.world.currentMove) {
+				console.log(`Time step ${this.timeStep}. Move: ${this.world.currentMove.toString()}`);
+			}
+			if (this.simulationMode === SimulationMode.RUNNING &&
+					!this.world.currentMove) {
+				console.log(`Time step ${this.timeStep}. No move left, so pausing the simulation.`);
+				this.run();  // pause
+				break;
 			}
 		}
 
@@ -238,16 +302,13 @@ class CubesSimulator {
 			window.innerWidth / 2 - this.bottomBar.getWidth() / 2,
 			window.innerHeight - this.bottomBar.getHeight());
 
-		this.world.balls.forEach((ball) => {
-			ball.updatePosition(this.time, this.timeStep);
-		});
+		this.world.updatePositions(this.time, this.timeStep);
 	}
 	
 	worldClickHandler(e: PIXI.interaction.InteractionEvent): void {
 		const p = e.data.getLocalPosition(this.world.pixi);
 		let x = p.x / 80;
 		let y = -p.y / 80;
-		console.log(x, y);
 
 		if (this.simulationMode === SimulationMode.RESET) {
 
@@ -266,11 +327,11 @@ class CubesSimulator {
 
 				const ball = this.world.getBall(x, y);
 				if (!ball) {
-					const newBall = this.world.addBall(x, y, this.lastDirection, this.lastColor);
+					const newBall = this.world.addBall(x, y, this.lastColor);
 					this.deselect();
 					this.select(newBall);
 				} else {
-					this.world.removeBall(ball.p.x, ball.p.y);
+					this.world.removeBall(...ball.p);
 				}
 			}
 		}
@@ -292,11 +353,14 @@ class CubesSimulator {
 			this.stepButton.setEnabled(false);
 		}
 
-		this.deselect();
+		if (this.selectButton.isEnabled()) {
+			this.algorithm = this.world.moveToRectangle();
+			this.deselect();
+			this.selectButton.setEnabled(false);
+			this.addBallButton.setEnabled(false);
+			this.saveButton.setEnabled(false);
+		}
 		this.resetButton.setEnabled(true);
-		this.selectButton.setEnabled(false);
-		this.addBallButton.setEnabled(false);
-		this.saveButton.setEnabled(false);
 	}
 
 	step(): void {
@@ -305,12 +369,15 @@ class CubesSimulator {
 		this.runButton.setIcon("pause");
 		this.runButton.setTooltip("Pause simulation");
 
-		this.deselect();
+		if (this.selectButton.isEnabled()) {
+			this.algorithm = this.world.moveToRectangle();
+			this.deselect();
+			this.selectButton.setEnabled(false);
+			this.addBallButton.setEnabled(false);
+			this.saveButton.setEnabled(false);
+		}
 		this.stepButton.setEnabled(false);
 		this.resetButton.setEnabled(true);
-		this.selectButton.setEnabled(false);
-		this.addBallButton.setEnabled(false);
-		this.saveButton.setEnabled(false);
 	}
 
 	reset(): void {
@@ -328,6 +395,7 @@ class CubesSimulator {
 		this.time = 0;
 		this.timeStep = 0;
 		this.runUntil = Infinity;
+		this.algorithm = null;
 	}
 
 	selectMode(): void {
@@ -345,7 +413,7 @@ class CubesSimulator {
 	delete(): void {
 		this.selection.forEach((obj) => {
 			if (obj instanceof Ball) {
-				const [x, y] = [obj.p.x, obj.p.y];
+				const [x, y] = obj.p;
 				this.world.removeBall(x, y);
 			}
 			this.deselect();
