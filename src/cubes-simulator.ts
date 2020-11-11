@@ -151,21 +151,13 @@ class CubesSimulator {
 		this.world.addBall(1, 0, Color.GRAY);
 		this.world.addBall(2, 0, Color.GRAY);
 		this.world.addBall(3, 0, Color.GRAY);
-		this.world.addBall(0, 1, Color.GRAY);
-		this.world.addBall(3, 1, Color.GRAY);
-		this.world.addBall(0, 2, Color.GRAY);
-		this.world.addBall(3, 2, Color.GRAY);
-		this.world.addBall(0, 3, Color.GRAY);
-		this.world.addBall(1, 3, Color.GRAY);
-		this.world.addBall(2, 3, Color.GRAY);
-		this.world.addBall(3, 3, Color.GRAY);
-		// extra
-		this.world.addBall(4, 2, Color.GRAY);
-		this.world.addBall(5, 2, Color.GRAY);
-		this.world.addBall(6, 2, Color.GRAY);
+		this.world.addBall(4, 0, Color.GRAY);
+		this.world.addBall(2, 1, Color.GRAY);
 		this.world.addBall(4, 1, Color.GRAY);
-		this.world.addBall(5, 1, Color.GRAY);*/
-		/*this.world.addBall(0, 0, Color.GRAY);
+		this.world.addBall(2, 2, Color.GRAY);
+		this.world.addBall(3, 2, Color.GRAY);
+		this.world.addBall(4, 2, Color.GRAY);*/
+		this.world.addBall(0, 0, Color.GRAY);
 		this.world.addBall(0, 1, Color.GRAY);
 		this.world.addBall(-2, 2, Color.GRAY);
 		this.world.addBall(-1, 2, Color.GRAY);
@@ -217,7 +209,7 @@ class CubesSimulator {
 		this.world.addBall(9, 6, Color.GRAY);
 		this.world.addBall(7, 7, Color.GRAY);
 		this.world.addBall(8, 7, Color.GRAY);
-		this.world.addBall(9, 7, Color.GRAY);*/
+		this.world.addBall(9, 7, Color.GRAY);
 		// TODO debug data until here
 
 		// key handlers
@@ -282,6 +274,7 @@ class CubesSimulator {
 				const cryEmoji = String.fromCodePoint(parseInt('1F622', 16));
 				console.log(`Time step ${this.timeStep}. Threw exception: ${e}. Pausing the simulation ${cryEmoji}`);
 				this.run();  // pause
+				throw e;
 				break;
 			}
 			if (this.world.currentMove) {

@@ -22,10 +22,16 @@ enum MoveDirection {
 	WN = "WN"
 }
 
+/**
+ * Representation of a single cube move (either slide or corner).
+ */
 class Move {
 	constructor(public world: World, public position: [number, number], public direction: MoveDirection) {
 	}
 
+	/**
+	 * Returns the coordinate of the cell we're moving from.
+	 */
 	sourcePosition(): [number, number] {
 		return this.position;
 	}
@@ -51,10 +57,20 @@ class Move {
 		return [x, y];
 	}
 
+	/**
+	 * Returns the coordinate of the cell we're moving towards.
+	 */
 	targetPosition(): [number, number] {
 		return Move.targetPositionFromFields(this.position, this.direction);
 	}
 
+	/**
+	 * Checks if this move is valid, but ignores the connectivity requirement
+	 * (i.e., still returns true if this move disconnects the configuration
+	 * but otherwise is valid).
+	 *
+	 * This avoids the need to do a BFS to check connectivity.
+	 */
 	isValidIgnoreConnectivity(): boolean {
 		if (this.world.getBall(...this.targetPosition())) {
 			return false;
@@ -80,6 +96,9 @@ class Move {
 		}
 	}
 
+	/**
+	 * Checks if this move is valid.
+	 */
 	isValid(): boolean {
 		if (!this.isValidIgnoreConnectivity()) {
 			return false;
@@ -129,7 +148,7 @@ class Move {
 }
 
 /**
- * Collection of balls and walls on the grid.
+ * Collection of cubes on the grid.
  */
 class World {
 
@@ -221,14 +240,24 @@ class World {
 		return column[y];
 	}
 
+	/**
+	 * Returns the cube at the given location, or null if that cell is empty.
+	 */
 	getBall(x: number, y: number): Ball | null {
 		return this.getCell(x, y).ball;
 	}
 
+	/**
+	 * Checks if a ball exists at the given location.
+	 */
 	hasBall(x: number, y: number): boolean {
 		return !!this.getBall(x, y);
 	}
 
+	/**
+	 * Adds a new cube of the given color at the given location; throws if a
+	 * cube already exists at that location.
+	 */
 	addBall(x: number, y: number, color: Color): Ball {
 		if (this.getBall(x, y)) {
 			throw `Tried to insert ball on top of another ball ` +
@@ -241,6 +270,11 @@ class World {
 		return ball;
 	}
 
+	/**
+	 * Moves the cube from the given source location to the given target
+	 * location. Throws if no cube exists at the source or if a cube already
+	 * exists at the target.
+	 */
 	moveBall(from: [number, number], to: [number, number]): void {
 		const [x1, y1] = from;
 		const [x2, y2] = to;
@@ -262,6 +296,9 @@ class World {
 		this.getCell(x2, y2).ball = ball;
 	}
 
+	/**
+	 * Removes the cube at the given location; throws if no cube exists there.
+	 */
 	removeBall(x: number, y: number): void {
 		const ball = this.getBall(x, y);
 		if (!ball) {
@@ -273,6 +310,10 @@ class World {
 		this.getCell(x, y).ball = null;
 	}
 
+	/**
+	 * Returns an object with keys 'N', 'NE', 'E', etc. with booleans
+	 * indicating if the given cell has neighboring cubes in that direction.
+	 */
 	neighbors(p: [number, number]): {[key: string]: boolean} {
 		const x = p[0];
 		const y = p[1];
@@ -345,21 +386,12 @@ class World {
 	}
 
 	nextStep(algorithm: Generator<Move, void, undefined>, step: number): void {
-		this.balls.forEach(ball => {
-			ball.setColor(Color.GRAY);
-		});
-		/*this.outsideBalls().forEach(ball => {
-			if (ball.color.r === Color.GRAY.r) {
-				ball.setColor(new Color(170, 170, 170));
-			} else {
-				ball.setColor(new Color(100, 100, 100));
-			}
-		})*/;
 
 		// first actually execute the current move
 		if (this.currentMove) {
 			this.currentMove.execute();
 		}
+		this.colorByComponents();  // TODO debug
 
 		// now figure out the next move
 		const output = algorithm.next();
@@ -375,8 +407,7 @@ class World {
 	}
 
 	*moveToRectangle(): Generator<Move, void, undefined> {
-		let e;
-
+		/*let e;
 		while (e = this.emptyCells(), e.length) {
 
 			// find right-most, top-most empty cell
@@ -393,7 +424,11 @@ class World {
 			yield* this.doBubble(best);
 		}
 
-		printStep('No empty cells left, done!');
+		printStep('No empty cells left, done!');*/
+
+		yield* this.buildBestBridge();  // TODO
+		
+		//yield* this.buildBridge(this.getBall(2, 7)!, this.getBall(1, 9)!);
 	}
 
 	emptyCells(): [number, number][] {
@@ -457,7 +492,7 @@ class World {
 	 * Starting from the given position, walk to the right until the last cube,
 	 * and shove that cube to the next row.
 	 */
-	*doTuck([x, y]: [number, number]): Generator<Move, void, unknown> {
+	*doTuck([x, y]: [number, number]): Generator<Move, void, undefined> {
 		while (this.hasBall(x + 1, y)) {
 			x++;
 		}
@@ -494,6 +529,9 @@ class World {
 		}
 	}
 
+	/**
+	 * Puts all cubes back in their starting location.
+	 */
 	reset(): void {
 		this.balls.forEach((ball) => {
 			this.getCell(...ball.p).ball = null;
@@ -506,6 +544,10 @@ class World {
 		});
 	}
 
+	/**
+	 * Checks if the configuration is connected. If the skip parameter is
+	 * provided, that cube is ignored (considered as non-existing).
+	 */
 	isConnected(skip?: [number, number]): boolean {
 		if (!this.balls.length) {
 			return true;
@@ -563,6 +605,9 @@ class World {
 		return this.balls.length === seenCount;
 	}
 
+	/**
+	 * Returns the leftmost cube in the downmost row that contains cubes.
+	 */
 	downmostLeftmost(): Ball | null {
 		if (!this.balls.length) {
 			return null;
@@ -578,6 +623,110 @@ class World {
 			.min();
 
 		return this.getBall(lowestX, lowestY);
+	}
+
+	*buildBestBridge(): Generator<Move, void, undefined> {
+
+		// TODO the following are debugging tests ...
+
+		//let path = this.shortestCubePath(this.downmostLeftmost()!, this.getBall(2, 11)!);
+		//console.log(path.map(ball => ball.p));
+		
+		//for (let i = 0; i < this.balls.length; i++) {
+		//	console.log(this.balls[i].p + " -> " + this.bridgeCapacity(this.balls[i]));
+		//}
+		
+		/*const components = this.findComponents();
+		for (let i = 0; i < this.balls.length; i++) {
+			console.log(this.balls[i].p + " -> " + components[i]);
+		}
+		console.log(this.countOneComponentCubes());*/
+
+		//console.log(this.bridgeCapacity(this.getBall(0, 10)!).map(b => b.p[0] + " " + b.p[1]));
+		
+		// for each pair of cubes, find out how good the bridge between them is
+		let bestFrom = -1;
+		let bestTo = -1;
+		let bestValue = 0;
+		for (let i = 0; i < this.balls.length; i++) {
+			for (let j = 0; j < this.balls.length; j++) {
+				if (this.bridgePossible(this.balls[i], this.balls[j])) {
+					const value = this.bridgeValue(this.balls[i], this.balls[j]);
+					if (value > bestValue) {
+						bestFrom = i;
+						bestTo = j;
+						bestValue = value;
+					}
+				}
+			}
+		}
+		const from = this.balls[bestFrom];
+		const to = this.balls[bestTo];
+		printStep(`Build bridge (${from.p}) \u2192 (${to.p})`);
+		yield* this.buildBridge(this.balls[bestFrom], this.balls[bestTo]);
+	}
+
+	/**
+	 * Returns the number of cubes in 1-components.
+	 */
+	countOneComponentCubes(): number {
+		const components = this.findComponents();
+		return components.filter(i => (i === 1)).length;
+	}
+
+	/**
+	 * Returns the number of cubes in 1-components.
+	 */
+	colorByComponents(): void {
+		const components = this.findComponents();
+		for (let i = 0; i < this.balls.length; i++) {
+			if (components[i] === 2) {
+				this.balls[i].setColor(Color.BLUE);
+			} else if (components[i] === 1) {
+				this.balls[i].setColor(Color.RED);
+			} else {
+				this.balls[i].setColor(Color.GRAY);
+			}
+		}
+	}
+
+	/**
+	 * Returns a list of component IDs for each cube.
+	 */
+	findComponents(): number[] {
+		let components = Array(this.balls.length).fill(-1);
+		let seen = Array(this.balls.length).fill(false);
+		let outside = this.outsideBalls();
+		outside.push(outside[0]);
+		let stack = [];
+
+		// walk over the outside
+		for (let i = 0; i < outside.length; i++) {
+			const cube = outside[i];
+			const cubeId = this.balls.indexOf(cube);
+			//console.log(cubeId + " " + cube.p + ", stack = " + stack);
+
+			// if we've not seen this cube, put it on the stack
+			// else if it's the one on top of the stack, remove it and 
+			if (!seen[cubeId]) {
+				seen[cubeId] = true;
+				stack.push(cubeId);
+			} else if (stack.length >= 1 && stack[stack.length - 2] === cubeId) {
+				let cube = stack.pop()!;
+				components[cube] = 1;  // 1-component  TODO
+				components[cubeId] = 1;  // 1-component  TODO
+			} else {
+				while (stack.length > 1 && stack[stack.length - 1] !== cubeId) {
+					let cube = stack.pop()!;
+					components[cube] = 2;  // 2-component  TODO
+				}
+				let cube = stack.pop()!;
+				components[cube] = 2;  // 2-component  TODO
+				i++;
+			}
+		}
+
+		return components;
 	}
 
 	/**
@@ -637,6 +786,200 @@ class World {
 		return null;
 	}
 
+	/**
+	 * Checks if a bridge is possible between the given cubes. A bridge is
+	 * possible if the source cube's bridge capacity is large enough, and the
+	 * bridge won't overlap existing cubes.
+	 */
+	bridgePossible(from: Ball, to: Ball): boolean {
+		const cellsToTake = this.bridgeCapacity(from);
+		const cellsToFill = this.bridgeCells(from.p, to.p);
+		if (cellsToTake.length < cellsToFill.length) {
+			return false;
+		}
+
+		for (let i = 0; i < cellsToFill.length; i++) {
+			if (this.hasBall(cellsToFill[i][0], cellsToFill[i][1])) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Computes the value of the bridge between the given cubes. The value of
+	 * a bridge is the number of cubes in a 1-component that get changed into
+	 * being in a 2-component by building that bridge.
+	 */
+	bridgeValue(from: Ball, to: Ball): number {
+		const before = this.countOneComponentCubes();
+
+		const cellsToTake = this.bridgeCapacity(from).map(ball => ball.p);
+		const cellsToFill = this.bridgeCells(from.p, to.p);
+
+		// we are now going to ‘virtually’ build the bridge so that we can
+		// count 1-component cubes in that situation, but we need to be
+		// careful to revert the situation afterwards!
+		for (let i = 0; i < cellsToFill.length; i++) {
+			this.moveBall(cellsToTake[i], cellsToFill[i]);
+		}
+		const after = this.countOneComponentCubes();
+		for (let i = cellsToFill.length - 1; i >= 0; i--) {
+			this.moveBall(cellsToFill[i], cellsToTake[i]);
+		}
+
+		return before - after;
+	}
+
+	/**
+	 * Builds a bridge between the given cubes.
+	 */
+	*buildBridge(from: Ball, to: Ball): Generator<Move, void, undefined> {
+		const cubesToTake = this.bridgeCapacity(from);
+		const cellsToFill = this.bridgeCells(from.p, to.p);
+
+		for (let i = 0; i < cellsToFill.length; i++) {
+			yield* this.shortestMovePath(cubesToTake[i].p, cellsToFill[i]);
+		}
+	}
+
+	/**
+	 * Given a cube, determines a list of cubes that are available to build a
+	 * bridge from there. The list is ordered such that the cubes can be taken
+	 * one by one from the front.
+	 */
+	bridgeCapacity(b: Ball): Ball[] {
+
+		// do a BFS from b, but ignore all balls that are on the shortest path
+		// from the root to b
+		let seen = Array(this.balls.length).fill(false);
+		const path = this.shortestCubePath(this.downmostLeftmost()!, b);
+		const self = this;
+		path.forEach(ball => {
+			seen[self.balls.indexOf(ball)] = true;
+		});
+		let bId = this.balls.indexOf(b);
+		seen[bId] = false;
+		let queue = [bId];
+		let availableCubes: Ball[] = [];
+
+		while (queue.length !== 0) {
+			const ballId = queue.shift()!;
+			if (seen[ballId]) {
+				continue;
+			}
+			
+			const ball = this.balls[ballId];
+			seen[ballId] = true;
+			if (bId !== ballId) {
+				availableCubes.push(ball);
+			}
+
+			const neighbors = [
+				this.getCell(ball.p[0] - 1, ball.p[1]),
+				this.getCell(ball.p[0] + 1, ball.p[1]),
+				this.getCell(ball.p[0], ball.p[1] - 1),
+				this.getCell(ball.p[0], ball.p[1] + 1)
+			];
+			const self = this;
+			neighbors.forEach(function(c) {
+				if (c.ball) {
+					queue.push(self.balls.indexOf(c.ball));
+				}
+			});
+		}
+
+		return availableCubes.reverse();
+	}
+
+	/**
+	 * Returns the shortest path in the 4-adjacency graph between the given
+	 * source and target cubes.
+	 */
+	shortestCubePath(from: Ball, to: Ball): Ball[] {
+
+		// do a BFS
+		let seen = Array(this.balls.length).fill(false);
+		let parent: (Ball | null)[] = Array(this.balls.length).fill(null);
+		let queue: [number, Ball | null][] = [[this.balls.indexOf(from), null]];
+
+		while (queue.length !== 0) {
+			const [ballId, p] = queue.shift()!;
+			if (seen[ballId]) {
+				continue;
+			}
+			
+			const ball = this.balls[ballId];
+			seen[ballId] = true;
+			parent[ballId] = p;
+
+			const neighbors = [
+				this.getCell(ball.p[0] - 1, ball.p[1]),
+				this.getCell(ball.p[0] + 1, ball.p[1]),
+				this.getCell(ball.p[0], ball.p[1] - 1),
+				this.getCell(ball.p[0], ball.p[1] + 1)
+			];
+			const self = this;
+			neighbors.forEach(function(c) {
+				if (c.ball) {
+					queue.push([self.balls.indexOf(c.ball), ball]);
+				}
+			});
+		}
+
+		// reconstruct the path
+		let ball = to;
+		let path = [to];
+		while (ball.p[0] !== from.p[0] || ball.p[1] !== from.p[1]) {
+			ball = parent[this.balls.indexOf(ball)]!;
+			path.unshift(ball);
+		}
+
+		return path;
+	}
+
+	/**
+	 * Returns the list of cells that need to be filled to build a bridge
+	 * between the given cubes.
+	 */
+	bridgeCells(from: [number, number], to: [number, number]): [number, number][] {
+		let cells: [number, number][] = [];
+
+		let [x1, y1] = from;
+		let [x2, y2] = to;
+
+		// vertical part
+		if (y2 < y1) {
+			for (let y = y1; y > y2; y--) {
+				cells.push([x1, y]);
+			}
+		} else {
+			for (let y = y1; y < y2; y++) {
+				cells.push([x1, y]);
+			}
+		}
+
+		// horizontal part
+		if (x2 < x1) {
+			for (let x = x1; x > x2; x--) {
+				cells.push([x, y2]);
+			}
+		} else {
+			for (let x = x1; x < x2; x++) {
+				cells.push([x, y2]);
+			}
+		}
+
+		// remove the source cube itself
+		cells.shift();
+
+		return cells;
+	}
+
+	/**
+	 * Generates a JSON string from this world.
+	 */
 	serialize(): string {
 		let cubes: any = [];
 		this.balls.forEach((cube) => {
@@ -653,6 +996,10 @@ class World {
 		return JSON.stringify(obj);
 	}
 
+	/**
+	 * Parses a JSON string back into this world. Make sure this is an empty
+	 * world before calling this method.
+	 */
 	deserialize(data: string): void {
 		let obj: any = JSON.parse(data);
 
