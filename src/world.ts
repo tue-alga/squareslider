@@ -440,7 +440,9 @@ class World {
 		
 		// also check 2-componentness of boundary
 
-		return true;  // TODO implement this
+		// TODO this is a stub, implement this properly
+		return this.hasBall([0, 0]) &&
+				(this.hasBall([1, 0]) || this.hasBall([0, 1]));
 	}
 
 	/**
@@ -448,16 +450,39 @@ class World {
 	 * performs moves to refill it.
 	 */
 	*doSiphonStep(): Generator<Move, void, undefined> {
-		// TODO implement
 		printStep('Siphoning step');
 
 		if (this.hasBall([2, 0]) || this.hasBall([2, 1])) {
 			yield* this.doRightSiphonRemoval();
-			yield* this.doSiphonOverBottom();
+			yield* this.doSiphonFill(false);
+
 		} else if (this.hasBall([0, 2]) || this.hasBall([1, 2])) {
 			yield* this.doTopSiphonRemoval();
-			//yield* this.doSiphonOverLeft();
-			throw 'left siphoning not supported yet';
+			yield* this.doSiphonFill(true);
+
+		} else {
+			printStep("Finish siphoning for the 2x2 block");
+			if (this.hasBall([0, 1])) {
+				yield* this.doRightSiphonRemoval();
+				if (this.hasBall([1, 1])) {
+					printMiniStep('Move cube at (1, 1) to siphon position');
+					yield new Move(this, [1, 1], MoveDirection.S);
+					yield* this.doRightSiphonRemoval();
+				}
+				if (this.hasBall([0, 1])) {
+					yield* this.doTopSiphonRemoval();
+				}
+			} else if (this.hasBall([1, 0])) {
+				yield* this.doTopSiphonRemoval();
+				if (this.hasBall([1, 1])) {
+					printMiniStep('Move cube at (1, 1) to siphon position');
+					yield new Move(this, [1, 1], MoveDirection.W);
+					yield* this.doTopSiphonRemoval();
+				}
+				if (this.hasBall([1, 0])) {
+					yield* this.doRightSiphonRemoval();
+				}
+			}
 		}
 	}
 
@@ -489,15 +514,44 @@ class World {
 	}
 
 	/**
-	 * Fills the empty cell at (1, 0) by executing a siphoning path.
+	 * Fills the empty cell at (1, 0) or (0, 1) by executing a siphoning path.
 	 * This is guaranteed to keep the configuration siphonable except possibly
 	 * for a single parity cube, which can be removed by calling this method
 	 * again.
+	 *
+	 * If viaLeft === false, this method fills the empty cell at (1, 0) by
+	 * using a siphoning path along the bottom boundary.
+	 *
+	 * If viaLeft === true, this method fills the empty cell at (0, 1) by
+	 * using a siphoning path along the left boundary.
 	 */
-	*doSiphonOverBottom(): Generator<Move, void, undefined> {
+	*doSiphonFill(viaLeft: boolean): Generator<Move, void, undefined> {
 
 		// step 1: find the target
 		const boundary = this.outsideBalls().map(b => b.p);
+
+		if (viaLeft) {
+			// outsideBalls() returns the boundary in counter-clockwise order,
+			// so if we want to follow the left boundary (upwards), we'll need
+			// to reverse the boundary first
+			boundary.reverse();
+
+			// we need to ensure that the boundary won't start with (0, 0)
+			// because otherwise we run into modulo issues later (trying to
+			// access boundary[startIndex - 1], to be precise)
+
+			// if we follow the bottom boundary, this is guaranteed by the
+			// fact that when this method is called, the first cube will
+			// already have been siphoned, so there is a cube in (-1, 0) that
+			// outsideBalls() will use as its starting point
+
+			// however, if we reverse the boundary, that is no longer true;
+			// so, to fix this, we take the last boundary element, which is the
+			// first one in the non-reversed boundary, and therefore guaranteed
+			// not to be (0, 0), and shove it in the beginning
+			boundary.unshift(boundary.pop()!);
+		}
+		console.log(JSON.stringify(boundary));
 		let target = [0, 0];
 		let targetIndex = -1;
 
@@ -511,9 +565,17 @@ class World {
 				break;
 			}
 		}
+		//console.log(startIndex);
+
+		// if we're following the bottom boundary, an edge is against direction
+		// if it goes left; if we're following the left boundary, it is against
+		// direction if it goes down
+		let againstDirection = viaLeft ?
+				((i: number) => boundary[i][1] < boundary[i - 1][1]) :
+				((i: number) => boundary[i][0] < boundary[i - 1][0]);
 
 		for (let i = startIndex; i < boundary.length; i++) {
-			if (boundary[i][0] < boundary[i - 1][0]) {  // non-monotone edge
+			if (againstDirection(i)) {
 				target = boundary[i - 1];
 				targetIndex = i - 1;
 				break;
@@ -523,14 +585,17 @@ class World {
 		// step 2: if removing the target would result in a near parity cube,
 		// take that cube instead
 
+		const goal = viaLeft ? '(0, 1)' : '(1, 0)';
+		const direction = viaLeft ? 'left' : 'bottom';
+
 		// we can detect that this near cube would be a parity cube by seeing
 		// that (1) it is the S-neighbor of the target, and (2) it has no
 		// S-neighbor itself
 		const potentialNearCube = boundary[targetIndex - 1];
-		if (potentialNearCube[0] === target[0] &&
-				potentialNearCube[1] === target[1] - 1 &&
-				!this.hasBall([potentialNearCube[0], potentialNearCube[1] - 1])) {
-			printMiniStep(`Fill (1, 0) again with a bottom boundary ` +
+		if (potentialNearCube[0] === target[0] - (viaLeft ? 1 : 0) &&
+				potentialNearCube[1] === target[1] - (viaLeft ? 0 : 1) &&
+				!this.hasBall([potentialNearCube[0] - (viaLeft ? 1 : 0), potentialNearCube[1] - (viaLeft ? 0 : 1)])) {
+			printMiniStep(`Fill ${goal} again with a ${direction} boundary ` +
 					`to (${boundary[targetIndex - 1][0]}, ` +
 					`${boundary[targetIndex - 1][1]}) ` +
 					`(not to (${target[0]}, ${target[1]}) ` +
@@ -541,7 +606,7 @@ class World {
 			target = boundary[targetIndex - 1];
 			targetIndex--;
 		} else {
-			printMiniStep(`Fill (1, 0) again with a bottom boundary ` +
+			printMiniStep(`Fill ${goal} again with a ${direction} boundary ` +
 					`siphoning path to (${target[0]}, ${target[1]})`);
 		}
 
@@ -554,13 +619,15 @@ class World {
 		
 		// so add 4 to the start index to start with (2, 0) (or if (2, 0)
 		// doesn't exist, add 2 to start with (1, 1))
-		if (this.hasBall([2, 0])) {
+
+		// (or the other way round if we're following the left boundary)
+		if (this.hasBall(viaLeft ? [0, 2] : [2, 0])) {
 			startIndex += 4;
 		} else {
 			startIndex += 2;
 		}
 		for (let i = startIndex; i <= targetIndex; i++) {
-			let emptySpace = [1, 0];  // empty space we need to move to
+			let emptySpace = viaLeft ? [0, 1] : [1, 0];
 			if (i > startIndex) {
 				emptySpace = boundary[i - 1];
 			}
@@ -572,11 +639,15 @@ class World {
 			if (i === targetIndex - 1 &&
 					emptySpace[0] === boundary[i + 1][0] - 1 &&
 					emptySpace[1] === boundary[i + 1][1] - 1 &&
-					!this.hasBall([boundary[i + 1][0], boundary[i + 1][1] - 1])) {
+					!this.hasBall([boundary[i + 1][0] - (viaLeft ? 1 : 0) , boundary[i + 1][1] - (viaLeft ? 0 : 1)])) {
 				printMiniStep(`Fix parity cube ` +
 						`(${boundary[i + 1][0]}, ${boundary[i + 1][1]}) ` +
-						`made in the previous siphoning step by an SW move`);
-				yield new Move(this, boundary[i + 1], MoveDirection.SW);
+						`made in the previous siphoning step by a corner move`);
+				if (viaLeft) {
+					yield new Move(this, boundary[i + 1], MoveDirection.WS);
+				} else {
+					yield new Move(this, boundary[i + 1], MoveDirection.SW);
+				}
 				i++;
 				continue;
 			}
@@ -588,44 +659,44 @@ class World {
 		}
 
 		// step 4: if removing the target resulted in a far parity cube, do any
-		// monotone moves on that cube to get rid of it
+		// monotone move on that cube to get rid of it
 		const potentialFarCube = boundary[targetIndex + 1];
 		if (this.hasOneNeighbor(potentialFarCube)) {
-			if (potentialFarCube[1] === 1) {
+			if (potentialFarCube[viaLeft ? 0 : 1] === 1) {
 				printMiniStep(`We made a parity cube ` +
 						`(${potentialFarCube[0]}, ${potentialFarCube[1]}), ` +
 						`but we will fix it in the next siphoning step`);
 			} else {
 				printMiniStep(`Do monotone moves to remove parity cube ` +
 						`(${potentialFarCube[0]}, ${potentialFarCube[1]})`);
-				yield* this.doFreeMoves(potentialFarCube);
+				yield* this.doFreeMove(potentialFarCube);
 			}
 		}
 	}
 
 	/**
-	 * Do any free move (W, S, SW, WS) possible, starting from the given cube,
-	 * until such moves are not possible anymore.
+	 * Do any free move (W, S, SW, WS) possible, starting from the given cube.
 	 */
-	*doFreeMoves(p: [number, number]): Generator<Move, void, undefined> {
-		while (true) {
-			let move = new Move(this, p, MoveDirection.W);
-			if (move.isValid()) {
-				yield move;
-			}
-			move = new Move(this, p, MoveDirection.S);
-			if (move.isValid()) {
-				yield move;
-			}
-			move = new Move(this, p, MoveDirection.SW);
-			if (move.isValid()) {
-				yield move;
-			}
-			move = new Move(this, p, MoveDirection.WS);
-			if (move.isValid()) {
-				yield move;
-			}
-			break;
+	*doFreeMove(p: [number, number]): Generator<Move, void, undefined> {
+		let move = new Move(this, p, MoveDirection.W);
+		if (move.isValid()) {
+			yield move;
+			return;
+		}
+		move = new Move(this, p, MoveDirection.S);
+		if (move.isValid()) {
+			yield move;
+			return;
+		}
+		move = new Move(this, p, MoveDirection.SW);
+		if (move.isValid()) {
+			yield move;
+			return;
+		}
+		move = new Move(this, p, MoveDirection.WS);
+		if (move.isValid()) {
+			yield move;
+			return;
 		}
 	}
 
