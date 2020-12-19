@@ -404,7 +404,7 @@ class World {
 
 	*moveToRectangle(): Generator<Move, void, undefined> {
 
-		while (true) {
+		while (!this.isSiphonable()) {
 			const empty = this.emptyCells();
 
 			const deflatables = empty.filter(this.isDeflatable.bind(this));
@@ -422,9 +422,233 @@ class World {
 			break;
 		}
 
+		while (this.isSiphonable()) {
+			yield* this.doSiphonStep();
+		}
+
 		//yield* this.buildBestBridge();  // TODO
 		
 		//yield* this.buildBridge(this.getBall(2, 7)!, this.getBall(1, 9)!);
+	}
+
+	/**
+	 * Checks if the configuration is a single monotone 2-component.
+	 */
+	isSiphonable(): boolean {
+		// run DFS to top-right, count number of cubes found
+		// and check if this is equal to total number of cubes
+		
+		// also check 2-componentness of boundary
+
+		return true;  // TODO implement this
+	}
+
+	/**
+	 * Performs a single siphon step: removes the cube at (0, 1) or (1, 0) and
+	 * performs moves to refill it.
+	 */
+	*doSiphonStep(): Generator<Move, void, undefined> {
+		// TODO implement
+		printStep('Siphoning step');
+
+		if (this.hasBall([2, 0]) || this.hasBall([2, 1])) {
+			yield* this.doRightSiphonRemoval();
+			yield* this.doSiphonOverBottom();
+		} else if (this.hasBall([0, 2]) || this.hasBall([1, 2])) {
+			yield* this.doTopSiphonRemoval();
+			//yield* this.doSiphonOverLeft();
+			throw 'left siphoning not supported yet';
+		}
+	}
+
+	/**
+	 * Removes the cube at (1, 0) and puts it in the line being built.
+	 */
+	*doRightSiphonRemoval(): Generator<Move, void, undefined> {
+		printMiniStep('Siphon away (1, 0)');
+		yield new Move(this, [1, 0], MoveDirection.SW);
+		let x = 0;
+		while (this.hasBall([x - 1, 0])) {
+			yield new Move(this, [x, -1], MoveDirection.W);
+			x--;
+		}
+		yield new Move(this, [x, -1], MoveDirection.WN);
+	}
+
+	/**
+	 * Removes the cube at (0, 1) and puts it in the line being built.
+	 */
+	*doTopSiphonRemoval(): Generator<Move, void, undefined> {
+		printMiniStep('Siphon away (0, 1)');
+		let x = 0;
+		while (this.hasBall([x - 1, 0])) {
+			yield new Move(this, [x, 1], MoveDirection.W);
+			x--;
+		}
+		yield new Move(this, [x, 1], MoveDirection.WS);
+	}
+
+	/**
+	 * Fills the empty cell at (1, 0) by executing a siphoning path.
+	 * This is guaranteed to keep the configuration siphonable except possibly
+	 * for a single parity cube, which can be removed by calling this method
+	 * again.
+	 */
+	*doSiphonOverBottom(): Generator<Move, void, undefined> {
+
+		// step 1: find the target
+		const boundary = this.outsideBalls().map(b => b.p);
+		let target = [0, 0];
+		let targetIndex = -1;
+
+		// start at the origin (0, 0), and find the first non-monotone boundary
+		// edge, which has the target as its source
+		let startIndex = -1;
+
+		for (let i = 0; i < boundary.length; i++) {
+			if (boundary[i][0] === 0 && boundary[i][1] === 0) {
+				startIndex = i;
+				break;
+			}
+		}
+
+		for (let i = startIndex; i < boundary.length; i++) {
+			if (boundary[i][0] < boundary[i - 1][0]) {  // non-monotone edge
+				target = boundary[i - 1];
+				targetIndex = i - 1;
+				break;
+			}
+		}
+
+		// step 2: if removing the target would result in a near parity cube,
+		// take that cube instead
+
+		// we can detect that this near cube would be a parity cube by seeing
+		// that (1) it is the S-neighbor of the target, and (2) it has no
+		// S-neighbor itself
+		const potentialNearCube = boundary[targetIndex - 1];
+		if (potentialNearCube[0] === target[0] &&
+				potentialNearCube[1] === target[1] - 1 &&
+				!this.hasBall([potentialNearCube[0], potentialNearCube[1] - 1])) {
+			printMiniStep(`Fill (1, 0) again with a bottom boundary ` +
+					`to (${boundary[targetIndex - 1][0]}, ` +
+					`${boundary[targetIndex - 1][1]}) ` +
+					`(not to (${target[0]}, ${target[1]}) ` +
+					`because that would make ` +
+					`(${boundary[targetIndex - 1][0]}, ` +
+					`${boundary[targetIndex - 1][1]}) ` +
+					`an unresolvable parity cube)`);
+			target = boundary[targetIndex - 1];
+			targetIndex--;
+		} else {
+			printMiniStep(`Fill (1, 0) again with a bottom boundary ` +
+					`siphoning path to (${target[0]}, ${target[1]})`);
+		}
+
+		// step 3: actually perform the move to eliminate the target
+
+		// the beginning of the boundary will walk around the empty space
+		// at (1, 0) we just created, and we need to walk around that to avoid
+		// that (2, 1) -> (2, 0) is used (it being a non-monotone boundary
+		// edge)
+		
+		// so add 4 to the start index to start with (2, 0) (or if (2, 0)
+		// doesn't exist, add 2 to start with (1, 1))
+		if (this.hasBall([2, 0])) {
+			startIndex += 4;
+		} else {
+			startIndex += 2;
+		}
+		for (let i = startIndex; i <= targetIndex; i++) {
+			let emptySpace = [1, 0];  // empty space we need to move to
+			if (i > startIndex) {
+				emptySpace = boundary[i - 1];
+			}
+
+			// special case: if we can do a SW move to boundary[i + 1], do it
+			// (this is necessary because we may need to remove a parity cube
+			// in the end of the path and we cannot do that with the regular
+			// move path because it would disconnect the parity cube)
+			if (i === targetIndex - 1 &&
+					emptySpace[0] === boundary[i + 1][0] - 1 &&
+					emptySpace[1] === boundary[i + 1][1] - 1 &&
+					!this.hasBall([boundary[i + 1][0], boundary[i + 1][1] - 1])) {
+				printMiniStep(`Fix parity cube ` +
+						`(${boundary[i + 1][0]}, ${boundary[i + 1][1]}) ` +
+						`made in the previous siphoning step by an SW move`);
+				yield new Move(this, boundary[i + 1], MoveDirection.SW);
+				i++;
+				continue;
+			}
+			if (boundary[i][0] === emptySpace[0]) {
+				yield new Move(this, boundary[i], MoveDirection.S);
+			} else {
+				yield new Move(this, boundary[i], MoveDirection.W);
+			}
+		}
+
+		// step 4: if removing the target resulted in a far parity cube, do any
+		// monotone moves on that cube to get rid of it
+		const potentialFarCube = boundary[targetIndex + 1];
+		if (this.hasOneNeighbor(potentialFarCube)) {
+			if (potentialFarCube[1] === 1) {
+				printMiniStep(`We made a parity cube ` +
+						`(${potentialFarCube[0]}, ${potentialFarCube[1]}), ` +
+						`but we will fix it in the next siphoning step`);
+			} else {
+				printMiniStep(`Do monotone moves to remove parity cube ` +
+						`(${potentialFarCube[0]}, ${potentialFarCube[1]})`);
+				yield* this.doFreeMoves(potentialFarCube);
+			}
+		}
+	}
+
+	/**
+	 * Do any free move (W, S, SW, WS) possible, starting from the given cube,
+	 * until such moves are not possible anymore.
+	 */
+	*doFreeMoves(p: [number, number]): Generator<Move, void, undefined> {
+		while (true) {
+			let move = new Move(this, p, MoveDirection.W);
+			if (move.isValid()) {
+				yield move;
+			}
+			move = new Move(this, p, MoveDirection.S);
+			if (move.isValid()) {
+				yield move;
+			}
+			move = new Move(this, p, MoveDirection.SW);
+			if (move.isValid()) {
+				yield move;
+			}
+			move = new Move(this, p, MoveDirection.WS);
+			if (move.isValid()) {
+				yield move;
+			}
+			break;
+		}
+	}
+
+	/**
+	 * Checks if a cube has only one neighbor (in 4-connectivity), that is, if
+	 * it is a ‘dead end’.
+	 */
+	hasOneNeighbor(p: [number, number]): boolean {
+		const has = this.neighbors(p);
+		let count = 0;
+		if (has['N']) {
+			count++;
+		}
+		if (has['E']) {
+			count++;
+		}
+		if (has['S']) {
+			count++;
+		}
+		if (has['W']) {
+			count++;
+		}
+		return count === 1;
 	}
 
 	/**
@@ -814,7 +1038,7 @@ class World {
 
 	/**
 	 * Returns a list of cubes on the outside of the configuration, in
-	 * counter-clockwise order.
+	 * counter-clockwise order, starting with the downmost-leftmost cube.
 	 */
 	outsideBalls(): Ball[] {
 		if (!this.balls.length) {

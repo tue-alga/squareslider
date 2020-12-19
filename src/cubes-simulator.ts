@@ -147,7 +147,13 @@ class CubesSimulator {
 		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
 
 		// TODO debug data
-		for (let x = 0; x < 8; x++) {
+		for (let x = 0; x < 4; x++) {
+			for (let y = 0; y < 4; y++) {
+				this.world.addBall([x, y], Color.GRAY);
+			}
+		}
+
+		/*for (let x = 0; x < 8; x++) {
 			this.world.addBall([x, 0], Color.GRAY);
 			this.world.addBall([x, 1], Color.GRAY);
 			this.world.addBall([x, 6], Color.GRAY);
@@ -158,7 +164,7 @@ class CubesSimulator {
 			this.world.addBall([x, 3], Color.GRAY);
 			this.world.addBall([x, 4], Color.GRAY);
 			this.world.addBall([x, 5], Color.GRAY);
-		}
+		}*/
 
 		/*this.world.addBall(0, 0, Color.GRAY);
 		this.world.addBall(0, 1, Color.GRAY);
