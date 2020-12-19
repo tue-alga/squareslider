@@ -37,10 +37,11 @@ class Ball {
 	dots: [number, PIXI.Graphics][] = [];
 	dotsLayer = new PIXI.Container();
 	selected: boolean = false;
+	connectivity = 0;
 
-	constructor(private world: World, x: number, y: number, color: Color) {
-		this.p = [x, y];
-		this.resetPosition = [x, y];
+	constructor(private world: World, p: [number, number], color: Color) {
+		this.p = [p[0], p[1]];
+		this.resetPosition = [p[0], p[1]];
 		this.color = color;
 
 		this.pixi.addChild(this.dotsLayer);

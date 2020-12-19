@@ -72,7 +72,7 @@ class Move {
 	 * This avoids the need to do a BFS to check connectivity.
 	 */
 	isValidIgnoreConnectivity(): boolean {
-		if (this.world.getBall(...this.targetPosition())) {
+		if (this.world.getBall(this.targetPosition())) {
 			return false;
 		}
 
@@ -230,7 +230,7 @@ class World {
 		return this.world[x];
 	}
 
-	private getCell(x: number, y: number): WorldCell {
+	private getCell([x, y]: [number, number]): WorldCell {
 		let column = this.getColumn(x);
 		if (!column[y]) {
 			column[y] = {
@@ -243,28 +243,28 @@ class World {
 	/**
 	 * Returns the cube at the given location, or null if that cell is empty.
 	 */
-	getBall(x: number, y: number): Ball | null {
-		return this.getCell(x, y).ball;
+	getBall(p: [number, number]): Ball | null {
+		return this.getCell(p).ball;
 	}
 
 	/**
 	 * Checks if a ball exists at the given location.
 	 */
-	hasBall(x: number, y: number): boolean {
-		return !!this.getBall(x, y);
+	hasBall(p: [number, number]): boolean {
+		return !!this.getBall(p);
 	}
 
 	/**
 	 * Adds a new cube of the given color at the given location; throws if a
 	 * cube already exists at that location.
 	 */
-	addBall(x: number, y: number, color: Color): Ball {
-		if (this.getBall(x, y)) {
+	addBall(p: [number, number], color: Color): Ball {
+		if (this.getBall(p)) {
 			throw `Tried to insert ball on top of another ball ` +
-					`at (${x}, ${y})`;
+					`at (${p[0]}, ${p[1]})`;
 		}
-		const ball = new Ball(this, x, y, color);
-		this.getCell(x, y).ball = ball;
+		const ball = new Ball(this, p, color);
+		this.getCell(p).ball = ball;
 		this.balls.push(ball);
 		this.pixi.addChild(ball.pixi);
 		return ball;
@@ -276,38 +276,35 @@ class World {
 	 * exists at the target.
 	 */
 	moveBall(from: [number, number], to: [number, number]): void {
-		const [x1, y1] = from;
-		const [x2, y2] = to;
-
-		const ball = this.getBall(x1, y1);
+		const ball = this.getBall(from);
 		if (!ball) {
 			throw `Tried to move non-existing ball at ` +
-					`at (${x1}, ${y1})`;
+					`at (${from[0]}, ${from[1]})`;
 		}
 
-		if (this.getBall(x2, y2)) {
+		if (this.getBall(to)) {
 			throw `Tried to move ball on top of another ball ` +
-					`at (${x2}, ${y2})`;
+					`at (${to[0]}, ${to[1]})`;
 		}
 
-		this.getCell(x1, y1).ball = null;
-		ball.p = [x2, y2];
+		this.getCell(from).ball = null;
+		ball.p = [to[0], to[1]];
 		ball.updatePosition(0, 0);
-		this.getCell(x2, y2).ball = ball;
+		this.getCell(to).ball = ball;
 	}
 
 	/**
 	 * Removes the cube at the given location; throws if no cube exists there.
 	 */
-	removeBall(x: number, y: number): void {
-		const ball = this.getBall(x, y);
+	removeBall(p: [number, number]): void {
+		const ball = this.getBall(p);
 		if (!ball) {
 			throw `Tried to remove non-existing ball ` +
-					`at (${x}, ${y})`;
+					`at (${p[0]}, ${p[1]})`;
 		}
 		this.pixi.removeChild(ball.pixi);
 		this.balls = this.balls.filter((b) => b !== ball);
-		this.getCell(x, y).ball = null;
+		this.getCell(p).ball = null;
 	}
 
 	/**
@@ -315,17 +312,16 @@ class World {
 	 * indicating if the given cell has neighboring cubes in that direction.
 	 */
 	neighbors(p: [number, number]): {[key: string]: boolean} {
-		const x = p[0];
-		const y = p[1];
+		const [x, y] = p;
 		let has: {[key: string]: boolean} = {};
-		has['N'] = this.hasBall(x, y + 1);
-		has['NE'] = this.hasBall(x + 1, y + 1);
-		has['E'] = this.hasBall(x + 1, y);
-		has['SE'] = this.hasBall(x + 1, y - 1);
-		has['S'] = this.hasBall(x, y - 1);
-		has['SW'] = this.hasBall(x - 1, y - 1);
-		has['W'] = this.hasBall(x - 1, y);
-		has['NW'] = this.hasBall(x - 1, y + 1);
+		has['N'] = this.hasBall([x, y + 1]);
+		has['NE'] = this.hasBall([x + 1, y + 1]);
+		has['E'] = this.hasBall([x + 1, y]);
+		has['SE'] = this.hasBall([x + 1, y - 1]);
+		has['S'] = this.hasBall([x, y - 1]);
+		has['SW'] = this.hasBall([x - 1, y - 1]);
+		has['W'] = this.hasBall([x - 1, y]);
+		has['NW'] = this.hasBall([x - 1, y + 1]);
 		return has;
 	}
 
@@ -391,7 +387,7 @@ class World {
 		if (this.currentMove) {
 			this.currentMove.execute();
 		}
-		this.colorByComponents();  // TODO debug
+		this.colorByComponents();
 
 		// now figure out the next move
 		const output = algorithm.next();
@@ -407,52 +403,90 @@ class World {
 	}
 
 	*moveToRectangle(): Generator<Move, void, undefined> {
-		/*let e;
-		while (e = this.emptyCells(), e.length) {
 
-			// find right-most, top-most empty cell
-			let best = e[0];
-			for (const p of e) {
-				if (p[0] > best[0]) {
-					best = p;
-				} else if (p[0] === best[0] && p[1] > best[1]) {
-					best = p;
-				}
+		while (true) {
+			const empty = this.emptyCells();
+
+			const deflatables = empty.filter(this.isDeflatable.bind(this));
+			if (deflatables.length) {
+				yield* this.doDeflate(deflatables[0]);
+				continue;
+			}
+			const inflatables = empty.filter(this.isInflatable.bind(this));
+			if (inflatables.length) {
+				yield* this.doInflate(inflatables[0]);
+				continue;
 			}
 
-			// ... and fill it
-			yield* this.doBubble(best);
+			printStep('No empty cells left, done!');
+			break;
 		}
 
-		printStep('No empty cells left, done!');*/
-
-		yield* this.buildBestBridge();  // TODO
+		//yield* this.buildBestBridge();  // TODO
 		
 		//yield* this.buildBridge(this.getBall(2, 7)!, this.getBall(1, 9)!);
 	}
 
+	/**
+	 * Return all gaps, sorted descending on x-coordinate, then in case of
+	 * ties descending on y-coordinate.
+	 */
 	emptyCells(): [number, number][] {
 
-		const lowestX = this.balls
-			.map((ball) => ball.p[0])
-			.min();
-		const lowestY = this.balls
-			.map((ball) => ball.p[1])
-			.min();
+		const [minX, minY, , ] = this.bounds();
 
 		// find all empty cells (empty cell: cell without a cube that has E and NE neighbors)
 		return this.balls
 			.map((ball): [number, number] => [ball.p[0] - 1, ball.p[1] - 1])
 			.filter((p) => this.isEmptyCell(p))
-			.filter((p) => p[0] >= lowestX && p[1] >= lowestY);
+			.filter((p) => p[0] >= minX && p[1] >= minY)
+			.sort(([x1, y1], [x2, y2]) => {
+				if (x1 === x2) {
+					return y2 - y1;
+				}
+				return x2 - x1;
+			});
+	}
+
+	isDeflatable([x, y]: [number, number]): boolean {
+		return this.isEmptyCell([x, y]) &&
+				this.isInside([x, y]);
+	}
+
+	isInflatable([x, y]: [number, number]): boolean {
+		if (!this.isEmptyCell([x, y])) {
+			return false;
+		}
+
+		return (this.getBall([x + 1, y])!.connectivity === 2) &&
+				(this.getBall([x + 1, y + 1])!.connectivity === 2) &&
+				(this.getBall([x, y + 1])!.connectivity === 2);
+	}
+
+	isEmptyCell([x, y]: [number, number]): boolean {
+		if (this.getBall([x, y])) {
+			return false;
+		}
+
+		const has = this.neighbors([x, y]);
+		return has['N'] && has['NE'] && has['E'];
 	}
 
 	/**
-	 * Performs a bubble move to fill the given gap.
+	 * Performs an inflate move to fill the given gap.
 	 */
-	*doBubble([x, y]: [number, number]): Generator<Move, void, undefined> {
+	*doInflate([x, y]: [number, number]): Generator<Move, void, undefined> {
+		printStep(`Inflate move to fill gap (${x}, ${y})`);
+		yield new Move(this, [x + 1, y], MoveDirection.W);
+		yield new Move(this, [x + 1, y + 1], MoveDirection.S);
+	}
 
-		printStep(`Bubble move to fill gap (${x}, ${y})`);
+	/**
+	 * Performs a deflate move to fill the given gap.
+	 */
+	*doDeflate([x, y]: [number, number]): Generator<Move, void, undefined> {
+
+		printStep(`Deflate move to fill gap (${x}, ${y})`);
 		const xOriginal = x;
 
 		while (this.needsTuck([x, y])) {
@@ -461,7 +495,7 @@ class World {
 		}
 
 		printMiniStep(`Move row to the right of (${x}, ${y}) to the left`);
-		while (this.hasBall(x + 1, y)) {
+		while (this.hasBall([x + 1, y])) {
 			yield new Move(this, [x + 1, y], MoveDirection.W);
 			x++;
 		}
@@ -479,8 +513,8 @@ class World {
 	 * right of the given coordinate to the left.
 	 */
 	needsTuck([x, y]: [number, number]): boolean {
-		while (this.hasBall(x + 1, y)) {
-			if (!this.hasBall(x + 1, y + 1) && !this.hasBall(x + 1, y - 1)) {
+		while (this.hasBall([x + 1, y])) {
+			if (!this.hasBall([x + 1, y + 1]) && !this.hasBall([x + 1, y - 1])) {
 				return true;
 			}
 			x++;
@@ -493,30 +527,19 @@ class World {
 	 * and shove that cube to the next row.
 	 */
 	*doTuck([x, y]: [number, number]): Generator<Move, void, undefined> {
-		while (this.hasBall(x + 1, y)) {
+		while (this.hasBall([x + 1, y])) {
 			x++;
 		}
-		if (this.hasBall(x - 1, y - 1)) {
+		if (this.hasBall([x - 1, y - 1])) {
 			yield new Move(this, [x, y], MoveDirection.S);
 			return;
 		}
 		yield new Move(this, [x, y], MoveDirection.SW);
 		x--;
-		while (!this.hasBall(x - 1, y - 1)) {
+		while (!this.hasBall([x - 1, y - 1])) {
 			yield new Move(this, [x, y - 1], MoveDirection.W);
 			x--;
 		}
-	}
-
-	isEmptyCell(p: [number, number]): boolean {
-		if (this.getBall(...p)) {
-			return false;
-		}
-
-		const hasNENeighbor: boolean = this.getBall(p[0] + 1, p[1] + 1) !== null;
-		const hasENeighbor: boolean = this.getBall(p[0] + 1, p[1]) !== null;
-
-		return hasNENeighbor && hasENeighbor;
 	}
 
 	updatePositions(time: number, timeStep: number): void {
@@ -524,8 +547,8 @@ class World {
 			ball.updatePosition(time, timeStep);
 		});
 		if (this.currentMove) {
-			const [x, y] = this.currentMove.position;
-			this.getBall(x, y)?.updatePosition(time, timeStep, this.currentMove);
+			const p = this.currentMove.position;
+			this.getBall(p)?.updatePosition(time, timeStep, this.currentMove);
 		}
 	}
 
@@ -534,13 +557,13 @@ class World {
 	 */
 	reset(): void {
 		this.balls.forEach((ball) => {
-			this.getCell(...ball.p).ball = null;
+			this.getCell(ball.p).ball = null;
 		});
 		this.balls.forEach((ball) => {
 			ball.p = [ball.resetPosition[0], ball.resetPosition[1]];
 			ball.dots = [];
 			ball.dotsLayer.removeChildren();
-			this.getCell(...ball.p).ball = ball;
+			this.getCell(ball.p).ball = ball;
 		});
 	}
 
@@ -560,7 +583,7 @@ class World {
 
 		if (skip) {
 			// mark the skipped ball so we won't visit it again
-			const skipBall = this.getBall(...skip);
+			const skipBall = this.getBall(skip);
 			if (skipBall) {
 				const skipIndex = this.balls.indexOf(skipBall);
 				seen[skipIndex] = true;
@@ -589,10 +612,10 @@ class World {
 			seenCount++;
 
 			const neighbors = [
-				this.getCell(ball.p[0] - 1, ball.p[1]),
-				this.getCell(ball.p[0] + 1, ball.p[1]),
-				this.getCell(ball.p[0], ball.p[1] - 1),
-				this.getCell(ball.p[0], ball.p[1] + 1)
+				this.getCell([ball.p[0] - 1, ball.p[1]]),
+				this.getCell([ball.p[0] + 1, ball.p[1]]),
+				this.getCell([ball.p[0], ball.p[1] - 1]),
+				this.getCell([ball.p[0], ball.p[1] + 1])
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
@@ -603,6 +626,65 @@ class World {
 		}
 
 		return this.balls.length === seenCount;
+	}
+
+	/**
+	 * Checks if the given grid cell is within a hole of the configuration.
+	 * (Assuming 4-connectivity.)
+	 */
+	isInside(p: [number, number]): boolean {
+		// try to find a path to
+		const bounds = this.bounds();
+		const origin: [number, number] = [bounds[0] - 1, bounds[1] - 1];
+
+		// do a BFS from the origin, to see if we can find p
+		// (FIXME: this is stupid, can probably be done better...)
+		let seen: {[key: string]: boolean} = {};
+		let queue: [number, number][] = [origin];
+
+		while (queue.length !== 0) {
+			const location = queue.shift()!;
+			if (location[0] < bounds[0] - 1 || location[1] < bounds[1] - 1 ||
+					location[0] > bounds[2] + 1 || location[1] > bounds[3] + 1) {
+				continue;
+			}
+			if (seen[location[0] + "," + location[1]]) {
+				continue;
+			}
+			seen[location[0] + "," + location[1]] = true;
+			if (location[0] === p[0] && location[1] === p[1]) {
+				// done!
+				return false;
+			}
+
+			const neighbors: [number, number][] = [
+				[location[0] - 1, location[1]],
+				[location[0] + 1, location[1]],
+				[location[0], location[1] - 1],
+				[location[0], location[1] + 1]
+			];
+			const self = this;
+			neighbors.forEach(function(c) {
+				if (!self.hasBall(c)) {
+					queue.push(c);
+				}
+			});
+		}
+
+		return true;
+	}
+
+	/**
+	 * Returns the minimum and maximum x- and y-coordinates of cubes in the
+	 * configuration, as an array [minX, minY, maxX, maxY].
+	 */
+	bounds(): [number, number, number, number] {
+		return [
+			this.balls.map((ball) => ball.p[0]).min(),
+			this.balls.map((ball) => ball.p[1]).min(),
+			this.balls.map((ball) => ball.p[0]).max(),
+			this.balls.map((ball) => ball.p[1]).max()
+		];
 	}
 
 	/**
@@ -622,7 +704,7 @@ class World {
 			.map((ball) => ball.p[0])
 			.min();
 
-		return this.getBall(lowestX, lowestY);
+		return this.getBall([lowestX, lowestY]);
 	}
 
 	*buildBestBridge(): Generator<Move, void, undefined> {
@@ -675,11 +757,13 @@ class World {
 	}
 
 	/**
-	 * Returns the number of cubes in 1-components.
+	 * Colors the cubes by their connectivity, and set their connectivity
+	 * fields.
 	 */
 	colorByComponents(): void {
 		const components = this.findComponents();
 		for (let i = 0; i < this.balls.length; i++) {
+			this.balls[i].connectivity = components[i];
 			if (components[i] === 2) {
 				this.balls[i].setColor(Color.BLUE);
 			} else if (components[i] === 1) {
@@ -704,7 +788,6 @@ class World {
 		for (let i = 0; i < outside.length; i++) {
 			const cube = outside[i];
 			const cubeId = this.balls.indexOf(cube);
-			//console.log(cubeId + " " + cube.p + ", stack = " + stack);
 
 			// if we've not seen this cube, put it on the stack
 			// else if it's the one on top of the stack, remove it and 
@@ -742,7 +825,7 @@ class World {
 		let position: [number, number] = [start.p[0], start.p[1]];
 		let direction: string | null = 'S';
 		do {
-			outside.push(this.getBall(...position)!);
+			outside.push(this.getBall(position)!);
 			direction = this.nextOnOutside(position, direction);
 			if (!direction) {
 				break;
@@ -799,7 +882,7 @@ class World {
 		}
 
 		for (let i = 0; i < cellsToFill.length; i++) {
-			if (this.hasBall(cellsToFill[i][0], cellsToFill[i][1])) {
+			if (this.hasBall(cellsToFill[i])) {
 				return false;
 			}
 		}
@@ -877,10 +960,10 @@ class World {
 			}
 
 			const neighbors = [
-				this.getCell(ball.p[0] - 1, ball.p[1]),
-				this.getCell(ball.p[0] + 1, ball.p[1]),
-				this.getCell(ball.p[0], ball.p[1] - 1),
-				this.getCell(ball.p[0], ball.p[1] + 1)
+				this.getCell([ball.p[0] - 1, ball.p[1]]),
+				this.getCell([ball.p[0] + 1, ball.p[1]]),
+				this.getCell([ball.p[0], ball.p[1] - 1]),
+				this.getCell([ball.p[0], ball.p[1] + 1])
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
@@ -915,10 +998,10 @@ class World {
 			parent[ballId] = p;
 
 			const neighbors = [
-				this.getCell(ball.p[0] - 1, ball.p[1]),
-				this.getCell(ball.p[0] + 1, ball.p[1]),
-				this.getCell(ball.p[0], ball.p[1] - 1),
-				this.getCell(ball.p[0], ball.p[1] + 1)
+				this.getCell([ball.p[0] - 1, ball.p[1]]),
+				this.getCell([ball.p[0] + 1, ball.p[1]]),
+				this.getCell([ball.p[0], ball.p[1] - 1]),
+				this.getCell([ball.p[0], ball.p[1] + 1])
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
@@ -1014,7 +1097,7 @@ class World {
 				color = new Color(cube['color'][0],
 					cube['color'][1], cube['color'][2]);
 			}
-			this.addBall(cube['x'], cube['y'], color);
+			this.addBall([cube['x'], cube['y']], color);
 		});
 	}
 }

@@ -147,17 +147,20 @@ class CubesSimulator {
 		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
 
 		// TODO debug data
+		for (let x = 0; x < 8; x++) {
+			this.world.addBall([x, 0], Color.GRAY);
+			this.world.addBall([x, 1], Color.GRAY);
+			this.world.addBall([x, 6], Color.GRAY);
+			this.world.addBall([x, 7], Color.GRAY);
+		}
+		for (let x = 6; x < 8; x++) {
+			this.world.addBall([x, 2], Color.GRAY);
+			this.world.addBall([x, 3], Color.GRAY);
+			this.world.addBall([x, 4], Color.GRAY);
+			this.world.addBall([x, 5], Color.GRAY);
+		}
+
 		/*this.world.addBall(0, 0, Color.GRAY);
-		this.world.addBall(1, 0, Color.GRAY);
-		this.world.addBall(2, 0, Color.GRAY);
-		this.world.addBall(3, 0, Color.GRAY);
-		this.world.addBall(4, 0, Color.GRAY);
-		this.world.addBall(2, 1, Color.GRAY);
-		this.world.addBall(4, 1, Color.GRAY);
-		this.world.addBall(2, 2, Color.GRAY);
-		this.world.addBall(3, 2, Color.GRAY);
-		this.world.addBall(4, 2, Color.GRAY);*/
-		this.world.addBall(0, 0, Color.GRAY);
 		this.world.addBall(0, 1, Color.GRAY);
 		this.world.addBall(-2, 2, Color.GRAY);
 		this.world.addBall(-1, 2, Color.GRAY);
@@ -209,7 +212,7 @@ class CubesSimulator {
 		this.world.addBall(9, 6, Color.GRAY);
 		this.world.addBall(7, 7, Color.GRAY);
 		this.world.addBall(8, 7, Color.GRAY);
-		this.world.addBall(9, 7, Color.GRAY);
+		this.world.addBall(9, 7, Color.GRAY);*/
 		// TODO debug data until here
 
 		// key handlers
@@ -307,7 +310,7 @@ class CubesSimulator {
 
 			if (this.editMode === EditMode.SELECT) {
 				this.deselect();
-				const ball = this.world.getBall(Math.round(x), Math.round(y));
+				const ball = this.world.getBall([Math.round(x), Math.round(y)]);
 				if (ball) {
 					this.deselect();
 					this.select(ball);
@@ -318,13 +321,13 @@ class CubesSimulator {
 				x = Math.round(x);
 				y = Math.round(y);
 
-				const ball = this.world.getBall(x, y);
+				const ball = this.world.getBall([x, y]);
 				if (!ball) {
-					const newBall = this.world.addBall(x, y, this.lastColor);
+					const newBall = this.world.addBall([x, y], this.lastColor);
 					this.deselect();
 					this.select(newBall);
 				} else {
-					this.world.removeBall(...ball.p);
+					this.world.removeBall(ball.p);
 				}
 			}
 		}
@@ -406,8 +409,7 @@ class CubesSimulator {
 	delete(): void {
 		this.selection.forEach((obj) => {
 			if (obj instanceof Ball) {
-				const [x, y] = obj.p;
-				this.world.removeBall(x, y);
+				this.world.removeBall(obj.p);
 			}
 			this.deselect();
 		});
