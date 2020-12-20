@@ -551,7 +551,7 @@ class World {
 			// not to be (0, 0), and shove it in the beginning
 			boundary.unshift(boundary.pop()!);
 		}
-		console.log(JSON.stringify(boundary));
+
 		let target = [0, 0];
 		let targetIndex = -1;
 
