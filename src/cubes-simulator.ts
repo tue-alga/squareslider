@@ -22,7 +22,7 @@ class CubesSimulator {
 	skipSiphoning: boolean = true;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
-	timeSpeed: number = 0.2;
+	timeSpeed: number = 0.1;
 
 	world: World;
 	algorithm: Generator<Move> | null = null;
@@ -280,7 +280,8 @@ class CubesSimulator {
 			this.timeStep++;
 			try {
 				this.world.nextStep(this.algorithm!, this.timeStep);
-				if (this.skipSiphoning && this.world.currentMove &&
+				if (this.skipSiphoning &&
+						this.world.currentMove &&
 						(this.world.currentMove.position[0] < 0 ||
 						this.world.currentMove.position[1] < 0)) {
 					this.time += 1;

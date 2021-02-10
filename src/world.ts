@@ -565,7 +565,6 @@ class World {
 				break;
 			}
 		}
-		//console.log(startIndex);
 
 		// if we're following the bottom boundary, an edge is against direction
 		// if it goes left; if we're following the left boundary, it is against
@@ -669,34 +668,46 @@ class World {
 			} else {
 				printMiniStep(`Do monotone moves to remove parity cube ` +
 						`(${potentialFarCube[0]}, ${potentialFarCube[1]})`);
-				yield* this.doFreeMove(potentialFarCube);
+				yield* this.doFreeMoves(potentialFarCube);
 			}
 		}
 	}
 
 	/**
-	 * Do any free move (W, S, SW, WS) possible, starting from the given cube.
+	 * Do any free moves (W, S, SW, WS) possible, starting from the given cube,
+	 * until it has N- and W neighbors.
 	 */
-	*doFreeMove(p: [number, number]): Generator<Move, void, undefined> {
-		let move = new Move(this, p, MoveDirection.W);
-		if (move.isValid()) {
-			yield move;
-			return;
-		}
-		move = new Move(this, p, MoveDirection.S);
-		if (move.isValid()) {
-			yield move;
-			return;
-		}
-		move = new Move(this, p, MoveDirection.SW);
-		if (move.isValid()) {
-			yield move;
-			return;
-		}
-		move = new Move(this, p, MoveDirection.WS);
-		if (move.isValid()) {
-			yield move;
-			return;
+	*doFreeMoves(p: [number, number]): Generator<Move, void, undefined> {
+		let has;
+		while (has = this.neighbors(p), !has['W'] || !has["N"]) {
+			let move = new Move(this, p, MoveDirection.W);
+			if (p[0] > 1 && move.isValid()) {
+				yield move;
+				p[0]--;
+				continue;
+			}
+			move = new Move(this, p, MoveDirection.S);
+			if (p[1] > 1 && move.isValid()) {
+				yield move;
+				p[1]--;
+				continue;
+			}
+			move = new Move(this, p, MoveDirection.SW);
+			if (p[0] > 1 && p[1] > 1 && move.isValid()) {
+				yield move;
+				p[0]--;
+				p[1]--;
+				continue;
+			}
+			move = new Move(this, p, MoveDirection.WS);
+			if (p[0] > 1 && p[1] > 1 && move.isValid()) {
+				yield move;
+				p[0]--;
+				p[1]--;
+				continue;
+			}
+			//throw 'no free move available to remove parity cube';
+			break;
 		}
 	}
 
