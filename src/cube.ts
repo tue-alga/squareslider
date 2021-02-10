@@ -27,7 +27,7 @@ class Color {
 	}
 }
 
-class Ball {
+class Cube {
 	p: Position;
 	resetPosition: Position;
 	color: Color;
@@ -111,5 +111,5 @@ class Ball {
 	}
 }
 
-export {Ball, Color, Position};
+export {Cube, Color, Position};
 

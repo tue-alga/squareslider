@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 
-import {Ball, Color} from './ball';
+import {Cube, Color} from './cube';
 import {World, Move} from './world';
 import {Button, Separator, Toolbar} from './ui';
 
@@ -28,10 +28,10 @@ class CubesSimulator {
 	algorithm: Generator<Move> | null = null;
 
 	// selected objects
-	private selection: Ball[] = [];
+	private selection: Cube[] = [];
 
-	// color of last-edited ball
-	// (remembered to insert new balls with the same color)
+	// color of last-edited cube
+	// (remembered to insert new cubes with the same color)
 	private lastColor = Color.GRAY;
 
 	// GUI elements
@@ -42,7 +42,7 @@ class CubesSimulator {
 	private resetButton: Button;
 	
 	private selectButton: Button;
-	private addBallButton: Button;
+	private addCubeButton: Button;
 	private colorButton: Button;
 	private deleteButton: Button;
 
@@ -78,20 +78,20 @@ class CubesSimulator {
 		this.selectButton.onClick(this.selectMode.bind(this));
 		this.bottomBar.addChild(this.selectButton);
 
-		this.addBallButton = new Button(
+		this.addCubeButton = new Button(
 			"add-ball", "Add/remove cubes", "C");
-		this.addBallButton.onClick(this.addBallsMode.bind(this));
-		this.bottomBar.addChild(this.addBallButton);
+		this.addCubeButton.onClick(this.addCubesMode.bind(this));
+		this.bottomBar.addChild(this.addCubeButton);
 
 		this.colorButton = new Button(
 			"color", "Change color");
 		this.colorButton.onClick(
 			() => {
-				this.selection.forEach((ball) => {
-					if (ball instanceof Ball) {
-						ball.nextColor();
+				this.selection.forEach((cube) => {
+					if (cube instanceof Cube) {
+						cube.nextColor();
 						if (this.selection.length === 1) {
-							this.lastColor = ball.color;
+							this.lastColor = cube.color;
 						}
 					}
 				});
@@ -150,76 +150,76 @@ class CubesSimulator {
 		// TODO debug data
 		for (let x = 0; x < 4; x++) {
 			for (let y = 0; y < 4; y++) {
-				this.world.addBall([x, y], Color.GRAY);
+				this.world.addCube([x, y], Color.GRAY);
 			}
 		}
 
 		/*for (let x = 0; x < 8; x++) {
-			this.world.addBall([x, 0], Color.GRAY);
-			this.world.addBall([x, 1], Color.GRAY);
-			this.world.addBall([x, 6], Color.GRAY);
-			this.world.addBall([x, 7], Color.GRAY);
+			this.world.addCube([x, 0], Color.GRAY);
+			this.world.addCube([x, 1], Color.GRAY);
+			this.world.addCube([x, 6], Color.GRAY);
+			this.world.addCube([x, 7], Color.GRAY);
 		}
 		for (let x = 6; x < 8; x++) {
-			this.world.addBall([x, 2], Color.GRAY);
-			this.world.addBall([x, 3], Color.GRAY);
-			this.world.addBall([x, 4], Color.GRAY);
-			this.world.addBall([x, 5], Color.GRAY);
+			this.world.addCube([x, 2], Color.GRAY);
+			this.world.addCube([x, 3], Color.GRAY);
+			this.world.addCube([x, 4], Color.GRAY);
+			this.world.addCube([x, 5], Color.GRAY);
 		}*/
 
-		/*this.world.addBall(0, 0, Color.GRAY);
-		this.world.addBall(0, 1, Color.GRAY);
-		this.world.addBall(-2, 2, Color.GRAY);
-		this.world.addBall(-1, 2, Color.GRAY);
-		this.world.addBall(0, 2, Color.GRAY);
-		this.world.addBall(1, 2, Color.GRAY);
-		this.world.addBall(2, 2, Color.GRAY);
-		this.world.addBall(3, 2, Color.GRAY);
-		this.world.addBall(-2, 3, Color.GRAY);
-		this.world.addBall(3, 3, Color.GRAY);
-		this.world.addBall(-2, 4, Color.GRAY);
-		this.world.addBall(1, 4, Color.GRAY);
-		this.world.addBall(2, 4, Color.GRAY);
-		this.world.addBall(3, 4, Color.GRAY);
-		this.world.addBall(4, 4, Color.GRAY);
-		this.world.addBall(-2, 5, Color.GRAY);
-		this.world.addBall(-1, 5, Color.GRAY);
-		this.world.addBall(0, 5, Color.GRAY);
-		this.world.addBall(1, 5, Color.GRAY);
-		this.world.addBall(4, 5, Color.GRAY);
-		this.world.addBall(0, 6, Color.GRAY);
-		this.world.addBall(3, 6, Color.GRAY);
-		this.world.addBall(4, 6, Color.GRAY);
-		this.world.addBall(0, 7, Color.GRAY);
-		this.world.addBall(1, 7, Color.GRAY);
-		this.world.addBall(2, 7, Color.GRAY);
-		this.world.addBall(3, 7, Color.GRAY);
-		this.world.addBall(1, 8, Color.GRAY);
-		this.world.addBall(1, 9, Color.GRAY);
-		this.world.addBall(-1, 10, Color.GRAY);
-		this.world.addBall(0, 10, Color.GRAY);
-		this.world.addBall(1, 10, Color.GRAY);
-		this.world.addBall(2, 10, Color.GRAY);
-		this.world.addBall(-1, 11, Color.GRAY);
-		this.world.addBall(2, 11, Color.GRAY);
-		this.world.addBall(-1, 12, Color.GRAY);
-		this.world.addBall(1, 12, Color.GRAY);
-		this.world.addBall(2, 12, Color.GRAY);
-		this.world.addBall(-1, 13, Color.GRAY);
-		this.world.addBall(0, 13, Color.GRAY);
-		this.world.addBall(1, 13, Color.GRAY);
+		/*this.world.addCube(0, 0, Color.GRAY);
+		this.world.addCube(0, 1, Color.GRAY);
+		this.world.addCube(-2, 2, Color.GRAY);
+		this.world.addCube(-1, 2, Color.GRAY);
+		this.world.addCube(0, 2, Color.GRAY);
+		this.world.addCube(1, 2, Color.GRAY);
+		this.world.addCube(2, 2, Color.GRAY);
+		this.world.addCube(3, 2, Color.GRAY);
+		this.world.addCube(-2, 3, Color.GRAY);
+		this.world.addCube(3, 3, Color.GRAY);
+		this.world.addCube(-2, 4, Color.GRAY);
+		this.world.addCube(1, 4, Color.GRAY);
+		this.world.addCube(2, 4, Color.GRAY);
+		this.world.addCube(3, 4, Color.GRAY);
+		this.world.addCube(4, 4, Color.GRAY);
+		this.world.addCube(-2, 5, Color.GRAY);
+		this.world.addCube(-1, 5, Color.GRAY);
+		this.world.addCube(0, 5, Color.GRAY);
+		this.world.addCube(1, 5, Color.GRAY);
+		this.world.addCube(4, 5, Color.GRAY);
+		this.world.addCube(0, 6, Color.GRAY);
+		this.world.addCube(3, 6, Color.GRAY);
+		this.world.addCube(4, 6, Color.GRAY);
+		this.world.addCube(0, 7, Color.GRAY);
+		this.world.addCube(1, 7, Color.GRAY);
+		this.world.addCube(2, 7, Color.GRAY);
+		this.world.addCube(3, 7, Color.GRAY);
+		this.world.addCube(1, 8, Color.GRAY);
+		this.world.addCube(1, 9, Color.GRAY);
+		this.world.addCube(-1, 10, Color.GRAY);
+		this.world.addCube(0, 10, Color.GRAY);
+		this.world.addCube(1, 10, Color.GRAY);
+		this.world.addCube(2, 10, Color.GRAY);
+		this.world.addCube(-1, 11, Color.GRAY);
+		this.world.addCube(2, 11, Color.GRAY);
+		this.world.addCube(-1, 12, Color.GRAY);
+		this.world.addCube(1, 12, Color.GRAY);
+		this.world.addCube(2, 12, Color.GRAY);
+		this.world.addCube(-1, 13, Color.GRAY);
+		this.world.addCube(0, 13, Color.GRAY);
+		this.world.addCube(1, 13, Color.GRAY);
 		// tail
-		this.world.addBall(5, 5, Color.GRAY);
-		this.world.addBall(6, 5, Color.GRAY);
-		this.world.addBall(7, 5, Color.GRAY);
-		this.world.addBall(8, 5, Color.GRAY);
-		this.world.addBall(9, 5, Color.GRAY);
-		this.world.addBall(7, 6, Color.GRAY);
-		this.world.addBall(8, 6, Color.GRAY);
-		this.world.addBall(9, 6, Color.GRAY);
-		this.world.addBall(7, 7, Color.GRAY);
-		this.world.addBall(8, 7, Color.GRAY);
-		this.world.addBall(9, 7, Color.GRAY);*/
+		this.world.addCube(5, 5, Color.GRAY);
+		this.world.addCube(6, 5, Color.GRAY);
+		this.world.addCube(7, 5, Color.GRAY);
+		this.world.addCube(8, 5, Color.GRAY);
+		this.world.addCube(9, 5, Color.GRAY);
+		this.world.addCube(7, 6, Color.GRAY);
+		this.world.addCube(8, 6, Color.GRAY);
+		this.world.addCube(9, 6, Color.GRAY);
+		this.world.addCube(7, 7, Color.GRAY);
+		this.world.addCube(8, 7, Color.GRAY);
+		this.world.addCube(9, 7, Color.GRAY);*/
 		// TODO debug data until here
 
 		// key handlers
@@ -231,7 +231,7 @@ class CubesSimulator {
 			} else if (event.key === "s") {
 				this.selectMode();
 			} else if (event.key === "c") {
-				this.addBallsMode();
+				this.addCubesMode();
 			} else if (event.key === "Delete") {
 				this.delete();
 			}
@@ -243,15 +243,15 @@ class CubesSimulator {
 	update(): void {
 	}
 
-	select(obj: Ball): void {
+	select(obj: Cube): void {
 		this.selection.push(obj);
 		obj.selected = true;
 		this.updateEditButtons();
 	}
 
 	deselect(): void {
-		this.selection.forEach((ball) => {
-			ball.selected = false;
+		this.selection.forEach((cube) => {
+			cube.selected = false;
 		});
 
 		this.selection = [];
@@ -323,10 +323,10 @@ class CubesSimulator {
 
 			if (this.editMode === EditMode.SELECT) {
 				this.deselect();
-				const ball = this.world.getBall([Math.round(x), Math.round(y)]);
-				if (ball) {
+				const cube = this.world.getCube([Math.round(x), Math.round(y)]);
+				if (cube) {
 					this.deselect();
-					this.select(ball);
+					this.select(cube);
 				}
 			}
 
@@ -334,13 +334,13 @@ class CubesSimulator {
 				x = Math.round(x);
 				y = Math.round(y);
 
-				const ball = this.world.getBall([x, y]);
-				if (!ball) {
-					const newBall = this.world.addBall([x, y], this.lastColor);
+				const cube = this.world.getCube([x, y]);
+				if (!cube) {
+					const newCube = this.world.addCube([x, y], this.lastColor);
 					this.deselect();
-					this.select(newBall);
+					this.select(newCube);
 				} else {
-					this.world.removeBall(ball.p);
+					this.world.removeCube(cube.p);
 				}
 			}
 		}
@@ -366,7 +366,7 @@ class CubesSimulator {
 			this.algorithm = this.world.moveToRectangle();
 			this.deselect();
 			this.selectButton.setEnabled(false);
-			this.addBallButton.setEnabled(false);
+			this.addCubeButton.setEnabled(false);
 			this.saveButton.setEnabled(false);
 		}
 		this.resetButton.setEnabled(true);
@@ -382,7 +382,7 @@ class CubesSimulator {
 			this.algorithm = this.world.moveToRectangle();
 			this.deselect();
 			this.selectButton.setEnabled(false);
-			this.addBallButton.setEnabled(false);
+			this.addCubeButton.setEnabled(false);
 			this.saveButton.setEnabled(false);
 		}
 		this.stepButton.setEnabled(false);
@@ -397,7 +397,7 @@ class CubesSimulator {
 		this.resetButton.setEnabled(false);
 
 		this.selectButton.setEnabled(true);
-		this.addBallButton.setEnabled(true);
+		this.addCubeButton.setEnabled(true);
 		this.saveButton.setEnabled(true);
 
 		this.world.reset();
@@ -410,19 +410,19 @@ class CubesSimulator {
 	selectMode(): void {
 		this.editMode = EditMode.SELECT;
 		this.selectButton.setPressed(true);
-		this.addBallButton.setPressed(false);
+		this.addCubeButton.setPressed(false);
 	}
 
-	addBallsMode(): void {
+	addCubesMode(): void {
 		this.editMode = EditMode.ADD_BALL;
 		this.selectButton.setPressed(false);
-		this.addBallButton.setPressed(true);
+		this.addCubeButton.setPressed(true);
 	}
 	
 	delete(): void {
 		this.selection.forEach((obj) => {
-			if (obj instanceof Ball) {
-				this.world.removeBall(obj.p);
+			if (obj instanceof Cube) {
+				this.world.removeCube(obj.p);
 			}
 			this.deselect();
 		});

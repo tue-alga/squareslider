@@ -1,10 +1,10 @@
 import * as PIXI from 'pixi.js';
 import {Viewport} from 'pixi-viewport';
 
-import {Ball, Color} from './ball';
+import {Cube, Color} from './cube';
 
 type WorldCell = {
-	ball: Ball | null;
+	cube: Cube | null;
 };
 
 enum MoveDirection {
@@ -72,7 +72,7 @@ class Move {
 	 * This avoids the need to do a BFS to check connectivity.
 	 */
 	isValidIgnoreConnectivity(): boolean {
-		if (this.world.getBall(this.targetPosition())) {
+		if (this.world.getCube(this.targetPosition())) {
 			return false;
 		}
 
@@ -137,7 +137,7 @@ class Move {
 	}
 
 	execute(): void {
-		this.world.moveBall(this.position, this.targetPosition());
+		this.world.moveCube(this.position, this.targetPosition());
 	}
 
 	toString(): string {
@@ -158,10 +158,13 @@ class World {
 	pixi = new PIXI.Container();
 	grid: PIXI.Mesh;
 
-	balls: Ball[] = [];
+	cubes: Cube[] = [];
 
 	currentMove: Move | null = null;
 
+	/**
+	 * Creates the world and initializes its PIXI elements (viewport and grid).
+	 */
 	constructor() {
 		this.viewport.addChild(this.pixi);
 
@@ -234,7 +237,7 @@ class World {
 		let column = this.getColumn(x);
 		if (!column[y]) {
 			column[y] = {
-				ball: null
+				cube: null
 			};
 		}
 		return column[y];
@@ -243,31 +246,31 @@ class World {
 	/**
 	 * Returns the cube at the given location, or null if that cell is empty.
 	 */
-	getBall(p: [number, number]): Ball | null {
-		return this.getCell(p).ball;
+	getCube(p: [number, number]): Cube | null {
+		return this.getCell(p).cube;
 	}
 
 	/**
-	 * Checks if a ball exists at the given location.
+	 * Checks if a cube exists at the given location.
 	 */
-	hasBall(p: [number, number]): boolean {
-		return !!this.getBall(p);
+	hasCube(p: [number, number]): boolean {
+		return !!this.getCube(p);
 	}
 
 	/**
 	 * Adds a new cube of the given color at the given location; throws if a
 	 * cube already exists at that location.
 	 */
-	addBall(p: [number, number], color: Color): Ball {
-		if (this.getBall(p)) {
-			throw `Tried to insert ball on top of another ball ` +
+	addCube(p: [number, number], color: Color): Cube {
+		if (this.getCube(p)) {
+			throw `Tried to insert cube on top of another cube ` +
 					`at (${p[0]}, ${p[1]})`;
 		}
-		const ball = new Ball(this, p, color);
-		this.getCell(p).ball = ball;
-		this.balls.push(ball);
-		this.pixi.addChild(ball.pixi);
-		return ball;
+		const cube = new Cube(this, p, color);
+		this.getCell(p).cube = cube;
+		this.cubes.push(cube);
+		this.pixi.addChild(cube.pixi);
+		return cube;
 	}
 
 	/**
@@ -275,36 +278,36 @@ class World {
 	 * location. Throws if no cube exists at the source or if a cube already
 	 * exists at the target.
 	 */
-	moveBall(from: [number, number], to: [number, number]): void {
-		const ball = this.getBall(from);
-		if (!ball) {
-			throw `Tried to move non-existing ball at ` +
+	moveCube(from: [number, number], to: [number, number]): void {
+		const cube = this.getCube(from);
+		if (!cube) {
+			throw `Tried to move non-existing cube at ` +
 					`at (${from[0]}, ${from[1]})`;
 		}
 
-		if (this.getBall(to)) {
-			throw `Tried to move ball on top of another ball ` +
+		if (this.getCube(to)) {
+			throw `Tried to move cube on top of another cube ` +
 					`at (${to[0]}, ${to[1]})`;
 		}
 
-		this.getCell(from).ball = null;
-		ball.p = [to[0], to[1]];
-		ball.updatePosition(0, 0);
-		this.getCell(to).ball = ball;
+		this.getCell(from).cube = null;
+		cube.p = [to[0], to[1]];
+		cube.updatePosition(0, 0);
+		this.getCell(to).cube = cube;
 	}
 
 	/**
 	 * Removes the cube at the given location; throws if no cube exists there.
 	 */
-	removeBall(p: [number, number]): void {
-		const ball = this.getBall(p);
-		if (!ball) {
-			throw `Tried to remove non-existing ball ` +
+	removeCube(p: [number, number]): void {
+		const cube = this.getCube(p);
+		if (!cube) {
+			throw `Tried to remove non-existing cube ` +
 					`at (${p[0]}, ${p[1]})`;
 		}
-		this.pixi.removeChild(ball.pixi);
-		this.balls = this.balls.filter((b) => b !== ball);
-		this.getCell(p).ball = null;
+		this.pixi.removeChild(cube.pixi);
+		this.cubes = this.cubes.filter((b) => b !== cube);
+		this.getCell(p).cube = null;
 	}
 
 	/**
@@ -314,14 +317,14 @@ class World {
 	neighbors(p: [number, number]): {[key: string]: boolean} {
 		const [x, y] = p;
 		let has: {[key: string]: boolean} = {};
-		has['N'] = this.hasBall([x, y + 1]);
-		has['NE'] = this.hasBall([x + 1, y + 1]);
-		has['E'] = this.hasBall([x + 1, y]);
-		has['SE'] = this.hasBall([x + 1, y - 1]);
-		has['S'] = this.hasBall([x, y - 1]);
-		has['SW'] = this.hasBall([x - 1, y - 1]);
-		has['W'] = this.hasBall([x - 1, y]);
-		has['NW'] = this.hasBall([x - 1, y + 1]);
+		has['N'] = this.hasCube([x, y + 1]);
+		has['NE'] = this.hasCube([x + 1, y + 1]);
+		has['E'] = this.hasCube([x + 1, y]);
+		has['SE'] = this.hasCube([x + 1, y - 1]);
+		has['S'] = this.hasCube([x, y - 1]);
+		has['SW'] = this.hasCube([x - 1, y - 1]);
+		has['W'] = this.hasCube([x - 1, y]);
+		has['NW'] = this.hasCube([x - 1, y + 1]);
 		return has;
 	}
 
@@ -428,7 +431,7 @@ class World {
 
 		//yield* this.buildBestBridge();  // TODO
 		
-		//yield* this.buildBridge(this.getBall(2, 7)!, this.getBall(1, 9)!);
+		//yield* this.buildBridge(this.getCube(2, 7)!, this.getCube(1, 9)!);
 	}
 
 	/**
@@ -441,8 +444,8 @@ class World {
 		// also check 2-componentness of boundary
 
 		// TODO this is a stub, implement this properly
-		return this.hasBall([0, 0]) &&
-				(this.hasBall([1, 0]) || this.hasBall([0, 1]));
+		return this.hasCube([0, 0]) &&
+				(this.hasCube([1, 0]) || this.hasCube([0, 1]));
 	}
 
 	/**
@@ -452,34 +455,34 @@ class World {
 	*doSiphonStep(): Generator<Move, void, undefined> {
 		printStep('Siphoning step');
 
-		if (this.hasBall([2, 0]) || this.hasBall([2, 1])) {
+		if (this.hasCube([2, 0]) || this.hasCube([2, 1])) {
 			yield* this.doRightSiphonRemoval();
 			yield* this.doSiphonFill(false);
 
-		} else if (this.hasBall([0, 2]) || this.hasBall([1, 2])) {
+		} else if (this.hasCube([0, 2]) || this.hasCube([1, 2])) {
 			yield* this.doTopSiphonRemoval();
 			yield* this.doSiphonFill(true);
 
 		} else {
 			printStep("Finish siphoning for the 2x2 block");
-			if (this.hasBall([0, 1])) {
+			if (this.hasCube([0, 1])) {
 				yield* this.doRightSiphonRemoval();
-				if (this.hasBall([1, 1])) {
+				if (this.hasCube([1, 1])) {
 					printMiniStep('Move cube at (1, 1) to siphon position');
 					yield new Move(this, [1, 1], MoveDirection.S);
 					yield* this.doRightSiphonRemoval();
 				}
-				if (this.hasBall([0, 1])) {
+				if (this.hasCube([0, 1])) {
 					yield* this.doTopSiphonRemoval();
 				}
-			} else if (this.hasBall([1, 0])) {
+			} else if (this.hasCube([1, 0])) {
 				yield* this.doTopSiphonRemoval();
-				if (this.hasBall([1, 1])) {
+				if (this.hasCube([1, 1])) {
 					printMiniStep('Move cube at (1, 1) to siphon position');
 					yield new Move(this, [1, 1], MoveDirection.W);
 					yield* this.doTopSiphonRemoval();
 				}
-				if (this.hasBall([1, 0])) {
+				if (this.hasCube([1, 0])) {
 					yield* this.doRightSiphonRemoval();
 				}
 			}
@@ -493,7 +496,7 @@ class World {
 		printMiniStep('Siphon away (1, 0)');
 		yield new Move(this, [1, 0], MoveDirection.SW);
 		let x = 0;
-		while (this.hasBall([x - 1, 0])) {
+		while (this.hasCube([x - 1, 0])) {
 			yield new Move(this, [x, -1], MoveDirection.W);
 			x--;
 		}
@@ -506,7 +509,7 @@ class World {
 	*doTopSiphonRemoval(): Generator<Move, void, undefined> {
 		printMiniStep('Siphon away (0, 1)');
 		let x = 0;
-		while (this.hasBall([x - 1, 0])) {
+		while (this.hasCube([x - 1, 0])) {
 			yield new Move(this, [x, 1], MoveDirection.W);
 			x--;
 		}
@@ -528,10 +531,10 @@ class World {
 	*doSiphonFill(viaLeft: boolean): Generator<Move, void, undefined> {
 
 		// step 1: find the target
-		const boundary = this.outsideBalls().map(b => b.p);
+		const boundary = this.outsideCubes().map(b => b.p);
 
 		if (viaLeft) {
-			// outsideBalls() returns the boundary in counter-clockwise order,
+			// outsideCubes() returns the boundary in counter-clockwise order,
 			// so if we want to follow the left boundary (upwards), we'll need
 			// to reverse the boundary first
 			boundary.reverse();
@@ -543,7 +546,7 @@ class World {
 			// if we follow the bottom boundary, this is guaranteed by the
 			// fact that when this method is called, the first cube will
 			// already have been siphoned, so there is a cube in (-1, 0) that
-			// outsideBalls() will use as its starting point
+			// outsideCubes() will use as its starting point
 
 			// however, if we reverse the boundary, that is no longer true;
 			// so, to fix this, we take the last boundary element, which is the
@@ -593,7 +596,7 @@ class World {
 		const potentialNearCube = boundary[targetIndex - 1];
 		if (potentialNearCube[0] === target[0] - (viaLeft ? 1 : 0) &&
 				potentialNearCube[1] === target[1] - (viaLeft ? 0 : 1) &&
-				!this.hasBall([potentialNearCube[0] - (viaLeft ? 1 : 0), potentialNearCube[1] - (viaLeft ? 0 : 1)])) {
+				!this.hasCube([potentialNearCube[0] - (viaLeft ? 1 : 0), potentialNearCube[1] - (viaLeft ? 0 : 1)])) {
 			printMiniStep(`Fill ${goal} again with a ${direction} boundary ` +
 					`to (${boundary[targetIndex - 1][0]}, ` +
 					`${boundary[targetIndex - 1][1]}) ` +
@@ -620,7 +623,7 @@ class World {
 		// doesn't exist, add 2 to start with (1, 1))
 
 		// (or the other way round if we're following the left boundary)
-		if (this.hasBall(viaLeft ? [0, 2] : [2, 0])) {
+		if (this.hasCube(viaLeft ? [0, 2] : [2, 0])) {
 			startIndex += 4;
 		} else {
 			startIndex += 2;
@@ -638,7 +641,7 @@ class World {
 			if (i === targetIndex - 1 &&
 					emptySpace[0] === boundary[i + 1][0] - 1 &&
 					emptySpace[1] === boundary[i + 1][1] - 1 &&
-					!this.hasBall([boundary[i + 1][0] - (viaLeft ? 1 : 0) , boundary[i + 1][1] - (viaLeft ? 0 : 1)])) {
+					!this.hasCube([boundary[i + 1][0] - (viaLeft ? 1 : 0) , boundary[i + 1][1] - (viaLeft ? 0 : 1)])) {
 				printMiniStep(`Fix parity cube ` +
 						`(${boundary[i + 1][0]}, ${boundary[i + 1][1]}) ` +
 						`made in the previous siphoning step by a corner move`);
@@ -742,8 +745,8 @@ class World {
 		const [minX, minY, , ] = this.bounds();
 
 		// find all empty cells (empty cell: cell without a cube that has E and NE neighbors)
-		return this.balls
-			.map((ball): [number, number] => [ball.p[0] - 1, ball.p[1] - 1])
+		return this.cubes
+			.map((cube): [number, number] => [cube.p[0] - 1, cube.p[1] - 1])
 			.filter((p) => this.isEmptyCell(p))
 			.filter((p) => p[0] >= minX && p[1] >= minY)
 			.sort(([x1, y1], [x2, y2]) => {
@@ -764,13 +767,13 @@ class World {
 			return false;
 		}
 
-		return (this.getBall([x + 1, y])!.connectivity === 2) &&
-				(this.getBall([x + 1, y + 1])!.connectivity === 2) &&
-				(this.getBall([x, y + 1])!.connectivity === 2);
+		return (this.getCube([x + 1, y])!.connectivity === 2) &&
+				(this.getCube([x + 1, y + 1])!.connectivity === 2) &&
+				(this.getCube([x, y + 1])!.connectivity === 2);
 	}
 
 	isEmptyCell([x, y]: [number, number]): boolean {
-		if (this.getBall([x, y])) {
+		if (this.getCube([x, y])) {
 			return false;
 		}
 
@@ -801,7 +804,7 @@ class World {
 		}
 
 		printMiniStep(`Move row to the right of (${x}, ${y}) to the left`);
-		while (this.hasBall([x + 1, y])) {
+		while (this.hasCube([x + 1, y])) {
 			yield new Move(this, [x + 1, y], MoveDirection.W);
 			x++;
 		}
@@ -819,8 +822,8 @@ class World {
 	 * right of the given coordinate to the left.
 	 */
 	needsTuck([x, y]: [number, number]): boolean {
-		while (this.hasBall([x + 1, y])) {
-			if (!this.hasBall([x + 1, y + 1]) && !this.hasBall([x + 1, y - 1])) {
+		while (this.hasCube([x + 1, y])) {
+			if (!this.hasCube([x + 1, y + 1]) && !this.hasCube([x + 1, y - 1])) {
 				return true;
 			}
 			x++;
@@ -833,28 +836,28 @@ class World {
 	 * and shove that cube to the next row.
 	 */
 	*doTuck([x, y]: [number, number]): Generator<Move, void, undefined> {
-		while (this.hasBall([x + 1, y])) {
+		while (this.hasCube([x + 1, y])) {
 			x++;
 		}
-		if (this.hasBall([x - 1, y - 1])) {
+		if (this.hasCube([x - 1, y - 1])) {
 			yield new Move(this, [x, y], MoveDirection.S);
 			return;
 		}
 		yield new Move(this, [x, y], MoveDirection.SW);
 		x--;
-		while (!this.hasBall([x - 1, y - 1])) {
+		while (!this.hasCube([x - 1, y - 1])) {
 			yield new Move(this, [x, y - 1], MoveDirection.W);
 			x--;
 		}
 	}
 
 	updatePositions(time: number, timeStep: number): void {
-		this.balls.forEach((ball) => {
-			ball.updatePosition(time, timeStep);
+		this.cubes.forEach((cube) => {
+			cube.updatePosition(time, timeStep);
 		});
 		if (this.currentMove) {
 			const p = this.currentMove.position;
-			this.getBall(p)?.updatePosition(time, timeStep, this.currentMove);
+			this.getCube(p)?.updatePosition(time, timeStep, this.currentMove);
 		}
 	}
 
@@ -862,14 +865,14 @@ class World {
 	 * Puts all cubes back in their starting location.
 	 */
 	reset(): void {
-		this.balls.forEach((ball) => {
-			this.getCell(ball.p).ball = null;
+		this.cubes.forEach((cube) => {
+			this.getCell(cube.p).cube = null;
 		});
-		this.balls.forEach((ball) => {
-			ball.p = [ball.resetPosition[0], ball.resetPosition[1]];
-			ball.dots = [];
-			ball.dotsLayer.removeChildren();
-			this.getCell(ball.p).ball = ball;
+		this.cubes.forEach((cube) => {
+			cube.p = [cube.resetPosition[0], cube.resetPosition[1]];
+			cube.dots = [];
+			cube.dotsLayer.removeChildren();
+			this.getCell(cube.p).cube = cube;
 		});
 	}
 
@@ -878,60 +881,60 @@ class World {
 	 * provided, that cube is ignored (considered as non-existing).
 	 */
 	isConnected(skip?: [number, number]): boolean {
-		if (!this.balls.length) {
+		if (!this.cubes.length) {
 			return true;
 		}
 
-		// do BFS from ball 0 to check if we can reach all balls
-		let seen = Array(this.balls.length).fill(false);
+		// do BFS from cube 0 to check if we can reach all cubes
+		let seen = Array(this.cubes.length).fill(false);
 		let seenCount = 0;
 		let queue = [0];
 
 		if (skip) {
-			// mark the skipped ball so we won't visit it again
-			const skipBall = this.getBall(skip);
-			if (skipBall) {
-				const skipIndex = this.balls.indexOf(skipBall);
+			// mark the skipped cube so we won't visit it again
+			const skipCube = this.getCube(skip);
+			if (skipCube) {
+				const skipIndex = this.cubes.indexOf(skipCube);
 				seen[skipIndex] = true;
 				seenCount++;
 
 				// special case: if we were about to start our BFS with the
-				// skipped ball, then pick another ball to start with
-				// (note that if the configuration has exactly 1 ball, which
+				// skipped cube, then pick another cube to start with
+				// (note that if the configuration has exactly 1 cube, which
 				// is then skipped, the function should return true
 				// but that works because the BFS starting at the skipped
-				// ball will not encounter any balls)
-				if (skipIndex === 0 && this.balls.length > 1) {
+				// cube will not encounter any cubes)
+				if (skipIndex === 0 && this.cubes.length > 1) {
 					queue = [1];
 				}
 			}
 		}
 
 		while (queue.length !== 0) {
-			const ballId = queue.shift()!;
-			if (seen[ballId]) {
+			const cubeId = queue.shift()!;
+			if (seen[cubeId]) {
 				continue;
 			}
 			
-			const ball = this.balls[ballId];
-			seen[ballId] = true;
+			const cube = this.cubes[cubeId];
+			seen[cubeId] = true;
 			seenCount++;
 
 			const neighbors = [
-				this.getCell([ball.p[0] - 1, ball.p[1]]),
-				this.getCell([ball.p[0] + 1, ball.p[1]]),
-				this.getCell([ball.p[0], ball.p[1] - 1]),
-				this.getCell([ball.p[0], ball.p[1] + 1])
+				this.getCell([cube.p[0] - 1, cube.p[1]]),
+				this.getCell([cube.p[0] + 1, cube.p[1]]),
+				this.getCell([cube.p[0], cube.p[1] - 1]),
+				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
-				if (c.ball) {
-					queue.push(self.balls.indexOf(c.ball));
+				if (c.cube) {
+					queue.push(self.cubes.indexOf(c.cube));
 				}
 			});
 		}
 
-		return this.balls.length === seenCount;
+		return this.cubes.length === seenCount;
 	}
 
 	/**
@@ -971,7 +974,7 @@ class World {
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
-				if (!self.hasBall(c)) {
+				if (!self.hasCube(c)) {
 					queue.push(c);
 				}
 			});
@@ -986,60 +989,60 @@ class World {
 	 */
 	bounds(): [number, number, number, number] {
 		return [
-			this.balls.map((ball) => ball.p[0]).min(),
-			this.balls.map((ball) => ball.p[1]).min(),
-			this.balls.map((ball) => ball.p[0]).max(),
-			this.balls.map((ball) => ball.p[1]).max()
+			this.cubes.map((cube) => cube.p[0]).min(),
+			this.cubes.map((cube) => cube.p[1]).min(),
+			this.cubes.map((cube) => cube.p[0]).max(),
+			this.cubes.map((cube) => cube.p[1]).max()
 		];
 	}
 
 	/**
 	 * Returns the leftmost cube in the downmost row that contains cubes.
 	 */
-	downmostLeftmost(): Ball | null {
-		if (!this.balls.length) {
+	downmostLeftmost(): Cube | null {
+		if (!this.cubes.length) {
 			return null;
 		}
 
-		const lowestY = this.balls
-			.map((ball) => ball.p[1])
+		const lowestY = this.cubes
+			.map((cube) => cube.p[1])
 			.min();
 
-		const lowestX = this.balls
-			.filter((ball) => ball.p[1] === lowestY)
-			.map((ball) => ball.p[0])
+		const lowestX = this.cubes
+			.filter((cube) => cube.p[1] === lowestY)
+			.map((cube) => cube.p[0])
 			.min();
 
-		return this.getBall([lowestX, lowestY]);
+		return this.getCube([lowestX, lowestY]);
 	}
 
 	*buildBestBridge(): Generator<Move, void, undefined> {
 
 		// TODO the following are debugging tests ...
 
-		//let path = this.shortestCubePath(this.downmostLeftmost()!, this.getBall(2, 11)!);
-		//console.log(path.map(ball => ball.p));
+		//let path = this.shortestCubePath(this.downmostLeftmost()!, this.getCube(2, 11)!);
+		//console.log(path.map(cube => cube.p));
 		
-		//for (let i = 0; i < this.balls.length; i++) {
-		//	console.log(this.balls[i].p + " -> " + this.bridgeCapacity(this.balls[i]));
+		//for (let i = 0; i < this.cubes.length; i++) {
+		//	console.log(this.cubes[i].p + " -> " + this.bridgeCapacity(this.cubes[i]));
 		//}
 		
 		/*const components = this.findComponents();
-		for (let i = 0; i < this.balls.length; i++) {
-			console.log(this.balls[i].p + " -> " + components[i]);
+		for (let i = 0; i < this.cubes.length; i++) {
+			console.log(this.cubes[i].p + " -> " + components[i]);
 		}
 		console.log(this.countOneComponentCubes());*/
 
-		//console.log(this.bridgeCapacity(this.getBall(0, 10)!).map(b => b.p[0] + " " + b.p[1]));
+		//console.log(this.bridgeCapacity(this.getCube(0, 10)!).map(b => b.p[0] + " " + b.p[1]));
 		
 		// for each pair of cubes, find out how good the bridge between them is
 		let bestFrom = -1;
 		let bestTo = -1;
 		let bestValue = 0;
-		for (let i = 0; i < this.balls.length; i++) {
-			for (let j = 0; j < this.balls.length; j++) {
-				if (this.bridgePossible(this.balls[i], this.balls[j])) {
-					const value = this.bridgeValue(this.balls[i], this.balls[j]);
+		for (let i = 0; i < this.cubes.length; i++) {
+			for (let j = 0; j < this.cubes.length; j++) {
+				if (this.bridgePossible(this.cubes[i], this.cubes[j])) {
+					const value = this.bridgeValue(this.cubes[i], this.cubes[j]);
 					if (value > bestValue) {
 						bestFrom = i;
 						bestTo = j;
@@ -1048,10 +1051,10 @@ class World {
 				}
 			}
 		}
-		const from = this.balls[bestFrom];
-		const to = this.balls[bestTo];
+		const from = this.cubes[bestFrom];
+		const to = this.cubes[bestTo];
 		printStep(`Build bridge (${from.p}) \u2192 (${to.p})`);
-		yield* this.buildBridge(this.balls[bestFrom], this.balls[bestTo]);
+		yield* this.buildBridge(this.cubes[bestFrom], this.cubes[bestTo]);
 	}
 
 	/**
@@ -1068,14 +1071,14 @@ class World {
 	 */
 	colorByComponents(): void {
 		const components = this.findComponents();
-		for (let i = 0; i < this.balls.length; i++) {
-			this.balls[i].connectivity = components[i];
+		for (let i = 0; i < this.cubes.length; i++) {
+			this.cubes[i].connectivity = components[i];
 			if (components[i] === 2) {
-				this.balls[i].setColor(Color.BLUE);
+				this.cubes[i].setColor(Color.BLUE);
 			} else if (components[i] === 1) {
-				this.balls[i].setColor(Color.RED);
+				this.cubes[i].setColor(Color.RED);
 			} else {
-				this.balls[i].setColor(Color.GRAY);
+				this.cubes[i].setColor(Color.GRAY);
 			}
 		}
 	}
@@ -1084,16 +1087,16 @@ class World {
 	 * Returns a list of component IDs for each cube.
 	 */
 	findComponents(): number[] {
-		let components = Array(this.balls.length).fill(-1);
-		let seen = Array(this.balls.length).fill(false);
-		let outside = this.outsideBalls();
+		let components = Array(this.cubes.length).fill(-1);
+		let seen = Array(this.cubes.length).fill(false);
+		let outside = this.outsideCubes();
 		outside.push(outside[0]);
 		let stack = [];
 
 		// walk over the outside
 		for (let i = 0; i < outside.length; i++) {
 			const cube = outside[i];
-			const cubeId = this.balls.indexOf(cube);
+			const cubeId = this.cubes.indexOf(cube);
 
 			// if we've not seen this cube, put it on the stack
 			// else if it's the one on top of the stack, remove it and 
@@ -1122,16 +1125,16 @@ class World {
 	 * Returns a list of cubes on the outside of the configuration, in
 	 * counter-clockwise order, starting with the downmost-leftmost cube.
 	 */
-	outsideBalls(): Ball[] {
-		if (!this.balls.length) {
+	outsideCubes(): Cube[] {
+		if (!this.cubes.length) {
 			return [];
 		}
 		const start = this.downmostLeftmost()!;
-		let outside: Ball[] = [];
+		let outside: Cube[] = [];
 		let position: [number, number] = [start.p[0], start.p[1]];
 		let direction: string | null = 'S';
 		do {
-			outside.push(this.getBall(position)!);
+			outside.push(this.getCube(position)!);
 			direction = this.nextOnOutside(position, direction);
 			if (!direction) {
 				break;
@@ -1180,7 +1183,7 @@ class World {
 	 * possible if the source cube's bridge capacity is large enough, and the
 	 * bridge won't overlap existing cubes.
 	 */
-	bridgePossible(from: Ball, to: Ball): boolean {
+	bridgePossible(from: Cube, to: Cube): boolean {
 		const cellsToTake = this.bridgeCapacity(from);
 		const cellsToFill = this.bridgeCells(from.p, to.p);
 		if (cellsToTake.length < cellsToFill.length) {
@@ -1188,7 +1191,7 @@ class World {
 		}
 
 		for (let i = 0; i < cellsToFill.length; i++) {
-			if (this.hasBall(cellsToFill[i])) {
+			if (this.hasCube(cellsToFill[i])) {
 				return false;
 			}
 		}
@@ -1201,21 +1204,21 @@ class World {
 	 * a bridge is the number of cubes in a 1-component that get changed into
 	 * being in a 2-component by building that bridge.
 	 */
-	bridgeValue(from: Ball, to: Ball): number {
+	bridgeValue(from: Cube, to: Cube): number {
 		const before = this.countOneComponentCubes();
 
-		const cellsToTake = this.bridgeCapacity(from).map(ball => ball.p);
+		const cellsToTake = this.bridgeCapacity(from).map(cube => cube.p);
 		const cellsToFill = this.bridgeCells(from.p, to.p);
 
 		// we are now going to ‘virtually’ build the bridge so that we can
 		// count 1-component cubes in that situation, but we need to be
 		// careful to revert the situation afterwards!
 		for (let i = 0; i < cellsToFill.length; i++) {
-			this.moveBall(cellsToTake[i], cellsToFill[i]);
+			this.moveCube(cellsToTake[i], cellsToFill[i]);
 		}
 		const after = this.countOneComponentCubes();
 		for (let i = cellsToFill.length - 1; i >= 0; i--) {
-			this.moveBall(cellsToFill[i], cellsToTake[i]);
+			this.moveCube(cellsToFill[i], cellsToTake[i]);
 		}
 
 		return before - after;
@@ -1224,7 +1227,7 @@ class World {
 	/**
 	 * Builds a bridge between the given cubes.
 	 */
-	*buildBridge(from: Ball, to: Ball): Generator<Move, void, undefined> {
+	*buildBridge(from: Cube, to: Cube): Generator<Move, void, undefined> {
 		const cubesToTake = this.bridgeCapacity(from);
 		const cellsToFill = this.bridgeCells(from.p, to.p);
 
@@ -1238,43 +1241,43 @@ class World {
 	 * bridge from there. The list is ordered such that the cubes can be taken
 	 * one by one from the front.
 	 */
-	bridgeCapacity(b: Ball): Ball[] {
+	bridgeCapacity(b: Cube): Cube[] {
 
-		// do a BFS from b, but ignore all balls that are on the shortest path
+		// do a BFS from b, but ignore all cubes that are on the shortest path
 		// from the root to b
-		let seen = Array(this.balls.length).fill(false);
+		let seen = Array(this.cubes.length).fill(false);
 		const path = this.shortestCubePath(this.downmostLeftmost()!, b);
 		const self = this;
-		path.forEach(ball => {
-			seen[self.balls.indexOf(ball)] = true;
+		path.forEach(cube => {
+			seen[self.cubes.indexOf(cube)] = true;
 		});
-		let bId = this.balls.indexOf(b);
+		let bId = this.cubes.indexOf(b);
 		seen[bId] = false;
 		let queue = [bId];
-		let availableCubes: Ball[] = [];
+		let availableCubes: Cube[] = [];
 
 		while (queue.length !== 0) {
-			const ballId = queue.shift()!;
-			if (seen[ballId]) {
+			const cubeId = queue.shift()!;
+			if (seen[cubeId]) {
 				continue;
 			}
 			
-			const ball = this.balls[ballId];
-			seen[ballId] = true;
-			if (bId !== ballId) {
-				availableCubes.push(ball);
+			const cube = this.cubes[cubeId];
+			seen[cubeId] = true;
+			if (bId !== cubeId) {
+				availableCubes.push(cube);
 			}
 
 			const neighbors = [
-				this.getCell([ball.p[0] - 1, ball.p[1]]),
-				this.getCell([ball.p[0] + 1, ball.p[1]]),
-				this.getCell([ball.p[0], ball.p[1] - 1]),
-				this.getCell([ball.p[0], ball.p[1] + 1])
+				this.getCell([cube.p[0] - 1, cube.p[1]]),
+				this.getCell([cube.p[0] + 1, cube.p[1]]),
+				this.getCell([cube.p[0], cube.p[1] - 1]),
+				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
-				if (c.ball) {
-					queue.push(self.balls.indexOf(c.ball));
+				if (c.cube) {
+					queue.push(self.cubes.indexOf(c.cube));
 				}
 			});
 		}
@@ -1286,43 +1289,43 @@ class World {
 	 * Returns the shortest path in the 4-adjacency graph between the given
 	 * source and target cubes.
 	 */
-	shortestCubePath(from: Ball, to: Ball): Ball[] {
+	shortestCubePath(from: Cube, to: Cube): Cube[] {
 
 		// do a BFS
-		let seen = Array(this.balls.length).fill(false);
-		let parent: (Ball | null)[] = Array(this.balls.length).fill(null);
-		let queue: [number, Ball | null][] = [[this.balls.indexOf(from), null]];
+		let seen = Array(this.cubes.length).fill(false);
+		let parent: (Cube | null)[] = Array(this.cubes.length).fill(null);
+		let queue: [number, Cube | null][] = [[this.cubes.indexOf(from), null]];
 
 		while (queue.length !== 0) {
-			const [ballId, p] = queue.shift()!;
-			if (seen[ballId]) {
+			const [cubeId, p] = queue.shift()!;
+			if (seen[cubeId]) {
 				continue;
 			}
 			
-			const ball = this.balls[ballId];
-			seen[ballId] = true;
-			parent[ballId] = p;
+			const cube = this.cubes[cubeId];
+			seen[cubeId] = true;
+			parent[cubeId] = p;
 
 			const neighbors = [
-				this.getCell([ball.p[0] - 1, ball.p[1]]),
-				this.getCell([ball.p[0] + 1, ball.p[1]]),
-				this.getCell([ball.p[0], ball.p[1] - 1]),
-				this.getCell([ball.p[0], ball.p[1] + 1])
+				this.getCell([cube.p[0] - 1, cube.p[1]]),
+				this.getCell([cube.p[0] + 1, cube.p[1]]),
+				this.getCell([cube.p[0], cube.p[1] - 1]),
+				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
-				if (c.ball) {
-					queue.push([self.balls.indexOf(c.ball), ball]);
+				if (c.cube) {
+					queue.push([self.cubes.indexOf(c.cube), cube]);
 				}
 			});
 		}
 
 		// reconstruct the path
-		let ball = to;
+		let cube = to;
 		let path = [to];
-		while (ball.p[0] !== from.p[0] || ball.p[1] !== from.p[1]) {
-			ball = parent[this.balls.indexOf(ball)]!;
-			path.unshift(ball);
+		while (cube.p[0] !== from.p[0] || cube.p[1] !== from.p[1]) {
+			cube = parent[this.cubes.indexOf(cube)]!;
+			path.unshift(cube);
 		}
 
 		return path;
@@ -1371,7 +1374,7 @@ class World {
 	 */
 	serialize(): string {
 		let cubes: any = [];
-		this.balls.forEach((cube) => {
+		this.cubes.forEach((cube) => {
 			cubes.push({
 				'x': cube.resetPosition[0],
 				'y': cube.resetPosition[1],
@@ -1403,7 +1406,7 @@ class World {
 				color = new Color(cube['color'][0],
 					cube['color'][1], cube['color'][2]);
 			}
-			this.addBall([cube['x'], cube['y']], color);
+			this.addCube([cube['x'], cube['y']], color);
 		});
 	}
 }
