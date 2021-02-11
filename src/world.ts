@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import {Viewport} from 'pixi-viewport';
 
-import {Cube, Color} from './cube';
+import {Cube, Color, ComponentStatus} from './cube';
 
 type WorldCell = {
 	cube: Cube | null;
@@ -156,6 +156,7 @@ class World {
 
 	viewport = new Viewport();
 	pixi = new PIXI.Container();
+	backgroundPixi = new PIXI.Container();
 	grid: PIXI.Mesh;
 
 	cubes: Cube[] = [];
@@ -166,6 +167,7 @@ class World {
 	 * Creates the world and initializes its PIXI elements (viewport and grid).
 	 */
 	constructor() {
+		this.viewport.addChild(this.backgroundPixi);
 		this.viewport.addChild(this.pixi);
 
 		this.viewport.drag();
@@ -223,7 +225,7 @@ class World {
 			}
 			`);
 		this.grid = new PIXI.Mesh(gridGeometry, gridShader);
-		this.pixi.addChild(this.grid);
+		this.backgroundPixi.addChild(this.grid);
 	}
 
 	private getColumn(x: number): WorldCell[] {
@@ -270,6 +272,7 @@ class World {
 		this.getCell(p).cube = cube;
 		this.cubes.push(cube);
 		this.pixi.addChild(cube.pixi);
+		this.backgroundPixi.addChild(cube.backgroundPixi);
 		return cube;
 	}
 
@@ -306,6 +309,7 @@ class World {
 					`at (${p[0]}, ${p[1]})`;
 		}
 		this.pixi.removeChild(cube.pixi);
+		this.backgroundPixi.removeChild(cube.backgroundPixi);
 		this.cubes = this.cubes.filter((b) => b !== cube);
 		this.getCell(p).cube = null;
 	}
@@ -1141,13 +1145,13 @@ class World {
 		for (let i = 0; i < this.cubes.length; i++) {
 			this.cubes[i].connectivity = components[i];
 			if (components[i] === 2) {
-				this.cubes[i].setColor(Color.BLUE);
+				this.cubes[i].setComponentStatus(ComponentStatus.TWO_COMPONENT);
 			} else if (components[i] === 1) {
-				this.cubes[i].setColor(Color.RED);
+				this.cubes[i].setComponentStatus(ComponentStatus.ONE_COMPONENT);
 			} else if (components[i] === 3) {
-				this.cubes[i].setColor(Color.YELLOW);
+				this.cubes[i].setComponentStatus(ComponentStatus.CROSS);
 			} else {
-				this.cubes[i].setColor(Color.GRAY);
+				this.cubes[i].setComponentStatus(ComponentStatus.NONE);
 			}
 		}
 	}
@@ -1176,18 +1180,25 @@ class World {
 				seen[cubeId] = true;
 				stack.push(cubeId);
 			} else if (stack.length >= 1 && stack[stack.length - 2] === cubeId) {
-				let cube = stack.pop()!;
-				components[cube] = 1;  // 1-component  TODO
-				components[cubeId] = 1;  // 1-component  TODO
+				let cId = stack.pop()!;
+				components[cId] = 1;
+				components[cubeId] = 1;
 			} else {
 				while (stack.length > 1 && stack[stack.length - 1] !== cubeId) {
-					let cube = stack.pop()!;
-					components[cube] = 2;  // 2-component  TODO
+					let cId = stack.pop()!;
+					components[cId] = components[cId] === 1 ? 3 : 2;
 				}
-				let cube = stack.pop()!;
-				components[cube] = stack.length ? 3 : 2;
+				let cId = stack.pop()!;
+				components[cId] = stack.length ? 3 : 2;
 				i++;
 			}
+		}
+
+		// if origin wasn't put in a component yet, it needs to be a
+		// 1-component
+		let originId = this.cubes.indexOf(outside[0]);
+		if (components[originId] === -1) {
+			components[originId] = 1;
 		}
 
 		return components;

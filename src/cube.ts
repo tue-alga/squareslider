@@ -27,13 +27,20 @@ class Color {
 	}
 }
 
+enum ComponentStatus {
+	ONE_COMPONENT, TWO_COMPONENT, CROSS, NONE
+}
+
 class Cube {
 	p: Position;
 	resetPosition: Position;
 	color: Color;
+	componentStatus: ComponentStatus;
 	pixi = new PIXI.Container();
 	selectionCircle = new PIXI.Graphics();
 	circle = new PIXI.Graphics();
+	componentMark = new PIXI.Graphics();
+	backgroundPixi = new PIXI.Graphics();
 	dots: [number, PIXI.Graphics][] = [];
 	dotsLayer = new PIXI.Container();
 	selected: boolean = false;
@@ -43,10 +50,12 @@ class Cube {
 		this.p = [p[0], p[1]];
 		this.resetPosition = [p[0], p[1]];
 		this.color = color;
+		this.componentStatus = ComponentStatus.NONE;
 
 		this.pixi.addChild(this.dotsLayer);
 		this.pixi.addChild(this.selectionCircle);
 		this.pixi.addChild(this.circle);
+		this.pixi.addChild(this.componentMark);
 		this.updatePixi();
 
 		this.updatePosition(0, 0);
@@ -64,13 +73,45 @@ class Cube {
 
 		this.circle.clear();
 		this.circle.beginFill(this.color.toHexColor());
-		this.circle.lineStyle(4, 0x222222);
+		this.circle.lineStyle(6, 0x222222);
 		this.circle.moveTo(-40, -40);
 		this.circle.lineTo(40, -40);
 		this.circle.lineTo(40, 40);
 		this.circle.lineTo(-40, 40);
 		this.circle.closePath();
 		this.circle.endFill();
+
+		this.componentMark.clear();
+		if (this.componentStatus !== ComponentStatus.NONE) {
+			if (this.componentStatus === ComponentStatus.CROSS) {
+				this.componentMark.lineStyle(10, 0x222222);
+				this.componentMark.moveTo(-20, -20);
+				this.componentMark.lineTo(20, 20);
+				this.componentMark.moveTo(-20, 20);
+				this.componentMark.lineTo(20, -20);
+			} else {
+				let color = this.componentStatus === ComponentStatus.TWO_COMPONENT ? 0x0066CB : 0xD5004A;
+				this.componentMark.beginFill(color);
+				this.componentMark.moveTo(-18, -18);
+				this.componentMark.lineTo(18, -18);
+				this.componentMark.lineTo(18, 18);
+				this.componentMark.lineTo(-18, 18);
+				this.componentMark.closePath();
+				this.componentMark.endFill();
+			}
+		}
+
+		this.backgroundPixi.clear();
+		this.backgroundPixi.beginFill(0xB2B2B2);
+		this.backgroundPixi.lineStyle(6, 0xB2B2B2);
+		this.backgroundPixi.moveTo(40, -40);
+		this.backgroundPixi.lineTo(50, -30);
+		this.backgroundPixi.lineTo(50, 50);
+		this.backgroundPixi.lineTo(-30, 50);
+		this.backgroundPixi.lineTo(-40, 40);
+		this.backgroundPixi.lineTo(40, 40);
+		this.backgroundPixi.closePath();
+		this.backgroundPixi.endFill();
 	}
 
 	updatePosition(time: number, timeStep: number, move?: Move): void {
@@ -85,10 +126,21 @@ class Cube {
 		this.selectionCircle.visible = this.selected;
 		this.selectionCircle.x = this.circle.x;
 		this.selectionCircle.y = this.circle.y;
+
+		this.componentMark.x = this.circle.x;
+		this.componentMark.y = this.circle.y;
+
+		this.backgroundPixi.x = this.circle.x;
+		this.backgroundPixi.y = this.circle.y;
 	}
 
 	setColor(color: Color): void {
 		this.color = color;
+		this.updatePixi();
+	}
+
+	setComponentStatus(componentStatus: ComponentStatus): void {
+		this.componentStatus = componentStatus;
 		this.updatePixi();
 	}
 
@@ -111,5 +163,5 @@ class Cube {
 	}
 }
 
-export {Cube, Color, Position};
+export {Cube, Color, ComponentStatus, Position};
 

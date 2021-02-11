@@ -102,7 +102,7 @@ class CubesSimulator {
 		this.bottomBar.addChild(this.colorButton);
 
 		this.colorComponentsButton = new Button(
-			"color", "Color components");
+			"color", "Mark components");
 		this.colorComponentsButton.onClick(
 			() => {
 				this.world.colorByComponents();
@@ -164,6 +164,7 @@ class CubesSimulator {
 				this.world.addCube([x + 5, y + 2], Color.GRAY);
 			}
 		}
+		this.world.addCube([6, 5], Color.GRAY);
 		this.world.addCube([3, 2], Color.GRAY);
 		this.world.addCube([4, 2], Color.GRAY);
 
@@ -319,7 +320,9 @@ class CubesSimulator {
 
 		this.world.pixi.x = window.innerWidth / 2;
 		this.world.pixi.y = window.innerHeight / 2;
-		
+		this.world.backgroundPixi.x = window.innerWidth / 2;
+		this.world.backgroundPixi.y = window.innerHeight / 2;
+
 		this.bottomBar.setPosition(
 			window.innerWidth / 2 - this.bottomBar.getWidth() / 2,
 			window.innerHeight - this.bottomBar.getHeight());
