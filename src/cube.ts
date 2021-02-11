@@ -109,7 +109,7 @@ class Cube {
 		this.backgroundPixi.lineTo(50, 50);
 		this.backgroundPixi.lineTo(-30, 50);
 		this.backgroundPixi.lineTo(-40, 40);
-		this.backgroundPixi.lineTo(40, 40);
+		this.backgroundPixi.lineTo(-40, -40);
 		this.backgroundPixi.closePath();
 		this.backgroundPixi.endFill();
 	}

@@ -150,10 +150,9 @@ class CubesSimulator {
 		// TODO debug data
 		this.world.addCube([0, 0], Color.GRAY);
 		this.world.addCube([1, 0], Color.GRAY);
-		this.world.addCube([2, 0], Color.GRAY);
 		this.world.addCube([0, 1], Color.GRAY);
+		this.world.addCube([1, 1], Color.GRAY);
 		this.world.addCube([2, 1], Color.GRAY);
-		this.world.addCube([0, 2], Color.GRAY);
 		this.world.addCube([1, 2], Color.GRAY);
 		this.world.addCube([2, 2], Color.GRAY);
 		/*for (let x = 0; x < 3; x++) {

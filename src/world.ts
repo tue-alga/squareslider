@@ -1179,28 +1179,35 @@ class World {
 		let outside = this.outsideCubes();
 		let stack = [];
 
+		//console.log('start walk');
+
 		// walk over the outside
 		for (let i = 0; i < outside.length; i++) {
 			const cube = outside[i];
 			const cubeId = this.cubes.indexOf(cube);
+			//console.log('cube', JSON.stringify(cube.p), 'stack', JSON.stringify(stack.map(c => this.cubes[c].p)));
 
 			// if we've not seen this cube, put it on the stack
-			// else if it's the one on top of the stack, remove it and 
+			// else mark its component and pop it
 			if (!seen[cubeId]) {
 				seen[cubeId] = true;
 				stack.push(cubeId);
 			} else if (stack.length >= 1 && stack[stack.length - 2] === cubeId) {
 				let cId = stack.pop()!;
-				components[cId] = 1;
+				if (components[cId] === -1) {
+					components[cId] = 1;
+				}
 				components[cubeId] = 1;
 			} else {
+				// pop entire 2-component in one go
 				while (stack.length > 1 && stack[stack.length - 1] !== cubeId) {
 					let cId = stack.pop()!;
-					components[cId] = components[cId] === 1 ? 3 : 2;
+					components[cId] = components[cId] !== -1 ? 3 : 2;
 				}
-				let cId = stack.pop()!;
-				components[cId] = stack.length ? 3 : 2;
-				i++;
+				// mark attachment point as cross (except if stack is empty)
+				let cId = stack[stack.length - 1];
+				components[cId] = stack.length > 1 ? 3 : 2;
+				//i++;
 			}
 		}
 
