@@ -328,6 +328,13 @@ class World {
 		return has;
 	}
 
+	/**
+	 * Given a cube, returns a list of all the moves starting at that cube that
+	 * are valid.
+	 *
+	 * If the configuration would be disconnected without the given cube, no
+	 * move is valid, so an empty array is returned.
+	 */
 	validMovesFrom(p: [number, number]): Move[] {
 		let moves: Move[] = [];
 
@@ -346,6 +353,14 @@ class World {
 		return moves;
 	}
 
+	/**
+	 * Executes the shortest move path between the given cubes.
+	 *
+	 * Throws if no move path is possible.
+	 *
+	 * @param from The source coordinate, containing the cube we want to move.
+	 * @param to The target coordinate, which should be an empty cell.
+	 */
 	*shortestMovePath(from: [number, number], to: [number, number]): Generator<Move, void, undefined> {
 
 		// do BFS over the move graph
@@ -371,6 +386,10 @@ class World {
 			moves.forEach(function(move) {
 				queue.push([move.targetPosition(), move]);
 			});
+		}
+
+		if (!seen[to[0] + "," + to[1]]) {
+			throw "No move path possible from " + from + " to " + to;
 		}
 
 		// reconstruct the path
@@ -408,14 +427,14 @@ class World {
 	*moveToRectangle(): Generator<Move, void, undefined> {
 
 		while (!this.isSiphonable()) {
-			const empty = this.emptyCells();
+			const gaps = this.gaps();
 
-			const deflatables = empty.filter(this.isDeflatable.bind(this));
+			const deflatables = gaps.filter(this.isDeflatable.bind(this));
 			if (deflatables.length) {
 				yield* this.doDeflate(deflatables[0]);
 				continue;
 			}
-			const inflatables = empty.filter(this.isInflatable.bind(this));
+			const inflatables = gaps.filter(this.isInflatable.bind(this));
 			if (inflatables.length) {
 				yield* this.doInflate(inflatables[0]);
 				continue;
@@ -435,17 +454,60 @@ class World {
 	}
 
 	/**
-	 * Checks if the configuration is a single monotone 2-component.
+	 * Checks if the configuration is siphonable.
+	 *
+	 * This is the case if it is a single monotone 2-component containing
+	 * (0, 0), and not containing any gaps.
+	 *
+	 * TODO check for gaps
 	 */
 	isSiphonable(): boolean {
-		// run DFS to top-right, count number of cubes found
-		// and check if this is equal to total number of cubes
-		
-		// also check 2-componentness of boundary
 
-		// TODO this is a stub, implement this properly
-		return this.hasCube([0, 0]) &&
-				(this.hasCube([1, 0]) || this.hasCube([0, 1]));
+		// check if we contain the origin
+		if (!this.hasCube([0, 0])) {
+			return false;
+		}
+		let originId = this.cubes.indexOf(this.getCube([0, 0])!);
+
+		// check if the boundary is all part of a 2-component
+		// TODO!!!!
+
+		// check if we don't contain gaps
+		let gaps = this.gaps();
+		if (gaps.length) {
+			return false;
+		}
+
+		// check monotonicity by running BFS to top-right, counting the
+		// number of cubes found, and checking if this is equal to total
+		// number of cubes
+		let seen = Array(this.cubes.length).fill(false);
+		let seenCount = 0;
+		let queue = [originId];
+
+		while (queue.length !== 0) {
+			const cubeId = queue.shift()!;
+			if (seen[cubeId]) {
+				continue;
+			}
+			
+			const cube = this.cubes[cubeId];
+			seen[cubeId] = true;
+			seenCount++;
+
+			const topRightNeighbors = [
+				this.getCell([cube.p[0] + 1, cube.p[1]]),
+				this.getCell([cube.p[0], cube.p[1] + 1])
+			];
+			const self = this;
+			topRightNeighbors.forEach(function(c) {
+				if (c.cube) {
+					queue.push(self.cubes.indexOf(c.cube));
+				}
+			});
+		}
+
+		return this.cubes.length === seenCount;
 	}
 
 	/**
@@ -532,6 +594,9 @@ class World {
 
 		// step 1: find the target
 		const boundary = this.outsideCubes().map(b => b.p);
+
+		// remove duplicated origin in the boundary
+		boundary.pop();
 
 		if (viaLeft) {
 			// outsideCubes() returns the boundary in counter-clockwise order,
@@ -740,7 +805,9 @@ class World {
 	 * Return all gaps, sorted descending on x-coordinate, then in case of
 	 * ties descending on y-coordinate.
 	 */
-	emptyCells(): [number, number][] {
+	gaps(): [number, number][] {
+
+		// TODO fix this to be our new definition of a gap
 
 		const [minX, minY, , ] = this.bounds();
 
@@ -1077,6 +1144,8 @@ class World {
 				this.cubes[i].setColor(Color.BLUE);
 			} else if (components[i] === 1) {
 				this.cubes[i].setColor(Color.RED);
+			} else if (components[i] === 3) {
+				this.cubes[i].setColor(Color.YELLOW);
 			} else {
 				this.cubes[i].setColor(Color.GRAY);
 			}
@@ -1084,13 +1153,16 @@ class World {
 	}
 
 	/**
-	 * Returns a list of component IDs for each cube.
+	 * Returns a list of component values for each cube.
+	 *
+	 * 1 and 2 mean that the cube is in a 1- or 2-component, respectively,
+	 * while 3 means that the cube is a cross cube (that is, in more than one
+	 * component).
 	 */
 	findComponents(): number[] {
 		let components = Array(this.cubes.length).fill(-1);
 		let seen = Array(this.cubes.length).fill(false);
 		let outside = this.outsideCubes();
-		outside.push(outside[0]);
 		let stack = [];
 
 		// walk over the outside
@@ -1113,7 +1185,7 @@ class World {
 					components[cube] = 2;  // 2-component  TODO
 				}
 				let cube = stack.pop()!;
-				components[cube] = 2;  // 2-component  TODO
+				components[cube] = stack.length ? 3 : 2;
 				i++;
 			}
 		}
@@ -1124,6 +1196,8 @@ class World {
 	/**
 	 * Returns a list of cubes on the outside of the configuration, in
 	 * counter-clockwise order, starting with the downmost-leftmost cube.
+	 * The downmost-leftmost cube is included twice (both as the first and as
+	 * the last element in the list).
 	 */
 	outsideCubes(): Cube[] {
 		if (!this.cubes.length) {
@@ -1131,14 +1205,21 @@ class World {
 		}
 		const start = this.downmostLeftmost()!;
 		let outside: Cube[] = [];
+		let edgesSeen = new Set();
 		let position: [number, number] = [start.p[0], start.p[1]];
 		let direction: string | null = 'S';
-		do {
-			outside.push(this.getCube(position)!);
+		while (true) {
+			let cube = this.getCube(position)!;
+			outside.push(cube);
 			direction = this.nextOnOutside(position, direction);
 			if (!direction) {
 				break;
 			}
+			let newEdge = cube.p[0] + " " + cube.p[1] + " " + direction;
+			if (edgesSeen.has(newEdge)) {
+				break;
+			}
+			edgesSeen.add(newEdge);
 			switch (direction) {
 				case 'N':
 					position[1]++;
@@ -1153,7 +1234,7 @@ class World {
 					position[0]--;
 					break;
 			}
-		} while (position[0] !== start.p[0] || position[1] !== start.p[1]);
+		}
 		return outside;
 	}
 

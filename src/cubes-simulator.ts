@@ -44,6 +44,7 @@ class CubesSimulator {
 	private selectButton: Button;
 	private addCubeButton: Button;
 	private colorButton: Button;
+	private colorComponentsButton: Button;
 	private deleteButton: Button;
 
 	private saveButton: Button;
@@ -100,6 +101,15 @@ class CubesSimulator {
 		this.colorButton.setEnabled(false);
 		this.bottomBar.addChild(this.colorButton);
 
+		this.colorComponentsButton = new Button(
+			"color", "Color components");
+		this.colorComponentsButton.onClick(
+			() => {
+				this.world.colorByComponents();
+			}
+		);
+		this.bottomBar.addChild(this.colorComponentsButton);
+
 		this.deleteButton = new Button(
 			"delete", "Delete selected", "Delete");
 		this.deleteButton.onClick(this.delete.bind(this));
@@ -148,11 +158,14 @@ class CubesSimulator {
 		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
 
 		// TODO debug data
-		for (let x = 0; x < 4; x++) {
-			for (let y = 0; y < 4; y++) {
+		for (let x = 0; x < 3; x++) {
+			for (let y = 0; y < 3; y++) {
 				this.world.addCube([x, y], Color.GRAY);
+				this.world.addCube([x + 5, y + 2], Color.GRAY);
 			}
 		}
+		this.world.addCube([3, 2], Color.GRAY);
+		this.world.addCube([4, 2], Color.GRAY);
 
 		/*for (let x = 0; x < 8; x++) {
 			this.world.addCube([x, 0], Color.GRAY);
