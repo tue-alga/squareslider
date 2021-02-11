@@ -82,28 +82,33 @@ class Cube {
 		this.circle.endFill();
 
 		this.componentMark.clear();
-		if (this.componentStatus !== ComponentStatus.NONE) {
-			if (this.componentStatus === ComponentStatus.CROSS) {
-				this.componentMark.lineStyle(10, 0x222222);
+		switch (this.componentStatus) {
+			case ComponentStatus.CROSS:
+				this.componentMark.lineStyle(8, 0x222222);
 				this.componentMark.moveTo(-20, -20);
 				this.componentMark.lineTo(20, 20);
 				this.componentMark.moveTo(-20, 20);
 				this.componentMark.lineTo(20, -20);
-			} else {
-				let color = this.componentStatus === ComponentStatus.TWO_COMPONENT ? 0x0066CB : 0xD5004A;
-				this.componentMark.beginFill(color);
+				break;
+			case ComponentStatus.TWO_COMPONENT:
+				this.componentMark.beginFill(0x0066CB);
 				this.componentMark.moveTo(-18, -18);
 				this.componentMark.lineTo(18, -18);
 				this.componentMark.lineTo(18, 18);
 				this.componentMark.lineTo(-18, 18);
 				this.componentMark.closePath();
 				this.componentMark.endFill();
-			}
+				break;
+			case ComponentStatus.ONE_COMPONENT:
+				this.componentMark.beginFill(0xD5004A);
+				this.componentMark.drawCircle(0, 0, 19);
+				this.componentMark.endFill();
+				break;
 		}
 
 		this.backgroundPixi.clear();
-		this.backgroundPixi.beginFill(0xB2B2B2);
-		this.backgroundPixi.lineStyle(6, 0xB2B2B2);
+		this.backgroundPixi.beginFill(0x000000);
+		this.backgroundPixi.lineStyle(6, 0x000000);
 		this.backgroundPixi.moveTo(40, -40);
 		this.backgroundPixi.lineTo(50, -30);
 		this.backgroundPixi.lineTo(50, 50);

@@ -319,6 +319,8 @@ class CubesSimulator {
 		this.world.pixi.y = window.innerHeight / 2;
 		this.world.backgroundPixi.x = window.innerWidth / 2;
 		this.world.backgroundPixi.y = window.innerHeight / 2;
+		this.world.gridPixi.x = window.innerWidth / 2;
+		this.world.gridPixi.y = window.innerHeight / 2;
 
 		this.bottomBar.setPosition(
 			window.innerWidth / 2 - this.bottomBar.getWidth() / 2,

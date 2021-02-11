@@ -157,6 +157,7 @@ class World {
 	viewport = new Viewport();
 	pixi = new PIXI.Container();
 	backgroundPixi = new PIXI.Container();
+	gridPixi = new PIXI.Container();
 	grid: PIXI.Mesh;
 
 	cubes: Cube[] = [];
@@ -167,7 +168,10 @@ class World {
 	 * Creates the world and initializes its PIXI elements (viewport and grid).
 	 */
 	constructor() {
+		this.viewport.addChild(this.gridPixi);
 		this.viewport.addChild(this.backgroundPixi);
+
+		this.backgroundPixi.filters = [new PIXI.filters.AlphaFilter(0.3)];
 		this.viewport.addChild(this.pixi);
 
 		this.viewport.drag();
@@ -225,7 +229,7 @@ class World {
 			}
 			`);
 		this.grid = new PIXI.Mesh(gridGeometry, gridShader);
-		this.backgroundPixi.addChild(this.grid);
+		this.gridPixi.addChild(this.grid);
 	}
 
 	private getColumn(x: number): WorldCell[] {
@@ -433,8 +437,9 @@ class World {
 
 	*moveToRectangle(): Generator<Move, void, undefined> {
 
-		while (!this.isSiphonable()) {
+		/*while (!this.isSiphonable()) {
 			const gaps = this.gaps();
+			console.log(gaps);
 
 			const deflatables = gaps.filter(this.isDeflatable.bind(this));
 			if (deflatables.length) {
@@ -449,9 +454,10 @@ class World {
 
 			printStep('No empty cells left, done!');
 			break;
-		}
+		}*/
 
-		while (this.isSiphonable()) {
+		//while (this.isSiphonable()) {
+		while (this.hasCube([0, 1]) || this.hasCube([1, 0])) {
 			yield* this.doSiphonStep();
 		}
 
