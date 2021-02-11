@@ -1524,6 +1524,58 @@ class World {
 			this.addCube([cube['x'], cube['y']], color);
 		});
 	}
+
+	/**
+	 * Generates an Ipe drawing from this world.
+	 */
+	toIpe(): string {
+		let header = '<ipeselection pos="0 0">\n';
+		let footer = '</ipeselection>\n';
+
+		let elements = '';
+
+		// shadows
+		this.cubes.forEach((cube) => {
+			let x = 8 * cube.p[0];
+			let y = 8 * cube.p[1];
+			elements += `<path stroke="Gray 0.7" fill="Gray 0.7" pen="heavier" cap="1" join="1">
+${x + 8} ${y + 8} m
+${x + 9} ${y + 7} l
+${x + 9} ${y - 1} l
+${x + 1} ${y - 1} l
+${x} ${y} l
+${x + 8} ${y} l
+h
+</path>\n`;
+		});
+
+		// cubes
+		this.cubes.forEach((cube) => {
+			let x = 8 * cube.p[0];
+			let y = 8 * cube.p[1];
+			elements += `<path stroke="black" fill="Gray 0.9" pen="heavier" cap="1" join="1">
+${x} ${y + 8} m
+${x} ${y} l
+${x + 8} ${y} l
+${x + 8} ${y + 8} l
+h
+</path>\n`;
+
+			switch (cube.componentStatus) {
+				case ComponentStatus.TWO_COMPONENT:
+					elements += `<use layer="cubes" name="mark/square(sx)" pos="${x + 4} ${y + 4}" size="normal" stroke="Bettina blue"/>\n`;
+					break;
+				case ComponentStatus.ONE_COMPONENT:
+					elements += `<use layer="cubes" name="mark/disk(sx)" pos="${x + 4} ${y + 4}" size="normal" stroke="Bettina red"/>\n`;
+					break;
+				case ComponentStatus.CROSS:
+					elements += `<use layer="cubes" name="mark/cross(sx)" pos="${x + 4} ${y + 4}" size="4" stroke="Gray 0.2"/>\n`;
+					break;
+			}
+		});
+		
+		return header + elements + footer;
+	}
 }
 
 export {World, Move};

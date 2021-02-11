@@ -47,8 +47,10 @@ class CubesSimulator {
 	private deleteButton: Button;
 
 	private saveButton: Button;
+	private ipeButton: Button;
 
 	private textArea = document.getElementById('save-textarea') as HTMLTextAreaElement;
+	private ipeArea = document.getElementById('ipe-textarea') as HTMLTextAreaElement;
 
 	constructor(app: PIXI.Application) {
 		this.app = app;
@@ -113,17 +115,27 @@ class CubesSimulator {
 		this.saveButton.onClick(this.save.bind(this));
 		this.bottomBar.addChild(this.saveButton);
 
+		this.ipeButton = new Button(
+			"save", "Ipe export");
+		this.ipeButton.onClick(this.ipeExport.bind(this));
+		this.bottomBar.addChild(this.ipeButton);
+
 
 		// set up event handlers for dialog buttons
 		const loadButton = document.getElementById('load-button');
 		loadButton!.addEventListener('click', () => {
-			document.getElementById('dialogs')!.style.display = 'none';
+			document.getElementById('saveDialog')!.style.display = 'none';
 			this.load(this.textArea.value);
 		});
 
 		const closeButton = document.getElementById('close-button');
 		closeButton!.addEventListener('click', () => {
-			document.getElementById('dialogs')!.style.display = 'none';
+			document.getElementById('saveDialog')!.style.display = 'none';
+		});
+
+		const ipeCloseButton = document.getElementById('ipe-close-button');
+		ipeCloseButton!.addEventListener('click', () => {
+			document.getElementById('ipeDialog')!.style.display = 'none';
 		});
 
 
@@ -445,7 +457,7 @@ class CubesSimulator {
 
 	save(): void {
 		const file = this.world.serialize();
-		const dialogs = document.getElementById('dialogs');
+		const dialogs = document.getElementById('saveDialog');
 		dialogs!.style.display = 'block';
 		this.textArea.value = file;
 	}
@@ -461,6 +473,13 @@ class CubesSimulator {
 		this.world = newWorld;
 		this.app.stage.removeChildren();
 		this.setup();
+	}
+
+	ipeExport(): void {
+		const file = this.world.serialize();
+		const dialogs = document.getElementById('ipeDialog');
+		dialogs!.style.display = 'block';
+		this.ipeArea.value = this.world.toIpe();
 	}
 }
 

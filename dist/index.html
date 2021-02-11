@@ -10,7 +10,7 @@
 				font-family: "Fira Sans";
 			}
 
-			#dialogs {
+			.dialogs {
 				background-color: rgba(250, 250, 250, 0.5);
 				position: absolute;
 				top: 0;
@@ -47,7 +47,7 @@
 				text-align: center;
 			}
 
-			#save-textarea {
+			#save-textarea, #ipe-textarea {
 				width: 100%;
 				height: 200px;
 				margin-top: 20px;
@@ -63,7 +63,7 @@
 		</style>
 	</head>
 	<body>
-		<div id="dialogs">
+		<div class="dialogs" id="saveDialog">
 			<div class="dialog">
 				<div class="dialog-title">
 					Save &amp; load
@@ -75,6 +75,20 @@
 				<div class="dialog-footer">
 					<a class="button" id="load-button">Load</a>
 					<a class="button" id="close-button">Close</a>
+				</div>
+			</div>
+		</div>
+		<div class="dialogs" id="ipeDialog">
+			<div class="dialog">
+				<div class="dialog-title">
+					Ipe export
+				</div>
+				<div class="dialog-content">
+					<p>Paste the text below into Ipe.</p>
+					<textarea id="ipe-textarea"></textarea>
+				</div>
+				<div class="dialog-footer">
+					<a class="button" id="ipe-close-button">Close</a>
 				</div>
 			</div>
 		</div>
