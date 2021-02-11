@@ -273,6 +273,7 @@ class World {
 		this.cubes.push(cube);
 		this.pixi.addChild(cube.pixi);
 		this.backgroundPixi.addChild(cube.backgroundPixi);
+		this.markComponents();
 		return cube;
 	}
 
@@ -297,6 +298,7 @@ class World {
 		cube.p = [to[0], to[1]];
 		cube.updatePosition(0, 0);
 		this.getCell(to).cube = cube;
+		this.markComponents();
 	}
 
 	/**
@@ -312,6 +314,7 @@ class World {
 		this.backgroundPixi.removeChild(cube.backgroundPixi);
 		this.cubes = this.cubes.filter((b) => b !== cube);
 		this.getCell(p).cube = null;
+		this.markComponents();
 	}
 
 	/**
@@ -413,7 +416,7 @@ class World {
 		if (this.currentMove) {
 			this.currentMove.execute();
 		}
-		this.colorByComponents();
+		this.markComponents();
 
 		// now figure out the next move
 		const output = algorithm.next();
@@ -1140,7 +1143,7 @@ class World {
 	 * Colors the cubes by their connectivity, and set their connectivity
 	 * fields.
 	 */
-	colorByComponents(): void {
+	markComponents(): void {
 		const components = this.findComponents();
 		for (let i = 0; i < this.cubes.length; i++) {
 			this.cubes[i].connectivity = components[i];
@@ -1164,7 +1167,14 @@ class World {
 	 * component).
 	 */
 	findComponents(): number[] {
+
 		let components = Array(this.cubes.length).fill(-1);
+
+		// don't try to find components if the configuration is disconnected
+		if (!this.isConnected()) {
+			return components;
+		}
+
 		let seen = Array(this.cubes.length).fill(false);
 		let outside = this.outsideCubes();
 		let stack = [];
