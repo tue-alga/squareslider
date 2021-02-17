@@ -48,6 +48,7 @@ class CubesSimulator {
 
 	private saveButton: Button;
 	private ipeButton: Button;
+	private showTreeButton: Button;
 
 	private textArea = document.getElementById('save-textarea') as HTMLTextAreaElement;
 	private ipeArea = document.getElementById('ipe-textarea') as HTMLTextAreaElement;
@@ -107,6 +108,13 @@ class CubesSimulator {
 		this.deleteButton.onClick(this.delete.bind(this));
 		this.deleteButton.setEnabled(false);
 		this.bottomBar.addChild(this.deleteButton);
+
+		this.bottomBar.addChild(new Separator());
+
+		this.showTreeButton = new Button(
+			"save", "Show tree");
+		this.showTreeButton.onClick(this.showTree.bind(this));
+		this.bottomBar.addChild(this.showTreeButton);
 
 		this.bottomBar.addChild(new Separator());
 
@@ -333,6 +341,8 @@ class CubesSimulator {
 		this.world.backgroundPixi.y = window.innerHeight / 2;
 		this.world.gridPixi.x = window.innerWidth / 2;
 		this.world.gridPixi.y = window.innerHeight / 2;
+		this.world.treePixi.x = window.innerWidth / 2;
+		this.world.treePixi.y = window.innerHeight / 2;
 
 		this.bottomBar.setPosition(
 			window.innerWidth / 2 - this.bottomBar.getWidth() / 2,
@@ -453,6 +463,18 @@ class CubesSimulator {
 			}
 			this.deselect();
 		});
+	}
+
+	showTree(): void {
+		this.showTreeButton.togglePressed();
+		this.world.treePixi.visible = this.showTreeButton.isPressed();
+		this.world.backgroundPixi.visible = !this.world.treePixi.visible;
+
+		if (this.world.treePixi.visible) {
+			this.world.pixi.filters = [new PIXI.filters.AlphaFilter(0.3)];
+		} else {
+			this.world.pixi.filters = [];
+		}
 	}
 
 	save(): void {

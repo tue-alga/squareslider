@@ -171,9 +171,17 @@ class Button extends Component {
 		this.rebuildPixi();
 	}
 
+	isPressed(): boolean {
+		return this.pressed;
+	}
+
 	setIcon(icon: string): void {
 		this.icon = icon;
 		this.rebuildPixi();
+	}
+
+	togglePressed(): void {
+		this.setPressed(!this.pressed);
 	}
 
 	setTooltip(tooltip: string): void {

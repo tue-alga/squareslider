@@ -7,6 +7,8 @@ type WorldCell = {
 	cube: Cube | null;
 };
 
+type Algorithm = Generator<Move, void, undefined>;
+
 enum MoveDirection {
 	N = "N",
 	E = "E",
@@ -148,6 +150,66 @@ class Move {
 }
 
 /**
+ * Representation of the component tree.
+ */
+class ComponentTree {
+	componentType: number;
+	outsideCubes: Cube[] = [];
+	children: ComponentTree[] = [];
+
+	constructor(componentType: number) {
+		this.componentType = componentType;
+	}
+
+	centerOfMass(): [number, number] {
+		let n = this.outsideCubes.length;
+		if (n === 0) {
+			return [0, 0];
+		}
+		let xSum = 0, ySum = 0;
+		for (let cube of this.outsideCubes) {
+			xSum += cube.p[0];
+			ySum += cube.p[1];
+		}
+		return [xSum / n, ySum / n];
+	}
+
+	paintOn(pixi: PIXI.Graphics, parent?: ComponentTree): void {
+		let [x, y] = this.centerOfMass();
+		x *= 80;
+		y *= -80;
+
+		pixi.lineStyle(8, 0x222222);
+
+		if (parent) {
+			let [px, py] = parent.centerOfMass();
+			px *= 80;
+			py *= -80;
+			pixi.moveTo(px, py);
+			pixi.lineTo(x, y);
+		}
+
+		if (this.componentType === 2) {
+			pixi.beginFill(0x0066CB);
+			pixi.moveTo(x - 27, y - 27);
+			pixi.lineTo(x + 27, y - 27);
+			pixi.lineTo(x + 27, y + 27);
+			pixi.lineTo(x - 27, y + 27);
+			pixi.closePath();
+			pixi.endFill();
+		} else if (this.componentType === 1) {
+			pixi.beginFill(0xD5004A);
+			pixi.drawCircle(x, y, 28);
+			pixi.endFill();
+		}
+
+		for (let child of this.children) {
+			child.paintOn(pixi, this);
+		}
+	}
+}
+
+/**
  * Collection of cubes on the grid.
  */
 class World {
@@ -158,6 +220,7 @@ class World {
 	pixi = new PIXI.Container();
 	backgroundPixi = new PIXI.Container();
 	gridPixi = new PIXI.Container();
+	treePixi = new PIXI.Graphics();
 	grid: PIXI.Mesh;
 
 	cubes: Cube[] = [];
@@ -173,6 +236,9 @@ class World {
 
 		this.backgroundPixi.filters = [new PIXI.filters.AlphaFilter(0.3)];
 		this.viewport.addChild(this.pixi);
+
+		this.treePixi.visible = false;
+		this.viewport.addChild(this.treePixi);
 
 		this.viewport.drag();
 		this.viewport.pinch();
@@ -372,7 +438,7 @@ class World {
 	 * @param from The source coordinate, containing the cube we want to move.
 	 * @param to The target coordinate, which should be an empty cell.
 	 */
-	*shortestMovePath(from: [number, number], to: [number, number]): Generator<Move, void, undefined> {
+	*shortestMovePath(from: [number, number], to: [number, number]): Algorithm {
 
 		// do BFS over the move graph
 		let seen: {[key: string]: {'seen': boolean, 'move': Move | null}} = {};
@@ -414,7 +480,7 @@ class World {
 		yield* path;
 	}
 
-	nextStep(algorithm: Generator<Move, void, undefined>, step: number): void {
+	nextStep(algorithm: Algorithm, step: number): void {
 
 		// first actually execute the current move
 		if (this.currentMove) {
@@ -435,7 +501,25 @@ class World {
 		this.currentMove = output.value;
 	}
 
-	*moveToRectangle(): Generator<Move, void, undefined> {
+	*moveToRectangle(): Algorithm {
+
+		/*printStep('Parity square removal');
+
+		let parityCubes = this.findParityCubes();
+		//console.log(parityCubes.map(c => c.p[0] + ',' + c.p[1]));
+		for (let i = 0; i < parityCubes.length - 1; i += 2) {
+			const c1 = parityCubes[i];
+			const c2 = parityCubes[i + 1];
+			printMiniStep(`Remove parity cube ` +
+					`(${c1.p[0]}, ${c1.p[1]}) ` +
+					`by merging it with another parity cube ` +
+					`(${c2.p[0]}, ${c2.p[1]})`);
+			yield* this.mergeParityCubes(parityCubes[i], parityCubes[i + 1]);
+		}
+
+		// TODO
+		*/
+
 
 		/*while (!this.isSiphonable()) {
 			const gaps = this.gaps();
@@ -464,6 +548,50 @@ class World {
 		//yield* this.buildBestBridge();  // TODO
 		
 		//yield* this.buildBridge(this.getCube(2, 7)!, this.getCube(1, 9)!);
+	}
+
+	/**
+	 * Finds all parity cubes (1-components with consisting of only a single
+	 * cube) and returns them in order around the boundary of the
+	 * configuration.
+	 */
+	findParityCubes(): Cube[] {
+		let parityCubes: Cube[] = [];
+
+		const outside = this.outsideCubes();
+		for (let i = 1; i < outside.length - 1; i++) {
+			if (outside[i - 1] === outside[i + 1] &&
+					outside[i - 1].componentStatus === ComponentStatus.CROSS) {
+				parityCubes.push(outside[i]);
+			}
+		}
+		if (outside.length > 1 &&
+				outside[outside.length - 2] === outside[1] &&
+				outside[1].componentStatus === ComponentStatus.CROSS) {
+			parityCubes.push(outside[0]);
+		}
+
+		return parityCubes;
+	}
+
+	/**
+	 * Given two parity cubes, move the first parity cube to be adjacent to the
+	 * second one, so that they are both not parity cubes anymore.
+	 */
+	*mergeParityCubes(c1: Cube, c2: Cube): Algorithm {
+		let [x, y] = c2.p;
+		let has = this.neighbors(c2.p);
+		let target: [number, number];
+		if (has['N']) {
+			target = [x - 1, y];
+		} else if (has['W']) {
+			target = [x, y - 1];
+		} else if (has['S']) {
+			target = [x + 1, y];
+		} else if (has['E']) {
+			target = [x, y + 1];
+		}
+		yield* this.shortestMovePath(c1.p, target!);
 	}
 
 	/**
@@ -523,18 +651,36 @@ class World {
 		return this.cubes.length === seenCount;
 	}
 
+	columnEmpty(x: number): boolean {
+		for (let cube of this.cubes) {
+			if (cube.p[0] === x) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	rowEmpty(y: number): boolean {
+		for (let cube of this.cubes) {
+			if (cube.p[1] === y) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * Performs a single siphon step: removes the cube at (0, 1) or (1, 0) and
 	 * performs moves to refill it.
 	 */
-	*doSiphonStep(): Generator<Move, void, undefined> {
+	*doSiphonStep(): Algorithm {
 		printStep('Siphoning step');
 
-		if (this.hasCube([2, 0]) || this.hasCube([2, 1])) {
+		if (!this.columnEmpty(2)) {
 			yield* this.doRightSiphonRemoval();
 			yield* this.doSiphonFill(false);
 
-		} else if (this.hasCube([0, 2]) || this.hasCube([1, 2])) {
+		} else if (!this.rowEmpty(2)) {
 			yield* this.doTopSiphonRemoval();
 			yield* this.doSiphonFill(true);
 
@@ -567,7 +713,7 @@ class World {
 	/**
 	 * Removes the cube at (1, 0) and puts it in the line being built.
 	 */
-	*doRightSiphonRemoval(): Generator<Move, void, undefined> {
+	*doRightSiphonRemoval(): Algorithm {
 		printMiniStep('Siphon away (1, 0)');
 		yield new Move(this, [1, 0], MoveDirection.SW);
 		let x = 0;
@@ -581,7 +727,7 @@ class World {
 	/**
 	 * Removes the cube at (0, 1) and puts it in the line being built.
 	 */
-	*doTopSiphonRemoval(): Generator<Move, void, undefined> {
+	*doTopSiphonRemoval(): Algorithm {
 		printMiniStep('Siphon away (0, 1)');
 		let x = 0;
 		while (this.hasCube([x - 1, 0])) {
@@ -603,7 +749,7 @@ class World {
 	 * If viaLeft === true, this method fills the empty cell at (0, 1) by
 	 * using a siphoning path along the left boundary.
 	 */
-	*doSiphonFill(viaLeft: boolean): Generator<Move, void, undefined> {
+	*doSiphonFill(viaLeft: boolean): Algorithm {
 
 		// step 1: find the target
 		const boundary = this.outsideCubes().map(b => b.p);
@@ -667,6 +813,7 @@ class World {
 
 		const goal = viaLeft ? '(0, 1)' : '(1, 0)';
 		const direction = viaLeft ? 'left' : 'bottom';
+		let detectedNearParityCube = false;
 
 		// we can detect that this near cube would be a parity cube by seeing
 		// that (1) it is the S-neighbor of the target, and (2) it has no
@@ -685,6 +832,7 @@ class World {
 					`an unresolvable parity cube)`);
 			target = boundary[targetIndex - 1];
 			targetIndex--;
+			detectedNearParityCube = true;
 		} else {
 			printMiniStep(`Fill ${goal} again with a ${direction} boundary ` +
 					`siphoning path to (${target[0]}, ${target[1]})`);
@@ -742,7 +890,7 @@ class World {
 		// monotone move on that cube to get rid of it
 		const potentialFarCube = boundary[targetIndex + 1];
 		if (this.hasOneNeighbor(potentialFarCube)) {
-			if (potentialFarCube[viaLeft ? 0 : 1] === 1) {
+			if (detectedNearParityCube) {
 				printMiniStep(`We made a parity cube ` +
 						`(${potentialFarCube[0]}, ${potentialFarCube[1]}), ` +
 						`but we will fix it in the next siphoning step`);
@@ -758,7 +906,7 @@ class World {
 	 * Do any free moves (W, S, SW, WS) possible, starting from the given cube,
 	 * until it has N- and W neighbors.
 	 */
-	*doFreeMoves(p: [number, number]): Generator<Move, void, undefined> {
+	*doFreeMoves(p: [number, number]): Algorithm {
 		let has;
 		while (has = this.neighbors(p), !has['W'] || !has["N"]) {
 			let move = new Move(this, p, MoveDirection.W);
@@ -774,14 +922,14 @@ class World {
 				continue;
 			}
 			move = new Move(this, p, MoveDirection.SW);
-			if (p[0] > 1 && p[1] > 1 && move.isValid()) {
+			if (p[0] > 2 && p[1] > 0 && move.isValid()) {
 				yield move;
 				p[0]--;
 				p[1]--;
 				continue;
 			}
 			move = new Move(this, p, MoveDirection.WS);
-			if (p[0] > 1 && p[1] > 1 && move.isValid()) {
+			if (p[0] > 0 && p[1] > 2 && move.isValid()) {
 				yield move;
 				p[0]--;
 				p[1]--;
@@ -864,7 +1012,7 @@ class World {
 	/**
 	 * Performs an inflate move to fill the given gap.
 	 */
-	*doInflate([x, y]: [number, number]): Generator<Move, void, undefined> {
+	*doInflate([x, y]: [number, number]): Algorithm {
 		printStep(`Inflate move to fill gap (${x}, ${y})`);
 		yield new Move(this, [x + 1, y], MoveDirection.W);
 		yield new Move(this, [x + 1, y + 1], MoveDirection.S);
@@ -873,7 +1021,7 @@ class World {
 	/**
 	 * Performs a deflate move to fill the given gap.
 	 */
-	*doDeflate([x, y]: [number, number]): Generator<Move, void, undefined> {
+	*doDeflate([x, y]: [number, number]): Algorithm {
 
 		printStep(`Deflate move to fill gap (${x}, ${y})`);
 		const xOriginal = x;
@@ -915,7 +1063,7 @@ class World {
 	 * Starting from the given position, walk to the right until the last cube,
 	 * and shove that cube to the next row.
 	 */
-	*doTuck([x, y]: [number, number]): Generator<Move, void, undefined> {
+	*doTuck([x, y]: [number, number]): Algorithm {
 		while (this.hasCube([x + 1, y])) {
 			x++;
 		}
@@ -954,6 +1102,7 @@ class World {
 			cube.dotsLayer.removeChildren();
 			this.getCell(cube.p).cube = cube;
 		});
+		this.markComponents();
 	}
 
 	/**
@@ -1096,7 +1245,7 @@ class World {
 		return this.getCube([lowestX, lowestY]);
 	}
 
-	*buildBestBridge(): Generator<Move, void, undefined> {
+	*buildBestBridge(): Algorithm {
 
 		// TODO the following are debugging tests ...
 
@@ -1163,6 +1312,30 @@ class World {
 				this.cubes[i].setComponentStatus(ComponentStatus.NONE);
 			}
 		}
+
+		//let tree = this.makeComponentTree();
+		this.treePixi.clear();
+		/*if (tree) {
+			tree.paintOn(this.treePixi);
+		}*/
+
+		// TODO debug
+		let leaf = this.findLeaf();
+		if (leaf) {
+			//console.log('leaf:', leaf[0].p[0], leaf[0].p[1], 'component', leaf[1]);
+			this.treePixi.lineStyle(8, 0x4477dd);
+			this.treePixi.drawCircle(leaf[0].p[0] * 80, leaf[0].p[1] * -80, 28);
+
+			let slimeTarget = this.findSlimeTarget(leaf[0]);
+			//console.log('slime target:', slimeTarget.p[0], slimeTarget.p[1], 'component', leaf[1]);
+			this.treePixi.lineStyle(8, 0xdd7744);
+			this.treePixi.drawCircle(slimeTarget.p[0] * 80, slimeTarget.p[1] * -80, 28);
+		}
+		let parityCubes = this.findParityCubes();
+		this.treePixi.lineStyle(8, 0x77dd44);
+		for (let i = 0; i < parityCubes.length; i++) {
+			this.treePixi.drawCircle(parityCubes[i].p[0] * 80, parityCubes[i].p[1] * -80, 28);
+		}
 	}
 
 	/**
@@ -1225,6 +1398,124 @@ class World {
 		}
 
 		return components;
+	}
+
+	/**
+	 * Generates the component tree.
+	 */
+	makeComponentTree(): ComponentTree | null {
+
+		// don't try to find components if the configuration is disconnected
+		if (!this.isConnected()) {
+			return null;
+		}
+
+		let seen = Array(this.cubes.length).fill(false);
+		let outside = this.outsideCubes();
+		let stack = [];
+
+		//console.log('start walk');
+
+		// walk over the outside
+		let origin = outside[0];
+		let trees: ComponentTree[] = [];
+		let newBranch = false;
+		for (let i = 0; i < outside.length; i++) {
+			const cube = outside[i];
+			const cubeId = this.cubes.indexOf(cube);
+			console.log('cube', JSON.stringify(cube.p), 'stack', JSON.stringify(stack.map(c => this.cubes[c].p)));
+
+			// if we've not seen this cube, put it on the stack
+			// else mark its component and pop it
+			if (!seen[cubeId]) {
+				seen[cubeId] = true;
+				stack.push(cubeId);
+				if (cube.componentStatus !== ComponentStatus.TWO_COMPONENT) {
+					newBranch = true;
+				}
+			} else if (stack.length >= 1 && stack[stack.length - 2] === cubeId) {
+				let cId = stack.pop()!;
+
+				let tree = new ComponentTree(1);
+				if (newBranch) {
+					trees.push(tree);
+					newBranch = false;
+				} else {
+					tree.children = trees;
+					trees = [tree];
+				}
+				tree.outsideCubes.push(this.cubes[cId]);
+				tree.outsideCubes.push(this.cubes[cubeId]);
+			} else {
+				// pop entire 2-component in one go
+				let tree = new ComponentTree(2);
+
+				if (newBranch) {
+					trees.push(tree);
+					newBranch = false;
+				} else {
+					tree.children = trees;
+					trees = [tree];
+				}
+
+				while (stack.length > 1 && stack[stack.length - 1] !== cubeId) {
+					let cId = stack.pop()!;
+					//components[cId] = components[cId] !== -1 ? 3 : 2;
+					tree.outsideCubes.push(this.cubes[cId]);
+				}
+				tree.outsideCubes.push(this.cubes[stack[stack.length - 1]]);
+
+				// TODO need to do this to find triple crosses
+				/*if (stack.length > 1) {
+					let oneTree = new ComponentTree(1);
+					oneTree.children = [tree];
+					oneTree.outsideCubes.push(this.cubes[stack[stack.length - 1]]);
+					trees = [oneTree];
+				}*/
+			}
+		}
+
+		console.log(trees.length);
+
+		return trees[0]!;
+	}
+
+	/**
+	 * Finds a leaf component in the component tree.
+	 *
+	 * Returns the attachment point of the leaf component or null if the
+	 * component tree consists of only a single node.
+	 */
+	findLeaf(): [Cube, number] | null {
+
+		let seen = Array(this.cubes.length).fill(false);
+		let outside = this.outsideCubes();
+		let stack = [];
+
+		// walk over the outside
+		for (let i = 0; i < outside.length; i++) {
+			const cube = outside[i];
+			const cubeId = this.cubes.indexOf(cube);
+
+			if (!seen[cubeId]) {
+				seen[cubeId] = true;
+				stack.push(cubeId);
+			} else if (stack.length >= 1 && stack[stack.length - 2] === cubeId) {
+				return [cube, 1];
+			} else {
+				return [cube, 2];
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Finds the empty space that we are going to slime to from the given
+	 * leaf.
+	 */
+	findSlimeTarget(leaf: Cube): Cube {
+		return this.getCube([0, 0])!;
 	}
 
 	/**
@@ -1342,7 +1633,7 @@ class World {
 	/**
 	 * Builds a bridge between the given cubes.
 	 */
-	*buildBridge(from: Cube, to: Cube): Generator<Move, void, undefined> {
+	*buildBridge(from: Cube, to: Cube): Algorithm {
 		const cubesToTake = this.bridgeCapacity(from);
 		const cellsToFill = this.bridgeCells(from.p, to.p);
 
