@@ -1328,8 +1328,10 @@ class World {
 
 			let slimeTarget = this.findSlimeTarget(leaf[0]);
 			//console.log('slime target:', slimeTarget.p[0], slimeTarget.p[1], 'component', leaf[1]);
-			this.treePixi.lineStyle(8, 0xdd7744);
-			this.treePixi.drawCircle(slimeTarget.p[0] * 80, slimeTarget.p[1] * -80, 28);
+			if (slimeTarget) {
+				this.treePixi.lineStyle(8, 0xdd7744);
+				this.treePixi.drawCircle(slimeTarget.p[0] * 80, slimeTarget.p[1] * -80, 28);
+			}
 		}
 		let parityCubes = this.findParityCubes();
 		this.treePixi.lineStyle(8, 0x77dd44);
