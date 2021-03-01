@@ -1,5 +1,6 @@
 import {Algorithm, World, Move, MoveDirection} from '../world';
 import {Cube, ComponentStatus} from '../cube';
+import {Vector} from '../vector';
 
 class GatherAlgorithm {
 
@@ -7,33 +8,20 @@ class GatherAlgorithm {
 
 	*execute(): Algorithm {
 
+		//console.log(this.findBoundaryPath(this.world.getCube([1, 0])!, this.world.getCube([0, 1])!));
 		// find light square s
 		// find two empty spaces around s to be filled
 		// find extremal stable square to move in the descendants of s
 		// move it
 		// handle special pocket cases
 
-		const lightSquare = this.findLightSquare()!;
-		console.log('light square:', lightSquare.p);
-		const toFill = this.findChunkifyingNeighbors(lightSquare);
-		console.log('chunkifying:', toFill);
+		let lightSquare: Cube | null;
+		while (lightSquare = this.findLightSquare()) {
+			printStep(`Gathering light square (${lightSquare.p[0]}, ${lightSquare.p[1]})`);
 
-		for (const f of toFill) {
 			const leaf = this.findLeafInDescendants(lightSquare)!;
-			console.log('leaf:', leaf.p);
-			yield* this.world.shortestMovePath(leaf.p, f);
+			yield* this.walkBoundaryUntil(leaf, lightSquare);
 		}
-
-		//yield new Move(this.world, [0, 0], MoveDirection.WN);
-		//return;
-
-		/*try {
-			while (true) {
-				yield* this.world.doAnyFreeMove();
-			}
-		} catch (e) {
-			// continue;
-		}*/
 	}
 
 	/**
@@ -54,38 +42,6 @@ class GatherAlgorithm {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Given a light square s with bridge capacity at least 3, finds one or
-	 * two neighbors of the given square, for which filling them would include
-	 * the square into a chunk.
-	 *
-	 * The returned array may include cells that are already filled.
-	 */
-	findChunkifyingNeighbors(c: Cube): [number, number][] {
-		const has = this.world.neighbors(c.p);
-		const [x, y] = c.p;
-
-		// if we have a corner, simply fill the corner
-		if (has['N'] && has['W']) {
-			return [[x - 1, y + 1]];
-		} else if (has['N'] && has['E']) {
-			return [[x + 1, y + 1]];
-		} else if (has['S'] && has['W']) {
-			return [[x - 1, y - 1]];
-		} else if (has['S'] && has['E']) {
-			return [[x + 1, y - 1]];
-		}
-
-		// a light square cannot be a leaf, so the only possible neighbor
-		// patterns are N-S and W-E
-		// fill a remaining 4-neighbor, plus the resulting corner
-		if (has['S']) {
-			return [[x + 1, y], [x + 1, y + 1]];
-		} else {
-			return [[x, y + 1], [x + 1, y + 1]];
-		}
 	}
 
 	/**
@@ -133,6 +89,60 @@ class GatherAlgorithm {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Constructs a path over the boundary, starting from the given cube c,
+	 * ending at target (if possible 4-neighbor of target, otherwise
+	 * 8-neighbor). The path is possibly non-simple.
+	 */
+	findBoundaryPath(c: Cube, target: Cube): [number, number][] {
+		const outside = this.world.outsideCubes();
+		let p = new Vector(...c.p);
+		let path: [number, number][] = [[p.x, p.y]];
+		let i = outside.indexOf(c) + 1;
+
+		while (outside[i - 1] !== target && outside[i] !== target) {
+
+			const p1 = new Vector(...outside[i].p);
+			const p2 = new Vector(...outside[i + 1].p);
+			const p3 = new Vector(...outside[i + 2].p);
+			const direction = p2.subtract(p1);
+
+			if (p.add(direction).equals(p3)) {
+				i += 2;  // skip over concave corner
+				continue;
+			}
+
+			if (p.equals(p1.add(direction.rotateLeft()))) {
+				p = p.add(direction.invert()).add(direction.rotateRight());
+				path.push([p.x, p.y]);
+			} else if (p.equals(p1.add(direction.invert()))) {
+				p = p.add(direction).add(direction.rotateRight());
+				path.push([p.x, p.y]);
+			} else {
+				p = p.add(direction);
+				path.push([p.x, p.y]);
+				i++;
+			}
+		}
+
+		return path;
+	}
+
+	*walkBoundaryUntil(c: Cube, target: Cube): Algorithm {
+		let path = this.findBoundaryPath(c, target);
+		for (let i = 0; i < path.length - 1; i++) {
+			// TODO pockets zijn irritant
+			const cube = this.world.getCube(path[i]);
+			if (!cube) {
+				continue;
+			}
+			const move = this.world.getMoveTo(cube, path[i + 1]);
+			if (move) {
+				yield move;
+			}
+		}
 	}
 }
 

@@ -431,6 +431,20 @@ class World {
 	}
 
 	/**
+	 * Returns a move from and to the given coordinates.
+	 */
+	getMoveTo(source: Cube, target: [number, number]): Move | null {
+		const moves = this.validMovesFrom(source.p);
+		for (let move of moves) {
+			if (move.targetPosition()[0] === target[0] &&
+					move.targetPosition()[1] === target[1]) {
+				return move;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Executes the shortest move path between the given cubes.
 	 *
 	 * Throws if no move path is possible.
