@@ -501,55 +501,6 @@ class World {
 		this.currentMove = output.value;
 	}
 
-	*moveToRectangle(): Algorithm {
-
-		/*printStep('Parity square removal');
-
-		let parityCubes = this.findParityCubes();
-		//console.log(parityCubes.map(c => c.p[0] + ',' + c.p[1]));
-		for (let i = 0; i < parityCubes.length - 1; i += 2) {
-			const c1 = parityCubes[i];
-			const c2 = parityCubes[i + 1];
-			printMiniStep(`Remove parity cube ` +
-					`(${c1.p[0]}, ${c1.p[1]}) ` +
-					`by merging it with another parity cube ` +
-					`(${c2.p[0]}, ${c2.p[1]})`);
-			yield* this.mergeParityCubes(parityCubes[i], parityCubes[i + 1]);
-		}
-
-		// TODO
-		*/
-
-
-		/*while (!this.isSiphonable()) {
-			const gaps = this.gaps();
-			console.log(gaps);
-
-			const deflatables = gaps.filter(this.isDeflatable.bind(this));
-			if (deflatables.length) {
-				yield* this.doDeflate(deflatables[0]);
-				continue;
-			}
-			const inflatables = gaps.filter(this.isInflatable.bind(this));
-			if (inflatables.length) {
-				yield* this.doInflate(inflatables[0]);
-				continue;
-			}
-
-			printStep('No empty cells left, done!');
-			break;
-		}*/
-
-		//while (this.isSiphonable()) {
-		while (this.hasCube([0, 1]) || this.hasCube([1, 0])) {
-			yield* this.doSiphonStep();
-		}
-
-		//yield* this.buildBestBridge();  // TODO
-		
-		//yield* this.buildBridge(this.getCube(2, 7)!, this.getCube(1, 9)!);
-	}
-
 	/**
 	 * Finds all parity cubes (1-components with consisting of only a single
 	 * cube) and returns them in order around the boundary of the
@@ -561,13 +512,13 @@ class World {
 		const outside = this.outsideCubes();
 		for (let i = 1; i < outside.length - 1; i++) {
 			if (outside[i - 1] === outside[i + 1] &&
-					outside[i - 1].componentStatus === ComponentStatus.CROSS) {
+					outside[i - 1].componentStatus === ComponentStatus.CONNECTOR) {
 				parityCubes.push(outside[i]);
 			}
 		}
 		if (outside.length > 1 &&
 				outside[outside.length - 2] === outside[1] &&
-				outside[1].componentStatus === ComponentStatus.CROSS) {
+				outside[1].componentStatus === ComponentStatus.CONNECTOR) {
 			parityCubes.push(outside[0]);
 		}
 
@@ -902,6 +853,35 @@ class World {
 		}
 	}
 
+	*doAnyFreeMove(): Algorithm {
+
+		for (let cube of this.cubes) {
+			const has = this.neighbors(cube.p);
+			const directions = [
+				MoveDirection.S,
+				MoveDirection.W,
+				MoveDirection.SW,
+				MoveDirection.WS,
+				MoveDirection.NW,
+				MoveDirection.WN
+			];
+			const [minX, minY, maxX, maxY] = this.bounds();
+			for (let direction of directions) {
+				const move = new Move(this, cube.p, direction);
+				if (move.isValid()) {
+					const target = move.targetPosition();
+					if (target[0] >= minX && target[0] <= maxX &&
+							target[1] >= minY && target[1] <= maxY) {
+						yield move;
+						return;
+					}
+				}
+			}
+		}
+
+		throw 'no free move available';
+	}
+
 	/**
 	 * Do any free moves (W, S, SW, WS) possible, starting from the given cube,
 	 * until it has N- and W neighbors.
@@ -995,9 +975,11 @@ class World {
 			return false;
 		}
 
-		return (this.getCube([x + 1, y])!.connectivity === 2) &&
-				(this.getCube([x + 1, y + 1])!.connectivity === 2) &&
-				(this.getCube([x, y + 1])!.connectivity === 2);
+		return false; // TODO implement
+
+		//return (this.getCube([x + 1, y])!.connectivity === 2) &&
+		//		(this.getCube([x + 1, y + 1])!.connectivity === 2) &&
+		//		(this.getCube([x, y + 1])!.connectivity === 2);
 	}
 
 	isEmptyCell([x, y]: [number, number]): boolean {
@@ -1226,6 +1208,16 @@ class World {
 	}
 
 	/**
+	 * Returns the bridge limit L.
+	 */
+	bridgeLimit(): number {
+		const bounds = this.bounds();
+		const width = bounds[2] - bounds[0] + 1;
+		const height = bounds[3] - bounds[1] + 1;
+		return width + height;
+	}
+
+	/**
 	 * Returns the leftmost cube in the downmost row that contains cubes.
 	 */
 	downmostLeftmost(): Cube | null {
@@ -1301,13 +1293,13 @@ class World {
 	markComponents(): void {
 		const components = this.findComponents();
 		for (let i = 0; i < this.cubes.length; i++) {
-			this.cubes[i].connectivity = components[i];
+			const stable = this.isConnected(this.cubes[i].p);
 			if (components[i] === 2) {
-				this.cubes[i].setComponentStatus(ComponentStatus.TWO_COMPONENT);
+				this.cubes[i].setComponentStatus(stable ? ComponentStatus.CHUNK_STABLE : ComponentStatus.CHUNK_CUT);
 			} else if (components[i] === 1) {
-				this.cubes[i].setComponentStatus(ComponentStatus.ONE_COMPONENT);
+				this.cubes[i].setComponentStatus(stable ? ComponentStatus.LINK_STABLE : ComponentStatus.LINK_CUT);
 			} else if (components[i] === 3) {
-				this.cubes[i].setComponentStatus(ComponentStatus.CROSS);
+				this.cubes[i].setComponentStatus(ComponentStatus.CONNECTOR);
 			} else {
 				this.cubes[i].setComponentStatus(ComponentStatus.NONE);
 			}
@@ -1399,6 +1391,14 @@ class World {
 			components[originId] = 1;
 		}
 
+		// and all remaining cubes not in a component need to be on the inside
+		// of a 2-component
+		for (let i = 0; i < components.length; i++) {
+			if (components[i] === -1) {
+				components[i] = 2;
+			}
+		}
+
 		return components;
 	}
 
@@ -1432,7 +1432,7 @@ class World {
 			if (!seen[cubeId]) {
 				seen[cubeId] = true;
 				stack.push(cubeId);
-				if (cube.componentStatus !== ComponentStatus.TWO_COMPONENT) {
+				if (cube.componentStatus !== ComponentStatus.CHUNK_STABLE && cube.componentStatus !== ComponentStatus.CHUNK_CUT) {
 					newBranch = true;
 				}
 			} else if (stack.length >= 1 && stack[stack.length - 2] === cubeId) {
@@ -1855,14 +1855,21 @@ h
 </path>\n`;
 
 			switch (cube.componentStatus) {
-				case ComponentStatus.TWO_COMPONENT:
+				case ComponentStatus.CHUNK_STABLE:
 					elements += `<use layer="cubes" name="mark/square(sx)" pos="${x + 4} ${y + 4}" size="normal" stroke="Bettina blue"/>\n`;
 					break;
-				case ComponentStatus.ONE_COMPONENT:
+				case ComponentStatus.LINK_STABLE:
 					elements += `<use layer="cubes" name="mark/disk(sx)" pos="${x + 4} ${y + 4}" size="normal" stroke="Bettina red"/>\n`;
 					break;
-				case ComponentStatus.CROSS:
-					elements += `<use layer="cubes" name="mark/cross(sx)" pos="${x + 4} ${y + 4}" size="4" stroke="Gray 0.2"/>\n`;
+				case ComponentStatus.CHUNK_CUT:
+					elements += `<use layer="cubes" name="mark/box(sx)" pos="${x + 4} ${y + 4}" size="normal" stroke="Bettina blue"/>\n`;
+					break;
+				case ComponentStatus.LINK_CUT:
+					elements += `<use layer="cubes" name="mark/circle(sx)" pos="${x + 4} ${y + 4}" size="normal" stroke="Bettina red"/>\n`;
+					break;
+				case ComponentStatus.CONNECTOR:
+					elements += `<use layer="cubes" name="mark/box(sx)" pos="${x + 4} ${y + 4}" size="normal" stroke="Bettina blue"/>\n`;
+					elements += `<use layer="cubes" name="mark/cross(sx)" pos="${x + 4} ${y + 4}" size="normal" stroke="Bettina blue"/>\n`;
 					break;
 			}
 		});
@@ -1871,5 +1878,5 @@ h
 	}
 }
 
-export {World, Move};
+export {Algorithm, World, Move, MoveDirection};
 

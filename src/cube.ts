@@ -28,7 +28,7 @@ class Color {
 }
 
 enum ComponentStatus {
-	ONE_COMPONENT, TWO_COMPONENT, CROSS, NONE
+	LINK_CUT, LINK_STABLE, CHUNK_CUT, CHUNK_STABLE, CONNECTOR, NONE
 }
 
 class Cube {
@@ -44,7 +44,6 @@ class Cube {
 	dots: [number, PIXI.Graphics][] = [];
 	dotsLayer = new PIXI.Container();
 	selected: boolean = false;
-	connectivity = 0;
 
 	constructor(private world: World, p: [number, number], color: Color) {
 		this.p = [p[0], p[1]];
@@ -83,14 +82,19 @@ class Cube {
 
 		this.componentMark.clear();
 		switch (this.componentStatus) {
-			case ComponentStatus.CROSS:
-				this.componentMark.lineStyle(8, 0x222222);
-				this.componentMark.moveTo(-20, -20);
-				this.componentMark.lineTo(20, 20);
-				this.componentMark.moveTo(-20, 20);
-				this.componentMark.lineTo(20, -20);
+			case ComponentStatus.CONNECTOR:
+				this.componentMark.lineStyle(6, 0x0066CB);
+				this.componentMark.moveTo(-15, -15);
+				this.componentMark.lineTo(15, -15);
+				this.componentMark.lineTo(15, 15);
+				this.componentMark.lineTo(-15, 15);
+				this.componentMark.closePath();
+				this.componentMark.moveTo(-15, -15);
+				this.componentMark.lineTo(15, 15);
+				this.componentMark.moveTo(15, -15);
+				this.componentMark.lineTo(-15, 15);
 				break;
-			case ComponentStatus.TWO_COMPONENT:
+			case ComponentStatus.CHUNK_STABLE:
 				this.componentMark.beginFill(0x0066CB);
 				this.componentMark.moveTo(-18, -18);
 				this.componentMark.lineTo(18, -18);
@@ -99,10 +103,22 @@ class Cube {
 				this.componentMark.closePath();
 				this.componentMark.endFill();
 				break;
-			case ComponentStatus.ONE_COMPONENT:
+			case ComponentStatus.CHUNK_CUT:
+				this.componentMark.lineStyle(6, 0x0066CB);
+				this.componentMark.moveTo(-15, -15);
+				this.componentMark.lineTo(15, -15);
+				this.componentMark.lineTo(15, 15);
+				this.componentMark.lineTo(-15, 15);
+				this.componentMark.closePath();
+				break;
+			case ComponentStatus.LINK_STABLE:
 				this.componentMark.beginFill(0xD5004A);
 				this.componentMark.drawCircle(0, 0, 19);
 				this.componentMark.endFill();
+				break;
+			case ComponentStatus.LINK_CUT:
+				this.componentMark.lineStyle(6, 0xD5004A);
+				this.componentMark.drawCircle(0, 0, 16);
 				break;
 		}
 

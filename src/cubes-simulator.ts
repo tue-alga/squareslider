@@ -4,6 +4,8 @@ import {Cube, Color} from './cube';
 import {World, Move} from './world';
 import {Button, Separator, Toolbar} from './ui';
 
+import {GatherAlgorithm} from './algorithms/gather';
+
 enum EditMode {
 	SELECT, ADD_BALL
 }
@@ -400,7 +402,7 @@ class CubesSimulator {
 		}
 
 		if (this.selectButton.isEnabled()) {
-			this.algorithm = this.world.moveToRectangle();
+			this.algorithm = new GatherAlgorithm(this.world).execute();
 			this.deselect();
 			this.selectButton.setEnabled(false);
 			this.addCubeButton.setEnabled(false);
@@ -416,7 +418,7 @@ class CubesSimulator {
 		this.runButton.setTooltip("Pause simulation");
 
 		if (this.selectButton.isEnabled()) {
-			this.algorithm = this.world.moveToRectangle();
+			this.algorithm = new GatherAlgorithm(this.world).execute();
 			this.deselect();
 			this.selectButton.setEnabled(false);
 			this.addCubeButton.setEnabled(false);
