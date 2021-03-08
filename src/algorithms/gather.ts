@@ -15,8 +15,9 @@ class GatherAlgorithm {
 		// move it
 		// handle special pocket cases
 
+		const limit = this.world.bridgeLimit();
 		let lightSquare: Cube | null;
-		while (lightSquare = this.findLightSquare()) {
+		while (lightSquare = this.findLightSquare(limit)) {
 			printStep(`Gathering light square (${lightSquare.p[0]}, ${lightSquare.p[1]})`);
 
 			const leaf = this.findLeafInDescendants(lightSquare)!;
@@ -28,9 +29,8 @@ class GatherAlgorithm {
 	 * Finds a light square closest to the root, or null if there are no light
 	 * squares in the configuration.
 	 */
-	findLightSquare(): Cube | null {
+	findLightSquare(limit: number): Cube | null {
 		const outside = this.world.outsideCubes();
-		const limit = this.world.bridgeLimit();
 		for (let i = 0; i < outside.length; i++) {
 			const cube = outside[i];
 			if (cube.componentStatus === ComponentStatus.CONNECTOR ||

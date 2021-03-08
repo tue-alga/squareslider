@@ -78,7 +78,7 @@ class Move {
 			return false;
 		}
 
-		let has = this.world.neighbors(this.position);
+		let has = this.world.hasNeighbors(this.position);
 
 		switch (this.direction) {
 			case "N":
@@ -391,7 +391,7 @@ class World {
 	 * Returns an object with keys 'N', 'NE', 'E', etc. with booleans
 	 * indicating if the given cell has neighboring cubes in that direction.
 	 */
-	neighbors(p: [number, number]): {[key: string]: boolean} {
+	hasNeighbors(p: [number, number]): {[key: string]: boolean} {
 		const [x, y] = p;
 		let has: {[key: string]: boolean} = {};
 		has['N'] = this.hasCube([x, y + 1]);
@@ -545,7 +545,7 @@ class World {
 	 */
 	*mergeParityCubes(c1: Cube, c2: Cube): Algorithm {
 		let [x, y] = c2.p;
-		let has = this.neighbors(c2.p);
+		let has = this.hasNeighbors(c2.p);
 		let target: [number, number];
 		if (has['N']) {
 			target = [x - 1, y];
@@ -854,7 +854,7 @@ class World {
 		// step 4: if removing the target resulted in a far parity cube, do any
 		// monotone move on that cube to get rid of it
 		const potentialFarCube = boundary[targetIndex + 1];
-		if (this.hasOneNeighbor(potentialFarCube)) {
+		if (this.hasOneNeighbor(this.getCube(potentialFarCube)!)) {
 			if (detectedNearParityCube) {
 				printMiniStep(`We made a parity cube ` +
 						`(${potentialFarCube[0]}, ${potentialFarCube[1]}), ` +
@@ -870,7 +870,7 @@ class World {
 	*doAnyFreeMove(): Algorithm {
 
 		for (let cube of this.cubes) {
-			const has = this.neighbors(cube.p);
+			const has = this.hasNeighbors(cube.p);
 			const directions = [
 				MoveDirection.S,
 				MoveDirection.W,
@@ -902,7 +902,7 @@ class World {
 	 */
 	*doFreeMoves(p: [number, number]): Algorithm {
 		let has;
-		while (has = this.neighbors(p), !has['W'] || !has["N"]) {
+		while (has = this.hasNeighbors(p), !has['W'] || !has["N"]) {
 			let move = new Move(this, p, MoveDirection.W);
 			if (p[0] > 1 && move.isValid()) {
 				yield move;
@@ -935,11 +935,10 @@ class World {
 	}
 
 	/**
-	 * Checks if a cube has only one neighbor (in 4-connectivity), that is, if
-	 * it is a ‘dead end’.
+	 * Returns the degree of the given cube (in 4-connectivity).
 	 */
-	hasOneNeighbor(p: [number, number]): boolean {
-		const has = this.neighbors(p);
+	degree(c: Cube): number {
+		const has = this.hasNeighbors(c.p);
 		let count = 0;
 		if (has['N']) {
 			count++;
@@ -953,7 +952,39 @@ class World {
 		if (has['W']) {
 			count++;
 		}
-		return count === 1;
+		return count;
+	}
+
+	/**
+	 * Checks if a cube has only one neighbor (in 4-connectivity), that is, if
+	 * it is a ‘dead end’.
+	 */
+	hasOneNeighbor(c: Cube): boolean {
+		return this.degree(c) === 1;
+	}
+
+	/**
+	 * Returns a neighbor of the given cube.
+	 */
+	getOneNeighbor(c: Cube): Cube | null {
+		const [x, y] = c.p;
+		let neighbor = this.getCube([x + 1, y]);
+		if (neighbor) {
+			return neighbor;
+		}
+		neighbor = this.getCube([x - 1, y]);
+		if (neighbor) {
+			return neighbor;
+		}
+		neighbor = this.getCube([x, y + 1]);
+		if (neighbor) {
+			return neighbor;
+		}
+		neighbor = this.getCube([x, y - 1]);
+		if (neighbor) {
+			return neighbor;
+		}
+		return null;
 	}
 
 	/**
@@ -1001,7 +1032,7 @@ class World {
 			return false;
 		}
 
-		const has = this.neighbors([x, y]);
+		const has = this.hasNeighbors([x, y]);
 		return has['N'] && has['NE'] && has['E'];
 	}
 
@@ -1383,17 +1414,23 @@ class World {
 				let cId = stack.pop()!;
 				if (components[cId] === -1) {
 					components[cId] = 1;
+					//console.log(this.cubes[cId].p, components[cId]);
 				}
-				components[cubeId] = 1;
+				if (components[cubeId] === -1) {
+					components[cubeId] = 1;
+					//console.log(this.cubes[cubeId].p, components[cubeId]);
+				}
 			} else {
 				// pop entire 2-component in one go
 				while (stack.length > 1 && stack[stack.length - 1] !== cubeId) {
 					let cId = stack.pop()!;
 					components[cId] = components[cId] !== -1 ? 3 : 2;
+					//console.log(this.cubes[cId].p, components[cId]);
 				}
 				// mark attachment point as cross (except if stack is empty)
 				let cId = stack[stack.length - 1];
 				components[cId] = stack.length > 1 ? 3 : 2;
+				//console.log(this.cubes[cId].p, components[cId]);
 				//i++;
 			}
 		}
@@ -1410,6 +1447,35 @@ class World {
 		for (let i = 0; i < components.length; i++) {
 			if (components[i] === -1) {
 				components[i] = 2;
+			}
+		}
+
+		// mark loose squares as part of a chunk
+		for (let i = 0; i < components.length; i++) {
+			if (components[i] === 1 &&
+					this.degree(this.cubes[i]) === 1) {
+				const neighbor = this.getOneNeighbor(this.cubes[i])!;
+				if (components[this.cubes.indexOf(neighbor)] === 3) {
+					components[i] = 2;
+					const [x, y] = neighbor.p;
+					let cs = [
+						this.getCube([x - 1, y]),
+						this.getCube([x + 1, y]),
+						this.getCube([x, y - 1]),
+						this.getCube([x, y + 1])
+					];
+					let shouldRemoveConnector = true;
+					for (let c of cs) {
+						if (c) {
+							if (components[this.cubes.indexOf(c)] === 1) {
+								shouldRemoveConnector = false;
+							}
+						}
+					}
+					if (shouldRemoveConnector) {
+						components[this.cubes.indexOf(neighbor)] = 2;
+					}
+				}
 			}
 		}
 
@@ -1584,7 +1650,7 @@ class World {
 	 * outside, returns the direction of the next outside segment.
 	 */
 	private nextOnOutside(p: [number, number], direction: string): string | null {
-		const has = this.neighbors(p);
+		const has = this.hasNeighbors(p);
 		const bends: {[key: string]: string[]} = {
 			'N': ['E', 'N', 'W', 'S'],
 			'E': ['S', 'E', 'N', 'W'],
