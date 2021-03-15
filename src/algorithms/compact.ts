@@ -55,13 +55,20 @@ class CompactAlgorithm {
 		console.log('checking chunkiness for', source, target);
 		this.world.moveCube(source, target);
 
+		// check if all neighbors are still in a chunk, and if they are all in
+		// the same chunk
 		const neighbors = this.world.getNeighbors(source);
+		let chunk = -1;
 		for (let neighbor of neighbors) {
 			if (neighbor.componentStatus === ComponentStatus.LINK_STABLE ||
-					neighbor.componentStatus === ComponentStatus.LINK_CUT) {
+					neighbor.componentStatus === ComponentStatus.LINK_CUT ||
+					(chunk !== -1 && neighbor.chunkId !== -1 && neighbor.chunkId !== chunk)) {
 				this.world.moveCube(target, source);
 				console.log('nope!');
 				return false;
+			}
+			if (neighbor.chunkId !== -1) {
+				chunk = neighbor.chunkId;
 			}
 		}
 
