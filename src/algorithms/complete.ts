@@ -48,13 +48,14 @@ class GatherAlgorithm {
 		//	yield* this.doSiphonStep();
 		//}
 
+		/*
 		try {
 			while (true) {
 				yield* this.world.doAnyFreeMove();
 			}
 		} catch (e) {
 			// continue;
-		}
+		}*/
 
 		//yield* this.buildBestBridge();  // TODO
 		

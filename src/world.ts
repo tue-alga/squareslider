@@ -867,35 +867,6 @@ class World {
 		}
 	}
 
-	*doAnyFreeMove(): Algorithm {
-
-		for (let cube of this.cubes) {
-			const has = this.hasNeighbors(cube.p);
-			const directions = [
-				MoveDirection.S,
-				MoveDirection.W,
-				MoveDirection.SW,
-				MoveDirection.WS,
-				MoveDirection.NW,
-				MoveDirection.WN
-			];
-			const [minX, minY, maxX, maxY] = this.bounds();
-			for (let direction of directions) {
-				const move = new Move(this, cube.p, direction);
-				if (move.isValid()) {
-					const target = move.targetPosition();
-					if (target[0] >= minX && target[0] <= maxX &&
-							target[1] >= minY && target[1] <= maxY) {
-						yield move;
-						return;
-					}
-				}
-			}
-		}
-
-		throw 'no free move available';
-	}
-
 	/**
 	 * Do any free moves (W, S, SW, WS) possible, starting from the given cube,
 	 * until it has N- and W neighbors.
@@ -985,6 +956,30 @@ class World {
 			return neighbor;
 		}
 		return null;
+	}
+
+	/**
+	 * Returns all neighbors of the given grid coordinate.
+	 */
+	getNeighbors([x, y]: [number, number]): Cube[] {
+		let neighbors = [];
+		let neighbor = this.getCube([x + 1, y]);
+		if (neighbor) {
+			neighbors.push(neighbor);
+		}
+		neighbor = this.getCube([x - 1, y]);
+		if (neighbor) {
+			neighbors.push(neighbor);
+		}
+		neighbor = this.getCube([x, y + 1]);
+		if (neighbor) {
+			neighbors.push(neighbor);
+		}
+		neighbor = this.getCube([x, y - 1]);
+		if (neighbor) {
+			neighbors.push(neighbor);
+		}
+		return neighbors;
 	}
 
 	/**
@@ -1282,61 +1277,12 @@ class World {
 		return this.getCube([lowestX, lowestY]);
 	}
 
-	*buildBestBridge(): Algorithm {
-
-		// TODO the following are debugging tests ...
-
-		//let path = this.shortestCubePath(this.downmostLeftmost()!, this.getCube(2, 11)!);
-		//console.log(path.map(cube => cube.p));
-		
-		//for (let i = 0; i < this.cubes.length; i++) {
-		//	console.log(this.cubes[i].p + " -> " + this.bridgeCapacity(this.cubes[i]));
-		//}
-		
-		/*const components = this.findComponents();
-		for (let i = 0; i < this.cubes.length; i++) {
-			console.log(this.cubes[i].p + " -> " + components[i]);
-		}
-		console.log(this.countOneComponentCubes());*/
-
-		//console.log(this.bridgeCapacity(this.getCube(0, 10)!).map(b => b.p[0] + " " + b.p[1]));
-		
-		// for each pair of cubes, find out how good the bridge between them is
-		let bestFrom = -1;
-		let bestTo = -1;
-		let bestValue = 0;
-		for (let i = 0; i < this.cubes.length; i++) {
-			for (let j = 0; j < this.cubes.length; j++) {
-				if (this.bridgePossible(this.cubes[i], this.cubes[j])) {
-					const value = this.bridgeValue(this.cubes[i], this.cubes[j]);
-					if (value > bestValue) {
-						bestFrom = i;
-						bestTo = j;
-						bestValue = value;
-					}
-				}
-			}
-		}
-		const from = this.cubes[bestFrom];
-		const to = this.cubes[bestTo];
-		printStep(`Build bridge (${from.p}) \u2192 (${to.p})`);
-		yield* this.buildBridge(this.cubes[bestFrom], this.cubes[bestTo]);
-	}
-
-	/**
-	 * Returns the number of cubes in 1-components.
-	 */
-	countOneComponentCubes(): number {
-		const components = this.findComponents();
-		return components.filter(i => (i === 1)).length;
-	}
-
 	/**
 	 * Colors the cubes by their connectivity, and set their connectivity
 	 * fields.
 	 */
 	markComponents(): void {
-		const components = this.findComponents();
+		const [components, chunkIds] = this.findComponents();
 		for (let i = 0; i < this.cubes.length; i++) {
 			const stable = this.isConnected(this.cubes[i].p);
 			if (components[i] === 2) {
@@ -1348,6 +1294,7 @@ class World {
 			} else {
 				this.cubes[i].setComponentStatus(ComponentStatus.NONE);
 			}
+			this.cubes[i].setChunkId(chunkIds[i]);
 		}
 
 		//let tree = this.makeComponentTree();
@@ -1357,7 +1304,7 @@ class World {
 		}*/
 
 		// TODO debug
-		let leaf = this.findLeaf();
+		/*let leaf = this.findLeaf();
 		if (leaf) {
 			//console.log('leaf:', leaf[0].p[0], leaf[0].p[1], 'component', leaf[1]);
 			this.treePixi.lineStyle(8, 0x4477dd);
@@ -1374,28 +1321,37 @@ class World {
 		this.treePixi.lineStyle(8, 0x77dd44);
 		for (let i = 0; i < parityCubes.length; i++) {
 			this.treePixi.drawCircle(parityCubes[i].p[0] * 80, parityCubes[i].p[1] * -80, 28);
-		}
+		}*/
 	}
 
 	/**
 	 * Returns a list of component values for each cube.
 	 *
-	 * 1 and 2 mean that the cube is in a 1- or 2-component, respectively,
-	 * while 3 means that the cube is a cross cube (that is, in more than one
-	 * component).
+	 * This returns two arrays. The first array indicates for each cube the
+	 * component status: 1 and 2 mean that the cube is in a link or chunk,
+	 * respectively, while 3 means that the cube is a connector (that is, in
+	 * more than one component). The second array contains the ID of the chunk
+	 * the cube is in. If the cube is a connector and in more than one chunk,
+	 * the chunk ID of the chunk closer to the root is returned. Cubes that
+	 * are not in a chunk get chunk ID -1.
+	 *
+	 * If the configuration is disconneted, this returns -1 for both component
+	 * status and chunk IDs.
 	 */
-	findComponents(): number[] {
+	findComponents(): [number[], number[]] {
 
 		let components = Array(this.cubes.length).fill(-1);
+		let chunkIds = Array(this.cubes.length).fill(-1);
 
 		// don't try to find components if the configuration is disconnected
 		if (!this.isConnected()) {
-			return components;
+			return [components, chunkIds];
 		}
 
 		let seen = Array(this.cubes.length).fill(false);
 		let outside = this.outsideCubes();
 		let stack = [];
+		let chunksSeen = 0;
 
 		//console.log('start walk');
 
@@ -1425,13 +1381,15 @@ class World {
 				while (stack.length > 1 && stack[stack.length - 1] !== cubeId) {
 					let cId = stack.pop()!;
 					components[cId] = components[cId] !== -1 ? 3 : 2;
+					chunkIds[cId] = chunksSeen;
 					//console.log(this.cubes[cId].p, components[cId]);
 				}
 				// mark attachment point as cross (except if stack is empty)
 				let cId = stack[stack.length - 1];
 				components[cId] = stack.length > 1 ? 3 : 2;
+				chunkIds[cId] = chunksSeen;
 				//console.log(this.cubes[cId].p, components[cId]);
-				//i++;
+				chunksSeen++;
 			}
 		}
 
@@ -1448,6 +1406,7 @@ class World {
 			if (components[i] === -1) {
 				components[i] = 2;
 			}
+			// TODO mark chunk IDs somehow?
 		}
 
 		// mark loose squares as part of a chunk
@@ -1455,8 +1414,10 @@ class World {
 			if (components[i] === 1 &&
 					this.degree(this.cubes[i]) === 1) {
 				const neighbor = this.getOneNeighbor(this.cubes[i])!;
-				if (components[this.cubes.indexOf(neighbor)] === 3) {
+				const neighborIndex = this.cubes.indexOf(neighbor);
+				if (components[neighborIndex] === 3) {
 					components[i] = 2;
+					chunkIds[i] = chunkIds[neighborIndex];
 					const [x, y] = neighbor.p;
 					let cs = [
 						this.getCube([x - 1, y]),
@@ -1479,7 +1440,7 @@ class World {
 			}
 		}
 
-		return components;
+		return [components, chunkIds];
 	}
 
 	/**
@@ -1685,43 +1646,6 @@ class World {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Computes the value of the bridge between the given cubes. The value of
-	 * a bridge is the number of cubes in a 1-component that get changed into
-	 * being in a 2-component by building that bridge.
-	 */
-	bridgeValue(from: Cube, to: Cube): number {
-		const before = this.countOneComponentCubes();
-
-		const cellsToTake = this.bridgeCapacity(from).map(cube => cube.p);
-		const cellsToFill = this.bridgeCells(from.p, to.p);
-
-		// we are now going to ‘virtually’ build the bridge so that we can
-		// count 1-component cubes in that situation, but we need to be
-		// careful to revert the situation afterwards!
-		for (let i = 0; i < cellsToFill.length; i++) {
-			this.moveCube(cellsToTake[i], cellsToFill[i]);
-		}
-		const after = this.countOneComponentCubes();
-		for (let i = cellsToFill.length - 1; i >= 0; i--) {
-			this.moveCube(cellsToFill[i], cellsToTake[i]);
-		}
-
-		return before - after;
-	}
-
-	/**
-	 * Builds a bridge between the given cubes.
-	 */
-	*buildBridge(from: Cube, to: Cube): Algorithm {
-		const cubesToTake = this.bridgeCapacity(from);
-		const cellsToFill = this.bridgeCells(from.p, to.p);
-
-		for (let i = 0; i < cellsToFill.length; i++) {
-			yield* this.shortestMovePath(cubesToTake[i].p, cellsToFill[i]);
-		}
 	}
 
 	/**

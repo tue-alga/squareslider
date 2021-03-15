@@ -36,11 +36,13 @@ class Cube {
 	resetPosition: Position;
 	color: Color;
 	componentStatus: ComponentStatus;
+	chunkId: number;
 	pixi = new PIXI.Container();
 	selectionCircle = new PIXI.Graphics();
 	circle = new PIXI.Graphics();
 	componentMark = new PIXI.Graphics();
 	backgroundPixi = new PIXI.Graphics();
+	textPixi = new PIXI.Text('bla');
 	dots: [number, PIXI.Graphics][] = [];
 	dotsLayer = new PIXI.Container();
 	selected: boolean = false;
@@ -50,11 +52,13 @@ class Cube {
 		this.resetPosition = [p[0], p[1]];
 		this.color = color;
 		this.componentStatus = ComponentStatus.NONE;
+		this.chunkId = -1;
 
 		this.pixi.addChild(this.dotsLayer);
 		this.pixi.addChild(this.selectionCircle);
 		this.pixi.addChild(this.circle);
 		this.pixi.addChild(this.componentMark);
+		this.pixi.addChild(this.textPixi);
 		this.updatePixi();
 
 		this.updatePosition(0, 0);
@@ -133,6 +137,10 @@ class Cube {
 		this.backgroundPixi.lineTo(-40, -40);
 		this.backgroundPixi.closePath();
 		this.backgroundPixi.endFill();
+
+		this.textPixi.text = this.chunkId + '';
+		this.textPixi.position.x = 80 * this.p[0];
+		this.textPixi.position.y = -80 * this.p[1];
 	}
 
 	updatePosition(time: number, timeStep: number, move?: Move): void {
@@ -162,6 +170,11 @@ class Cube {
 
 	setComponentStatus(componentStatus: ComponentStatus): void {
 		this.componentStatus = componentStatus;
+		this.updatePixi();
+	}
+
+	setChunkId(chunkId: number): void {
+		this.chunkId = chunkId;
 		this.updatePixi();
 	}
 
