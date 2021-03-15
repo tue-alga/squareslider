@@ -42,7 +42,7 @@ class Cube {
 	circle = new PIXI.Graphics();
 	componentMark = new PIXI.Graphics();
 	backgroundPixi = new PIXI.Graphics();
-	textPixi = new PIXI.Text('bla');
+	//textPixi = new PIXI.Text('bla');
 	dots: [number, PIXI.Graphics][] = [];
 	dotsLayer = new PIXI.Container();
 	selected: boolean = false;
@@ -58,7 +58,7 @@ class Cube {
 		this.pixi.addChild(this.selectionCircle);
 		this.pixi.addChild(this.circle);
 		this.pixi.addChild(this.componentMark);
-		this.pixi.addChild(this.textPixi);
+		//this.pixi.addChild(this.textPixi);
 		this.updatePixi();
 
 		this.updatePosition(0, 0);
@@ -138,9 +138,9 @@ class Cube {
 		this.backgroundPixi.closePath();
 		this.backgroundPixi.endFill();
 
-		this.textPixi.text = this.chunkId + '';
+		/*this.textPixi.text = this.chunkId + '';
 		this.textPixi.position.x = 80 * this.p[0];
-		this.textPixi.position.y = -80 * this.p[1];
+		this.textPixi.position.y = -80 * this.p[1];*/
 	}
 
 	updatePosition(time: number, timeStep: number, move?: Move): void {

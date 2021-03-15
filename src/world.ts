@@ -983,6 +983,23 @@ class World {
 	}
 
 	/**
+	 * Returns all neighbors of the given grid coordinate, as a dictionary
+	 * mapping compass directions to Cubes.
+	 */
+	getNeighborMap([x, y]: [number, number]): {[direction: string]: Cube | null} {
+		let neighbors: {[direction: string]: Cube | null} = {};
+		neighbors['N'] = this.getCube([x, y + 1]);
+		neighbors['E'] = this.getCube([x + 1, y]);
+		neighbors['W'] = this.getCube([x - 1, y]);
+		neighbors['S'] = this.getCube([x, y - 1]);
+		neighbors['NE'] = this.getCube([x + 1, y + 1]);
+		neighbors['NW'] = this.getCube([x - 1, y + 1]);
+		neighbors['SW'] = this.getCube([x - 1, y - 1]);
+		neighbors['SE'] = this.getCube([x + 1, y - 1]);
+		return neighbors;
+	}
+
+	/**
 	 * Return all gaps, sorted descending on x-coordinate, then in case of
 	 * ties descending on y-coordinate.
 	 */

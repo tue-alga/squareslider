@@ -25,7 +25,7 @@ class CubesSimulator {
 	skipSiphoning: boolean = true;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
-	timeSpeed: number = 0.1;
+	timeSpeed: number = 0.25;
 
 	world: World;
 	algorithm: Generator<Move> | null = null;
