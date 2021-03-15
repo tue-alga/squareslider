@@ -31,12 +31,15 @@ class GatherAlgorithm {
 	 */
 	findLightSquare(limit: number): Cube | null {
 		const outside = this.world.outsideCubes();
+		console.log(outside);
 		for (let i = 0; i < outside.length; i++) {
 			const cube = outside[i];
 			if (cube.componentStatus === ComponentStatus.CONNECTOR ||
 					cube.componentStatus === ComponentStatus.LINK_CUT) {
 				const capacity = this.world.bridgeCapacity(cube).length;
+				console.log('capacity of', cube.p, 'is', capacity);
 				if (capacity < limit) {
+					console.log('YAY');
 					return cube;
 				}
 			}
@@ -45,8 +48,8 @@ class GatherAlgorithm {
 	}
 
 	/**
-	 * Given a light square s, return a square from the descendants of s that
-	 * can be safely removed to chunkify s.
+	 * Given a light square s, return a square from the descendants of s, not
+	 * edge-adjacent to s itself, that can be safely removed to chunkify s.
 	 */
 	findLeafInDescendants(c: Cube): Cube | null {
 
@@ -64,9 +67,16 @@ class GatherAlgorithm {
 				seen[cubeId] = true;
 				stack.push(cubeId);
 
-			} else if (stack.length >= 1 && stack[stack.length - 2] === cubeId) {
-				// found link stable square
-				return this.world.cubes[stack[stack.length - 1]];
+			} else if (stack.length > 1 && stack[stack.length - 2] === cubeId) {
+				if (stack.length > 2) {
+					// found link stable square
+					return this.world.cubes[stack[stack.length - 1]];
+				} else {
+					// in this case stack[stack.length - 1] is adjacent to c,
+					// so we don't want it... but make sure that we remove
+					// it for the stack so we can continue correctly
+					stack.pop();
+				}
 
 			} else {
 				// found leaf chunk
@@ -133,12 +143,15 @@ class GatherAlgorithm {
 	*walkBoundaryUntil(c: Cube, target: Cube): Algorithm {
 		let path = this.findBoundaryPath(c, target);
 		for (let i = 0; i < path.length - 1; i++) {
-			// TODO pockets zijn irritant
 			const cube = this.world.getCube(path[i]);
 			if (!cube) {
 				continue;
 			}
 			const move = this.world.getMoveTo(cube, path[i + 1]);
+			// it may happen that no move is possible to get to path[i + 1],
+			// for example, when we would need to enter a pocket to do so
+			// in this case, we simply do not perform the move to leave the
+			// cube where it is
 			if (move) {
 				yield move;
 			}
