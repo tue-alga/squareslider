@@ -1271,7 +1271,7 @@ class World {
 		const bounds = this.bounds();
 		const width = bounds[2] - bounds[0] + 1;
 		const height = bounds[3] - bounds[1] + 1;
-		return width + height;
+		return 2 * (width + height);
 	}
 
 	/**

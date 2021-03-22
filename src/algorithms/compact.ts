@@ -21,7 +21,12 @@ class CompactAlgorithm {
 
 	findFreeMove(): Move[] | null {
 
+		const [minX, minY, maxX, maxY] = this.world.bounds();
 		for (let cube of this.world.cubes) {
+			if (//cube.componentStatus !== ComponentStatus.LINK_STABLE &&
+					cube.componentStatus !== ComponentStatus.CHUNK_STABLE) {
+				continue;
+			}
 			const directions = [
 				MoveDirection.S,
 				MoveDirection.W,
@@ -30,17 +35,16 @@ class CompactAlgorithm {
 				MoveDirection.NW,
 				MoveDirection.WN
 			];
-			const [minX, minY, maxX, maxY] = this.world.bounds();
 			for (let direction of directions) {
 				const move = new Move(this.world, cube.p, direction);
-				if (move.isValid() && this.preservesChunkiness(
-						move.sourcePosition(), move.targetPosition()
+				const target = move.targetPosition();
+				if (move.isValidIgnoreConnectivity() &&
+						target[0] >= minX && target[1] >= minY &&
+						this.preservesChunkiness(
+							move.sourcePosition(), move.targetPosition()
 				)) {
-					const target = move.targetPosition();
-					if (target[0] >= minX && target[1] >= minY) {
-						printMiniStep(`Free move`);
-						return [move];
-					}
+					printMiniStep(`Free move`);
+					return [move];
 				}
 			}
 		}
@@ -115,7 +119,9 @@ class CompactAlgorithm {
 	preservesChunkiness(source: [number, number], target: [number, number]) {
 		if (this.world.getCube(source)!.componentStatus !==
 				ComponentStatus.CHUNK_STABLE) {
-			throw 'tried to determine if moving an unstable/non-chunk cube ' +
+			throw 'tried to determine if moving unstable/non-chunk cube ' +
+					'(' + source[0] + ', ' + source[1] + ') to ' +
+					'(' + target[0] + ', ' + target[1] + ') ' +
 					'preserves chunkiness';
 		}
 
