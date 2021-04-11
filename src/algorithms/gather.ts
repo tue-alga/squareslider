@@ -31,15 +31,12 @@ class GatherAlgorithm {
 	 */
 	findLightSquare(limit: number): Cube | null {
 		const outside = this.world.outsideCubes();
-		console.log(outside);
 		for (let i = 0; i < outside.length; i++) {
 			const cube = outside[i];
 			if (cube.componentStatus === ComponentStatus.CONNECTOR ||
 					cube.componentStatus === ComponentStatus.LINK_CUT) {
 				const capacity = this.world.bridgeCapacity(cube).length;
-				console.log('capacity of', cube.p, 'is', capacity);
 				if (capacity < limit) {
-					console.log('YAY');
 					return cube;
 				}
 			}

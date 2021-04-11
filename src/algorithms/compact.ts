@@ -4,6 +4,8 @@ import {Vector} from '../vector';
 
 class CompactAlgorithm {
 
+	CONSTRAIN_TO_CHUNK_BOUNDS = false;
+
 	constructor(public world: World) {}
 
 	*execute(): Algorithm {
@@ -40,9 +42,9 @@ class CompactAlgorithm {
 				const target = move.targetPosition();
 				if (move.isValidIgnoreConnectivity() &&
 						target[0] >= minX && target[1] >= minY &&
-						this.preservesChunkiness(
-							move.sourcePosition(), move.targetPosition()
-				)) {
+						(!this.CONSTRAIN_TO_CHUNK_BOUNDS || this.withinChunkBounds(cube.chunkId, target)) &&
+						this.preservesChunkiness(cube.p, target)
+				) {
 					printMiniStep(`Free move`);
 					return [move];
 				}
@@ -50,6 +52,21 @@ class CompactAlgorithm {
 		}
 
 		return null;
+	}
+
+	withinChunkBounds(chunkId: number, coord: [number, number]): boolean {
+		let [minX, minY, maxX, maxY] = [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY];
+		for (let cube of this.world.cubes) {
+			if (cube.chunkId === chunkId) {
+				let [x, y] = cube.p;
+				minX = Math.min(minX, x);
+				minY = Math.min(minY, y);
+				maxX = Math.max(maxX, x);
+				maxY = Math.max(maxY, y);
+			}
+		}
+		return coord[0] >= minX && coord[0] <= maxX &&
+				coord[1] >= minY && coord[1] <= maxY;
 	}
 
 	findCornerMove(): Move[] | null {
