@@ -9,6 +9,8 @@ class CompactAlgorithm {
 	constructor(public world: World) {}
 
 	*execute(): Algorithm {
+		printStep('Compacting');
+
 		// is there a free move maintaining chunkiness? do it
 		let move: Move[] | null;
 		while ((move = this.findFreeMove()) || (move = this.findCornerMove())) {
