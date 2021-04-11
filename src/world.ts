@@ -4,7 +4,7 @@ import {Viewport} from 'pixi-viewport';
 import {Cube, Color, ComponentStatus} from './cube';
 
 type WorldCell = {
-	cube: Cube | null;
+	cubeId: number | null;
 };
 
 type Algorithm = Generator<Move, void, undefined>;
@@ -309,17 +309,28 @@ class World {
 		let column = this.getColumn(x);
 		if (!column[y]) {
 			column[y] = {
-				cube: null
+				cubeId: null
 			};
 		}
 		return column[y];
 	}
 
 	/**
+	 * Returns the ID of the cube at the given location, or null if that cell is empty.
+	 */
+	getCubeId(p: [number, number]): number | null {
+		return this.getCell(p).cubeId;
+	}
+
+	/**
 	 * Returns the cube at the given location, or null if that cell is empty.
 	 */
 	getCube(p: [number, number]): Cube | null {
-		return this.getCell(p).cube;
+		const id = this.getCubeId(p);
+		if (id === null) {
+			return null;
+		}
+		return this.cubes[id];
 	}
 
 	/**
@@ -334,12 +345,12 @@ class World {
 	 * cube already exists at that location.
 	 */
 	addCube(p: [number, number], color: Color): Cube {
-		if (this.getCube(p)) {
+		if (this.hasCube(p)) {
 			throw `Tried to insert cube on top of another cube ` +
 					`at (${p[0]}, ${p[1]})`;
 		}
 		const cube = new Cube(this, p, color);
-		this.getCell(p).cube = cube;
+		this.getCell(p).cubeId = this.cubes.length;
 		this.cubes.push(cube);
 		this.pixi.addChild(cube.pixi);
 		this.backgroundPixi.addChild(cube.backgroundPixi);
@@ -353,21 +364,21 @@ class World {
 	 * exists at the target.
 	 */
 	moveCube(from: [number, number], to: [number, number]): void {
-		const cube = this.getCube(from);
-		if (!cube) {
+		if (!this.hasCube(from)) {
 			throw `Tried to move non-existing cube at ` +
 					`at (${from[0]}, ${from[1]})`;
 		}
 
-		if (this.getCube(to)) {
+		if (this.hasCube(to)) {
 			throw `Tried to move cube on top of another cube ` +
 					`at (${to[0]}, ${to[1]})`;
 		}
 
-		this.getCell(from).cube = null;
-		cube.p = [to[0], to[1]];
-		cube.updatePosition(0, 0);
-		this.getCell(to).cube = cube;
+		const id = this.getCubeId(from)!;
+		this.getCell(from).cubeId = null;
+		this.getCell(to).cubeId = id;
+		this.cubes[id].p = [to[0], to[1]];
+		this.cubes[id].updatePosition(0, 0);
 		this.markComponents();
 	}
 
@@ -382,8 +393,13 @@ class World {
 		}
 		this.pixi.removeChild(cube.pixi);
 		this.backgroundPixi.removeChild(cube.backgroundPixi);
+		this.getCell(p).cubeId = null;
 		this.cubes = this.cubes.filter((b) => b !== cube);
-		this.getCell(p).cube = null;
+		// because removing the cube from this.cubes changes the indices, we
+		// need to update the cubeIds as well
+		for (let i = 0; i < this.cubes.length; i++) {
+			this.getCell(this.cubes[i].p).cubeId = i;
+		}
 		this.markComponents();
 	}
 
@@ -607,8 +623,8 @@ class World {
 			];
 			const self = this;
 			topRightNeighbors.forEach(function(c) {
-				if (c.cube) {
-					queue.push(self.cubes.indexOf(c.cube));
+				if (c.cubeId) {
+					queue.push(c.cubeId);
 				}
 			});
 		}
@@ -1133,14 +1149,15 @@ class World {
 	 */
 	reset(): void {
 		this.cubes.forEach((cube) => {
-			this.getCell(cube.p).cube = null;
+			this.getCell(cube.p).cubeId = null;
 		});
-		this.cubes.forEach((cube) => {
+		for (let i = 0; i < this.cubes.length; i++) {
+			const cube = this.cubes[i];
 			cube.p = [cube.resetPosition[0], cube.resetPosition[1]];
 			cube.dots = [];
 			cube.dotsLayer.removeChildren();
-			this.getCell(cube.p).cube = cube;
-		});
+			this.getCell(cube.p).cubeId = i;
+		}
 		this.markComponents();
 	}
 
@@ -1196,8 +1213,8 @@ class World {
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
-				if (c.cube) {
-					queue.push(self.cubes.indexOf(c.cube));
+				if (c.cubeId) {
+					queue.push(c.cubeId);
 				}
 			});
 		}
@@ -1705,8 +1722,8 @@ class World {
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
-				if (c.cube) {
-					queue.push(self.cubes.indexOf(c.cube));
+				if (c.cubeId) {
+					queue.push(c.cubeId);
 				}
 			});
 		}
@@ -1743,8 +1760,8 @@ class World {
 			];
 			const self = this;
 			neighbors.forEach(function(c) {
-				if (c.cube) {
-					queue.push([self.cubes.indexOf(c.cube), cube]);
+				if (c.cubeId) {
+					queue.push([c.cubeId, cube]);
 				}
 			});
 		}
