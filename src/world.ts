@@ -386,14 +386,14 @@ class World {
 	 * Removes the cube at the given location; throws if no cube exists there.
 	 */
 	removeCube(p: [number, number]): void {
-		const cube = this.getCube(p);
-		if (!cube) {
+		if (!this.hasCube(p)) {
 			throw `Tried to remove non-existing cube ` +
 					`at (${p[0]}, ${p[1]})`;
 		}
+		const cube = this.getCube(p)!;
+		this.getCell(p).cubeId = null;
 		this.pixi.removeChild(cube.pixi);
 		this.backgroundPixi.removeChild(cube.backgroundPixi);
-		this.getCell(p).cubeId = null;
 		this.cubes = this.cubes.filter((b) => b !== cube);
 		// because removing the cube from this.cubes changes the indices, we
 		// need to update the cubeIds as well
@@ -589,7 +589,7 @@ class World {
 		if (!this.hasCube([0, 0])) {
 			return false;
 		}
-		let originId = this.cubes.indexOf(this.getCube([0, 0])!);
+		let originId = this.getCubeId([0, 0]);
 
 		// check if the boundary is all part of a 2-component
 		// TODO!!!!
@@ -1177,9 +1177,8 @@ class World {
 
 		if (skip) {
 			// mark the skipped cube so we won't visit it again
-			const skipCube = this.getCube(skip);
-			if (skipCube) {
-				const skipIndex = this.cubes.indexOf(skipCube);
+			const skipIndex = this.getCubeId(skip);
+			if (skipIndex) {
 				seen[skipIndex] = true;
 				seenCount++;
 
@@ -1387,13 +1386,10 @@ class World {
 		let stack = [];
 		let chunksSeen = 0;
 
-		//console.log('start walk');
-
 		// walk over the outside
 		for (let i = 0; i < outside.length; i++) {
 			const cube = outside[i];
-			const cubeId = this.cubes.indexOf(cube);
-			//console.log('cube', JSON.stringify(cube.p), 'stack', JSON.stringify(stack.map(c => this.cubes[c].p)));
+			const cubeId = this.getCubeId(cube.p)!;
 
 			// if we've not seen this cube, put it on the stack
 			// else mark its component and pop it
@@ -1404,11 +1400,9 @@ class World {
 				let cId = stack.pop()!;
 				if (components[cId] === -1) {
 					components[cId] = 1;
-					//console.log(this.cubes[cId].p, components[cId]);
 				}
 				if (components[cubeId] === -1) {
 					components[cubeId] = 1;
-					//console.log(this.cubes[cubeId].p, components[cubeId]);
 				}
 			} else {
 				// pop entire 2-component in one go
@@ -1416,20 +1410,18 @@ class World {
 					let cId = stack.pop()!;
 					components[cId] = components[cId] !== -1 ? 3 : 2;
 					chunkIds[cId] = chunksSeen;
-					//console.log(this.cubes[cId].p, components[cId]);
 				}
 				// mark attachment point as cross (except if stack is empty)
 				let cId = stack[stack.length - 1];
 				components[cId] = stack.length > 1 ? 3 : 2;
 				chunkIds[cId] = chunksSeen;
-				//console.log(this.cubes[cId].p, components[cId]);
 				chunksSeen++;
 			}
 		}
 
 		// if origin wasn't put in a component yet, it needs to be a
 		// 1-component
-		let originId = this.cubes.indexOf(outside[0]);
+		let originId = this.getCubeId(outside[0].p)!;
 		if (components[originId] === -1) {
 			components[originId] = 1;
 		}
@@ -1448,7 +1440,7 @@ class World {
 			if (components[i] === 1 &&
 					this.degree(this.cubes[i]) === 1) {
 				const neighbor = this.getOneNeighbor(this.cubes[i])!;
-				const neighborIndex = this.cubes.indexOf(neighbor);
+				const neighborIndex = this.getCubeId(neighbor.p)!;
 				if (components[neighborIndex] === 3) {
 					components[i] = 2;
 					chunkIds[i] = chunkIds[neighborIndex];
@@ -1462,13 +1454,13 @@ class World {
 					let shouldRemoveConnector = true;
 					for (let c of cs) {
 						if (c) {
-							if (components[this.cubes.indexOf(c)] === 1) {
+							if (components[this.getCubeId(c.p)!] === 1) {
 								shouldRemoveConnector = false;
 							}
 						}
 					}
 					if (shouldRemoveConnector) {
-						components[this.cubes.indexOf(neighbor)] = 2;
+						components[this.getCubeId(neighbor.p)!] = 2;
 					}
 				}
 			}
@@ -1499,8 +1491,7 @@ class World {
 		let newBranch = false;
 		for (let i = 0; i < outside.length; i++) {
 			const cube = outside[i];
-			const cubeId = this.cubes.indexOf(cube);
-			console.log('cube', JSON.stringify(cube.p), 'stack', JSON.stringify(stack.map(c => this.cubes[c].p)));
+			const cubeId = this.getCubeId(cube.p)!;
 
 			// if we've not seen this cube, put it on the stack
 			// else mark its component and pop it
@@ -1572,7 +1563,7 @@ class World {
 		// walk over the outside
 		for (let i = 0; i < outside.length; i++) {
 			const cube = outside[i];
-			const cubeId = this.cubes.indexOf(cube);
+			const cubeId = this.getCubeId(cube.p)!;
 
 			if (!seen[cubeId]) {
 				seen[cubeId] = true;
@@ -1695,9 +1686,9 @@ class World {
 		const path = this.shortestCubePath(this.downmostLeftmost()!, b);
 		const self = this;
 		path.forEach(cube => {
-			seen[self.cubes.indexOf(cube)] = true;
+			seen[self.getCubeId(cube.p)!] = true;
 		});
-		let bId = this.cubes.indexOf(b);
+		let bId = this.getCubeId(b.p)!;
 		seen[bId] = false;
 		let queue = [bId];
 		let availableCubes: Cube[] = [];
@@ -1740,7 +1731,7 @@ class World {
 		// do a BFS
 		let seen = Array(this.cubes.length).fill(false);
 		let parent: (Cube | null)[] = Array(this.cubes.length).fill(null);
-		let queue: [number, Cube | null][] = [[this.cubes.indexOf(from), null]];
+		let queue: [number, Cube | null][] = [[this.getCubeId(from.p)!, null]];
 
 		while (queue.length !== 0) {
 			const [cubeId, p] = queue.shift()!;
@@ -1770,7 +1761,7 @@ class World {
 		let cube = to;
 		let path = [to];
 		while (cube.p[0] !== from.p[0] || cube.p[1] !== from.p[1]) {
-			cube = parent[this.cubes.indexOf(cube)]!;
+			cube = parent[this.getCubeId(cube.p)!]!;
 			path.unshift(cube);
 		}
 
