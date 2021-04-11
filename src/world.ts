@@ -1178,7 +1178,7 @@ class World {
 		if (skip) {
 			// mark the skipped cube so we won't visit it again
 			const skipIndex = this.getCubeId(skip);
-			if (skipIndex) {
+			if (skipIndex !== null) {
 				seen[skipIndex] = true;
 				seenCount++;
 
