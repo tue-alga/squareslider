@@ -489,7 +489,6 @@ class World {
 			}
 
 			const moves = this.validMovesFrom(location[0]); // FIXME this allows moves that use the from cube...
-			const self = this;
 			moves.forEach(function(move) {
 				queue.push([move.targetPosition(), move]);
 			});
@@ -621,7 +620,6 @@ class World {
 				this.getCell([cube.p[0] + 1, cube.p[1]]),
 				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
-			const self = this;
 			topRightNeighbors.forEach(function(c) {
 				if (c.cubeId) {
 					queue.push(c.cubeId);
@@ -1210,7 +1208,6 @@ class World {
 				this.getCell([cube.p[0], cube.p[1] - 1]),
 				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
-			const self = this;
 			neighbors.forEach(function(c) {
 				if (c.cubeId) {
 					queue.push(c.cubeId);
@@ -1316,12 +1313,12 @@ class World {
 	 */
 	markComponents(): void {
 		const [components, chunkIds] = this.findComponents();
+		const stable = this.findCubeStability();
 		for (let i = 0; i < this.cubes.length; i++) {
-			const stable = this.isConnected(this.cubes[i].p);
 			if (components[i] === 2) {
-				this.cubes[i].setComponentStatus(stable ? ComponentStatus.CHUNK_STABLE : ComponentStatus.CHUNK_CUT);
+				this.cubes[i].setComponentStatus(stable[i] ? ComponentStatus.CHUNK_STABLE : ComponentStatus.CHUNK_CUT);
 			} else if (components[i] === 1) {
-				this.cubes[i].setComponentStatus(stable ? ComponentStatus.LINK_STABLE : ComponentStatus.LINK_CUT);
+				this.cubes[i].setComponentStatus(stable[i] ? ComponentStatus.LINK_STABLE : ComponentStatus.LINK_CUT);
 			} else if (components[i] === 3) {
 				this.cubes[i].setComponentStatus(ComponentStatus.CONNECTOR);
 			} else {
@@ -1382,7 +1379,7 @@ class World {
 		}
 
 		let seen = Array(this.cubes.length).fill(false);
-		let outside = this.outsideCubes();
+		const outside = this.outsideCubes();
 		let stack = [];
 		let chunksSeen = 0;
 
@@ -1397,7 +1394,7 @@ class World {
 				seen[cubeId] = true;
 				stack.push(cubeId);
 			} else if (stack.length >= 1 && stack[stack.length - 2] === cubeId) {
-				let cId = stack.pop()!;
+				const cId = stack.pop()!;
 				if (components[cId] === -1) {
 					components[cId] = 1;
 				}
@@ -1407,12 +1404,12 @@ class World {
 			} else {
 				// pop entire 2-component in one go
 				while (stack.length > 1 && stack[stack.length - 1] !== cubeId) {
-					let cId = stack.pop()!;
+					const cId = stack.pop()!;
 					components[cId] = components[cId] !== -1 ? 3 : 2;
 					chunkIds[cId] = chunksSeen;
 				}
 				// mark attachment point as cross (except if stack is empty)
-				let cId = stack[stack.length - 1];
+				const cId = stack[stack.length - 1];
 				components[cId] = stack.length > 1 ? 3 : 2;
 				chunkIds[cId] = chunksSeen;
 				chunksSeen++;
@@ -1421,7 +1418,7 @@ class World {
 
 		// if origin wasn't put in a component yet, it needs to be a
 		// 1-component
-		let originId = this.getCubeId(outside[0].p)!;
+		const originId = this.getCubeId(outside[0].p)!;
 		if (components[originId] === -1) {
 			components[originId] = 1;
 		}
@@ -1432,7 +1429,6 @@ class World {
 			if (components[i] === -1) {
 				components[i] = 2;
 			}
-			// TODO mark chunk IDs somehow?
 		}
 
 		// mark loose squares as part of a chunk
@@ -1470,6 +1466,62 @@ class World {
 	}
 
 	/**
+	 * Determines which cubes in the configuration are stable.
+	 *
+	 * Returns a list of booleans for each cube: true if the corresponding cube
+	 * is stable; false if it is a cut cube.
+	 */
+	findCubeStability(): boolean[] {
+		let seen = Array(this.cubes.length).fill(false);
+		let parent: (number | null)[] = Array(this.cubes.length).fill(null);
+		let depth = Array(this.cubes.length).fill(-1);
+		let low = Array(this.cubes.length).fill(-1);
+		let stable = Array(this.cubes.length).fill(true);
+		this.findCubeStabilityRecursive(0, 0, seen, parent, depth, low, stable);
+		return stable;
+	}
+
+	private findCubeStabilityRecursive(i: number, d: number,
+			seen: boolean[], parent: (number | null)[],
+			depth: number[], low: number[],
+			stable: boolean[]): void {
+
+		seen[i] = true;
+		depth[i] = d;
+		low[i] = d;
+		let cube = this.cubes[i];
+
+		const neighbors = [
+			this.getCell([cube.p[0] - 1, cube.p[1]]),
+			this.getCell([cube.p[0] + 1, cube.p[1]]),
+			this.getCell([cube.p[0], cube.p[1] - 1]),
+			this.getCell([cube.p[0], cube.p[1] + 1])
+		];
+		const self = this;
+		let cutCube = false;
+		let childCount = 0;
+		neighbors.forEach(function(c) {
+			if (c.cubeId !== null && !seen[c.cubeId]) {
+				parent[c.cubeId] = i;
+				self.findCubeStabilityRecursive(c.cubeId, d + 1,
+						seen, parent, depth, low, stable);
+				childCount++;
+				if (low[c.cubeId] >= depth[i]) {
+					cutCube = true;
+				}
+				low[i] = Math.min(low[i], low[c.cubeId]);
+			} else if (c.cubeId !== null && c.cubeId != parent[i]) {
+				low[i] = Math.min(low[i], depth[c.cubeId]);
+			}
+		});
+		if (parent[i] === null) {
+			stable[i] = childCount <= 1;
+		} else {
+			stable[i] = !cutCube;
+		}
+	}
+
+	/**
 	 * Generates the component tree.
 	 */
 	makeComponentTree(): ComponentTree | null {
@@ -1480,13 +1532,11 @@ class World {
 		}
 
 		let seen = Array(this.cubes.length).fill(false);
-		let outside = this.outsideCubes();
+		const outside = this.outsideCubes();
 		let stack = [];
 
-		//console.log('start walk');
-
 		// walk over the outside
-		let origin = outside[0];
+		const origin = outside[0];
 		let trees: ComponentTree[] = [];
 		let newBranch = false;
 		for (let i = 0; i < outside.length; i++) {
@@ -1711,7 +1761,6 @@ class World {
 				this.getCell([cube.p[0], cube.p[1] - 1]),
 				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
-			const self = this;
 			neighbors.forEach(function(c) {
 				if (c.cubeId) {
 					queue.push(c.cubeId);
@@ -1749,7 +1798,6 @@ class World {
 				this.getCell([cube.p[0], cube.p[1] - 1]),
 				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
-			const self = this;
 			neighbors.forEach(function(c) {
 				if (c.cubeId) {
 					queue.push([c.cubeId, cube]);
