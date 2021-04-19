@@ -103,6 +103,11 @@ class CompactAlgorithm {
 					];
 				}
 			}
+		}
+
+		for (let cube of this.world.cubes) {
+			const [x, y] = cube.p;
+			const neighbor = this.world.getNeighborMap(cube.p);
 
 			// bottom corner move
 			if (!neighbor['W'] && neighbor['S'] && neighbor['SW'] &&
