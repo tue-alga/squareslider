@@ -35,7 +35,7 @@ class GatherAlgorithm {
 			const cube = outside[i];
 			if (cube.componentStatus === ComponentStatus.CONNECTOR ||
 					cube.componentStatus === ComponentStatus.LINK_CUT) {
-				const capacity = this.world.bridgeCapacity(cube).length;
+				const capacity = this.world.bridgeCapacity(cube);
 				if (capacity < limit) {
 					return cube;
 				}

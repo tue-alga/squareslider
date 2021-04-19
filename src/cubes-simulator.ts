@@ -169,92 +169,6 @@ class CubesSimulator {
 		this.world.pixi.on('click', this.worldClickHandler.bind(this));
 		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
 
-		// TODO debug data
-		this.world.addCube([0, 0], Color.GRAY);
-		this.world.addCube([1, 0], Color.GRAY);
-		this.world.addCube([0, 1], Color.GRAY);
-		this.world.addCube([1, 1], Color.GRAY);
-		this.world.addCube([2, 1], Color.GRAY);
-		this.world.addCube([1, 2], Color.GRAY);
-		this.world.addCube([2, 2], Color.GRAY);
-		/*for (let x = 0; x < 3; x++) {
-			for (let y = 0; y < 3; y++) {
-				this.world.addCube([x, y], Color.GRAY);
-				this.world.addCube([x + 5, y + 2], Color.GRAY);
-			}
-		}
-		this.world.addCube([6, 5], Color.GRAY);
-		this.world.addCube([3, 2], Color.GRAY);
-		this.world.addCube([4, 2], Color.GRAY);*/
-
-		/*for (let x = 0; x < 8; x++) {
-			this.world.addCube([x, 0], Color.GRAY);
-			this.world.addCube([x, 1], Color.GRAY);
-			this.world.addCube([x, 6], Color.GRAY);
-			this.world.addCube([x, 7], Color.GRAY);
-		}
-		for (let x = 6; x < 8; x++) {
-			this.world.addCube([x, 2], Color.GRAY);
-			this.world.addCube([x, 3], Color.GRAY);
-			this.world.addCube([x, 4], Color.GRAY);
-			this.world.addCube([x, 5], Color.GRAY);
-		}*/
-
-		/*this.world.addCube(0, 0, Color.GRAY);
-		this.world.addCube(0, 1, Color.GRAY);
-		this.world.addCube(-2, 2, Color.GRAY);
-		this.world.addCube(-1, 2, Color.GRAY);
-		this.world.addCube(0, 2, Color.GRAY);
-		this.world.addCube(1, 2, Color.GRAY);
-		this.world.addCube(2, 2, Color.GRAY);
-		this.world.addCube(3, 2, Color.GRAY);
-		this.world.addCube(-2, 3, Color.GRAY);
-		this.world.addCube(3, 3, Color.GRAY);
-		this.world.addCube(-2, 4, Color.GRAY);
-		this.world.addCube(1, 4, Color.GRAY);
-		this.world.addCube(2, 4, Color.GRAY);
-		this.world.addCube(3, 4, Color.GRAY);
-		this.world.addCube(4, 4, Color.GRAY);
-		this.world.addCube(-2, 5, Color.GRAY);
-		this.world.addCube(-1, 5, Color.GRAY);
-		this.world.addCube(0, 5, Color.GRAY);
-		this.world.addCube(1, 5, Color.GRAY);
-		this.world.addCube(4, 5, Color.GRAY);
-		this.world.addCube(0, 6, Color.GRAY);
-		this.world.addCube(3, 6, Color.GRAY);
-		this.world.addCube(4, 6, Color.GRAY);
-		this.world.addCube(0, 7, Color.GRAY);
-		this.world.addCube(1, 7, Color.GRAY);
-		this.world.addCube(2, 7, Color.GRAY);
-		this.world.addCube(3, 7, Color.GRAY);
-		this.world.addCube(1, 8, Color.GRAY);
-		this.world.addCube(1, 9, Color.GRAY);
-		this.world.addCube(-1, 10, Color.GRAY);
-		this.world.addCube(0, 10, Color.GRAY);
-		this.world.addCube(1, 10, Color.GRAY);
-		this.world.addCube(2, 10, Color.GRAY);
-		this.world.addCube(-1, 11, Color.GRAY);
-		this.world.addCube(2, 11, Color.GRAY);
-		this.world.addCube(-1, 12, Color.GRAY);
-		this.world.addCube(1, 12, Color.GRAY);
-		this.world.addCube(2, 12, Color.GRAY);
-		this.world.addCube(-1, 13, Color.GRAY);
-		this.world.addCube(0, 13, Color.GRAY);
-		this.world.addCube(1, 13, Color.GRAY);
-		// tail
-		this.world.addCube(5, 5, Color.GRAY);
-		this.world.addCube(6, 5, Color.GRAY);
-		this.world.addCube(7, 5, Color.GRAY);
-		this.world.addCube(8, 5, Color.GRAY);
-		this.world.addCube(9, 5, Color.GRAY);
-		this.world.addCube(7, 6, Color.GRAY);
-		this.world.addCube(8, 6, Color.GRAY);
-		this.world.addCube(9, 6, Color.GRAY);
-		this.world.addCube(7, 7, Color.GRAY);
-		this.world.addCube(8, 7, Color.GRAY);
-		this.world.addCube(9, 7, Color.GRAY);*/
-		// TODO debug data until here
-
 		// key handlers
 		window.addEventListener("keydown", (event: KeyboardEvent) => {
 			if (event.key === " ") {
@@ -363,6 +277,7 @@ class CubesSimulator {
 			if (this.editMode === EditMode.SELECT) {
 				this.deselect();
 				const cube = this.world.getCube([Math.round(x), Math.round(y)]);
+				console.log([Math.round(x), Math.round(y)]);
 				if (cube) {
 					this.deselect();
 					this.select(cube);

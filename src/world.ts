@@ -1374,7 +1374,7 @@ class World {
 		let chunkIds = Array(this.cubes.length).fill(-1);
 
 		// don't try to find components if the configuration is disconnected
-		if (!this.isConnected()) {
+		if (!this.cubes.length || !this.isConnected()) {
 			return [components, chunkIds];
 		}
 
@@ -1472,6 +1472,9 @@ class World {
 	 * is stable; false if it is a cut cube.
 	 */
 	findCubeStability(): boolean[] {
+		if (!this.cubes.length) {
+			return [];
+		}
 		let seen = Array(this.cubes.length).fill(false);
 		let parent: (number | null)[] = Array(this.cubes.length).fill(null);
 		let depth = Array(this.cubes.length).fill(-1);
@@ -1703,56 +1706,29 @@ class World {
 	}
 
 	/**
-	 * Checks if a bridge is possible between the given cubes. A bridge is
-	 * possible if the source cube's bridge capacity is large enough, and the
-	 * bridge won't overlap existing cubes.
+	 * Given a cube, determines the number of cubes in its descendant(s).
 	 */
-	bridgePossible(from: Cube, to: Cube): boolean {
-		const cellsToTake = this.bridgeCapacity(from);
-		const cellsToFill = this.bridgeCells(from.p, to.p);
-		if (cellsToTake.length < cellsToFill.length) {
-			return false;
-		}
+	bridgeCapacity(b: Cube): number {
 
-		for (let i = 0; i < cellsToFill.length; i++) {
-			if (this.hasCube(cellsToFill[i])) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Given a cube, determines a list of cubes that are available to build a
-	 * bridge from there. The list is ordered such that the cubes can be taken
-	 * one by one from the front.
-	 */
-	bridgeCapacity(b: Cube): Cube[] {
-
-		// do a BFS from b, but ignore all cubes that are on the shortest path
-		// from the root to b
+		// do a BFS from the root, but ignore b
 		let seen = Array(this.cubes.length).fill(false);
-		const path = this.shortestCubePath(this.downmostLeftmost()!, b);
-		const self = this;
-		path.forEach(cube => {
-			seen[self.getCubeId(cube.p)!] = true;
-		});
-		let bId = this.getCubeId(b.p)!;
-		seen[bId] = false;
-		let queue = [bId];
-		let availableCubes: Cube[] = [];
+		const bId = this.getCubeId(b.p)!;
+		seen[bId] = true;
+		let cubeCount = 1;
+
+		const originId = this.getCubeId(this.downmostLeftmost()!.p);
+		let queue = [originId];
 
 		while (queue.length !== 0) {
 			const cubeId = queue.shift()!;
 			if (seen[cubeId]) {
 				continue;
 			}
-			
+
 			const cube = this.cubes[cubeId];
 			seen[cubeId] = true;
 			if (bId !== cubeId) {
-				availableCubes.push(cube);
+				cubeCount++;
 			}
 
 			const neighbors = [
@@ -1768,7 +1744,7 @@ class World {
 			});
 		}
 
-		return availableCubes.reverse();
+		return this.cubes.length - cubeCount;
 	}
 
 	/**
