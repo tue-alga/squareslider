@@ -37,6 +37,7 @@ class Cube {
 	color: Color;
 	componentStatus: ComponentStatus;
 	chunkId: number;
+	onBoundary: boolean = false;
 	pixi = new PIXI.Container();
 	selectionCircle = new PIXI.Graphics();
 	circle = new PIXI.Graphics();

@@ -1342,31 +1342,13 @@ class World {
 			this.cubes[i].setChunkId(chunkIds[i]);
 		}
 
-		//let tree = this.makeComponentTree();
-		this.treePixi.clear();
-		/*if (tree) {
-			tree.paintOn(this.treePixi);
-		}*/
-
-		// TODO debug
-		/*let leaf = this.findLeaf();
-		if (leaf) {
-			//console.log('leaf:', leaf[0].p[0], leaf[0].p[1], 'component', leaf[1]);
-			this.treePixi.lineStyle(8, 0x4477dd);
-			this.treePixi.drawCircle(leaf[0].p[0] * 80, leaf[0].p[1] * -80, 28);
-
-			let slimeTarget = this.findSlimeTarget(leaf[0]);
-			//console.log('slime target:', slimeTarget.p[0], slimeTarget.p[1], 'component', leaf[1]);
-			if (slimeTarget) {
-				this.treePixi.lineStyle(8, 0xdd7744);
-				this.treePixi.drawCircle(slimeTarget.p[0] * 80, slimeTarget.p[1] * -80, 28);
-			}
+		for (const c of this.cubes) {
+			c.onBoundary = false;
 		}
-		let parityCubes = this.findParityCubes();
-		this.treePixi.lineStyle(8, 0x77dd44);
-		for (let i = 0; i < parityCubes.length; i++) {
-			this.treePixi.drawCircle(parityCubes[i].p[0] * 80, parityCubes[i].p[1] * -80, 28);
-		}*/
+
+		for (const c of this.outsideCubes()) {
+			c.onBoundary = true;
+		}
 	}
 
 	/**

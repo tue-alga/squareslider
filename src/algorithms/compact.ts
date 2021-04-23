@@ -5,6 +5,7 @@ import {Vector} from '../vector';
 class CompactAlgorithm {
 
 	CONSTRAIN_TO_CHUNK_BOUNDS = false;
+	CORNER_MOVES_ONLY_BOUNDARY = false;
 
 	constructor(public world: World) {}
 
@@ -82,6 +83,8 @@ class CompactAlgorithm {
 
 			// top corner move
 			if (!neighbor['W'] && neighbor['N'] && neighbor['NW'] &&
+					(!this.CORNER_MOVES_ONLY_BOUNDARY ||
+							(cube.onBoundary && neighbor['N'].onBoundary && neighbor['NW'].onBoundary)) &&
 					cube.componentStatus === ComponentStatus.CHUNK_STABLE &&
 					neighbor['N'].componentStatus === ComponentStatus.CHUNK_STABLE) {
 
@@ -95,6 +98,8 @@ class CompactAlgorithm {
 			}
 
 			if (!neighbor['S'] && neighbor['E'] && neighbor['SE'] &&
+					(!this.CORNER_MOVES_ONLY_BOUNDARY ||
+							(cube.onBoundary && neighbor['E'].onBoundary && neighbor['SE'].onBoundary)) &&
 					cube.componentStatus === ComponentStatus.CHUNK_STABLE &&
 					neighbor['E'].componentStatus === ComponentStatus.CHUNK_STABLE) {
 
@@ -114,6 +119,8 @@ class CompactAlgorithm {
 
 			// bottom corner move
 			if (!neighbor['W'] && neighbor['S'] && neighbor['SW'] &&
+					(!this.CORNER_MOVES_ONLY_BOUNDARY ||
+							(cube.onBoundary && neighbor['S'].onBoundary && neighbor['SW'].onBoundary)) &&
 					cube.componentStatus === ComponentStatus.CHUNK_STABLE &&
 					neighbor['S'].componentStatus === ComponentStatus.CHUNK_STABLE) {
 
@@ -127,6 +134,8 @@ class CompactAlgorithm {
 			}
 
 			if (!neighbor['N'] && neighbor['E'] && neighbor['NE'] &&
+					(!this.CORNER_MOVES_ONLY_BOUNDARY ||
+							(cube.onBoundary && neighbor['E'].onBoundary && neighbor['NE'].onBoundary)) &&
 					cube.componentStatus === ComponentStatus.CHUNK_STABLE &&
 					neighbor['E'].componentStatus === ComponentStatus.CHUNK_STABLE) {
 
