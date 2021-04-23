@@ -345,6 +345,15 @@ class World {
 	 * cube already exists at that location.
 	 */
 	addCube(p: [number, number], color: Color): Cube {
+		const cube = this.addCubeUnmarked(p, color);
+		this.markComponents();
+		return cube;
+	}
+
+	/**
+	 * As addCube(), but does not update the component status of the cubes.
+	 */
+	addCubeUnmarked(p: [number, number], color: Color): Cube {
 		if (this.hasCube(p)) {
 			throw `Tried to insert cube on top of another cube ` +
 					`at (${p[0]}, ${p[1]})`;
@@ -354,7 +363,6 @@ class World {
 		this.cubes.push(cube);
 		this.pixi.addChild(cube.pixi);
 		this.backgroundPixi.addChild(cube.backgroundPixi);
-		this.markComponents();
 		return cube;
 	}
 
@@ -364,6 +372,14 @@ class World {
 	 * exists at the target.
 	 */
 	moveCube(from: [number, number], to: [number, number]): void {
+		this.moveCubeUnmarked(from, to);
+		this.markComponents();
+	}
+
+	/**
+	 * As moveCube(), but does not update the component status of the cubes.
+	 */
+	moveCubeUnmarked(from: [number, number], to: [number, number]): void {
 		if (!this.hasCube(from)) {
 			throw `Tried to move non-existing cube at ` +
 					`at (${from[0]}, ${from[1]})`;
@@ -379,7 +395,6 @@ class World {
 		this.getCell(to).cubeId = id;
 		this.cubes[id].p = [to[0], to[1]];
 		this.cubes[id].updatePosition(0, 0);
-		this.markComponents();
 	}
 
 	/**

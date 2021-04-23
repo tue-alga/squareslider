@@ -1,5 +1,5 @@
 import {Algorithm, World, Move, MoveDirection} from '../world';
-import {Cube, ComponentStatus} from '../cube';
+import {Cube, ComponentStatus, Color} from '../cube';
 import {Vector} from '../vector';
 
 class CompactAlgorithm {
@@ -13,7 +13,9 @@ class CompactAlgorithm {
 
 		// is there a free move maintaining chunkiness? do it
 		let move: Move[] | null;
-		while ((move = this.findFreeMove()) || (move = this.findCornerMove())) {
+		while ((move = this.findFreeMove()) ||
+				(move = this.findCornerMove()) ||
+				(move = this.findChainMove())) {
 			for (let m of move) {
 				yield m;
 			}
@@ -149,7 +151,19 @@ class CompactAlgorithm {
 					'preserves chunkiness';
 		}
 
+		let marks: ComponentStatus[] = [];
+		for (let i = 0; i < this.world.cubes.length; i++) {
+			marks.push(this.world.cubes[i].componentStatus);
+		}
 		this.world.moveCube(source, target);
+
+		const self = this;
+		const putBack = function () {
+			self.world.moveCubeUnmarked(target, source);
+			for (let i = 0; i < self.world.cubes.length; i++) {
+				self.world.cubes[i].componentStatus = marks[i];
+			}
+		}
 
 		// check if all neighbors are still in a chunk, and if they are all in
 		// the same chunk
@@ -159,7 +173,7 @@ class CompactAlgorithm {
 			if (neighbor.componentStatus === ComponentStatus.LINK_STABLE ||
 					neighbor.componentStatus === ComponentStatus.LINK_CUT ||
 					(chunk !== -1 && neighbor.chunkId !== -1 && neighbor.chunkId !== chunk)) {
-				this.world.moveCube(target, source);
+				putBack();
 				return false;
 			}
 			if (neighbor.chunkId !== -1) {
@@ -170,12 +184,28 @@ class CompactAlgorithm {
 		const targetStatus = this.world.getCube(target)!.componentStatus;
 		if (targetStatus === ComponentStatus.LINK_STABLE ||
 				targetStatus === ComponentStatus.LINK_CUT) {
-			this.world.moveCube(target, source);
+			putBack();
 			return false;
 		}
 
-		this.world.moveCube(target, source);
+		putBack();
 		return true;
+	}
+
+	findChainMove(): Move[] | null {
+		let [minX, minY, maxX, maxY] = this.world.bounds();
+
+		for (let x = maxX; x >= minX; x--) {
+			if (this.world.hasCube([x, minY])) {
+				const cube = this.world.getCube([x, minY])!;
+				if (cube.componentStatus !== ComponentStatus.LINK_STABLE &&
+						cube.componentStatus !== ComponentStatus.LINK_CUT) {
+					// YAY
+				}
+			}
+		}
+
+		return null;  // TODO
 	}
 }
 

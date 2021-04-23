@@ -8,6 +8,8 @@ class GatherAlgorithm {
 
 	*execute(): Algorithm {
 
+		printStep('Gathering');
+
 		//console.log(this.findBoundaryPath(this.world.getCube([1, 0])!, this.world.getCube([0, 1])!));
 		// find light square s
 		// find two empty spaces around s to be filled
@@ -18,7 +20,7 @@ class GatherAlgorithm {
 		const limit = this.world.bridgeLimit();
 		let lightSquare: Cube | null;
 		while (lightSquare = this.findLightSquare(limit)) {
-			printStep(`Gathering light square (${lightSquare.p[0]}, ${lightSquare.p[1]})`);
+			printMiniStep(`Gathering light square (${lightSquare.p[0]}, ${lightSquare.p[1]})`);
 
 			const leaf = this.findLeafInDescendants(lightSquare)!;
 			yield* this.walkBoundaryUntil(leaf, lightSquare);
