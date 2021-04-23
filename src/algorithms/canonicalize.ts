@@ -31,7 +31,7 @@ class CanonicalizeAlgorithm {
 	}
 
 	lowestMaxPotentialCube(): [number, number] {
-		let max = 0;
+		let max = -Infinity;
 		let [xMax, yMax] = [-1, -1];
 		for (const c of this.world.cubes) {
 			const potential = c.p[0] + c.p[1];
