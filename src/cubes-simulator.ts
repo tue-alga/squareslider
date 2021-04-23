@@ -21,7 +21,6 @@ class CubesSimulator {
 	time: number = 0.0;
 	timeStep: number = 0;
 	runUntil: number = Infinity;
-	skipSiphoning: boolean = true;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
 	timeSpeed: number = 0.25;
@@ -227,12 +226,6 @@ class CubesSimulator {
 			this.timeStep++;
 			//try {
 				this.world.nextStep(this.algorithm!, this.timeStep);
-				if (this.skipSiphoning &&
-						this.world.currentMove &&
-						(this.world.currentMove.position[0] < 0 ||
-						this.world.currentMove.position[1] < 0)) {
-					this.time += 1;
-				}
 			/*} catch (e) {
 				const cryEmoji = String.fromCodePoint(parseInt('1F622', 16));
 				console.log(`Time step ${this.timeStep}. Threw exception: ${e}. Pausing the simulation ${cryEmoji}`);

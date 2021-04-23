@@ -15,7 +15,8 @@ class CompactAlgorithm {
 		let move: Move[] | null;
 		while ((move = this.findFreeMove()) ||
 				(move = this.findCornerMove()) ||
-				(move = this.findChainMove())) {
+				(move = this.findHorizontalChainMove()) ||
+				(move = this.findVerticalChainMove())) {
 			for (let m of move) {
 				yield m;
 			}
@@ -192,20 +193,98 @@ class CompactAlgorithm {
 		return true;
 	}
 
-	findChainMove(): Move[] | null {
-		let [minX, minY, maxX, maxY] = this.world.bounds();
+	findHorizontalChainMove(): Move[] | null {
+		let moves: Move[] = [];
+		const [minX, minY, maxX, maxY] = this.world.bounds();
 
+		let firstCube: Cube | null = null;
 		for (let x = maxX; x >= minX; x--) {
 			if (this.world.hasCube([x, minY])) {
 				const cube = this.world.getCube([x, minY])!;
 				if (cube.componentStatus !== ComponentStatus.LINK_STABLE &&
 						cube.componentStatus !== ComponentStatus.LINK_CUT) {
-					// YAY
+					firstCube = cube;
+					break;
 				}
 			}
 		}
+		if (firstCube === null) {
+			return null;
+		}
 
-		return null;  // TODO
+		let lastCube: Cube | null = null;
+		for (let x = firstCube.p[0]; x >= minX; x--) {
+			if (!this.world.hasCube([x - 1, minY])) {
+				lastCube = this.world.getCube([x, minY])!;
+				break;
+			}
+		}
+		lastCube = lastCube!;
+		if (lastCube.componentStatus === ComponentStatus.LINK_STABLE ||
+				lastCube.componentStatus === ComponentStatus.LINK_CUT) {
+			throw "chain move destination was not in chunk, that shouldn't happen";
+		}
+		if (this.world.degree(lastCube) === 1) {
+			moves.push(new Move(this.world, lastCube.p, MoveDirection.N));
+			lastCube = this.world.getCube([lastCube.p[0] + 1, lastCube.p[1]])!;
+		}
+		if (lastCube.p[0] === minX) {
+			return null;
+		}
+		moves.push(new Move(this.world, firstCube.p, MoveDirection.SW));
+		for (let x = firstCube.p[0] - 1; x > lastCube.p[0]; x--) {
+			moves.push(new Move(this.world, [x, minY - 1], MoveDirection.W));
+		}
+		moves.push(new Move(this.world, [lastCube.p[0], minY - 1], MoveDirection.WN));
+
+		return moves;
+	}
+
+	findVerticalChainMove(): Move[] | null {
+		let moves: Move[] = [];
+		const [minX, minY, maxX, maxY] = this.world.bounds();
+
+		let firstCube: Cube | null = null;
+		for (let y = maxY; y >= minY; y--) {
+			if (this.world.hasCube([minX, y])) {
+				const cube = this.world.getCube([minX, y])!;
+				if (cube.componentStatus !== ComponentStatus.LINK_STABLE &&
+						cube.componentStatus !== ComponentStatus.LINK_CUT) {
+					firstCube = cube;
+					break;
+				}
+			}
+		}
+		if (firstCube === null) {
+			return null;
+		}
+
+		let lastCube: Cube | null = null;
+		for (let y = firstCube.p[1]; y >= minY; y--) {
+			if (!this.world.hasCube([minX, y - 1])) {
+				lastCube = this.world.getCube([minX, y])!;
+				break;
+			}
+		}
+		lastCube = lastCube!;
+		if (lastCube.componentStatus === ComponentStatus.LINK_STABLE ||
+				lastCube.componentStatus === ComponentStatus.LINK_CUT) {
+			throw "chain move destination was not in chunk, that shouldn't happen";
+		}
+		if (this.world.degree(lastCube) === 1) {
+			moves.push(new Move(this.world, lastCube.p, MoveDirection.E));
+			lastCube = this.world.getCube([lastCube.p[0], lastCube.p[1] + 1])!;
+		}
+		if (lastCube.p[1] === minY) {
+			return null;
+		}
+		moves.push(new Move(this.world, firstCube.p, MoveDirection.WS));
+		for (let y = firstCube.p[1] - 1; y > lastCube.p[1]; y--) {
+			moves.push(new Move(this.world, [minX - 1, y], MoveDirection.S));
+		}
+		moves.push(new Move(this.world, [minX - 1, lastCube.p[1]], MoveDirection.SE));
+
+		return moves;
 	}
 }
 
