@@ -13,7 +13,7 @@ class CompleteAlgorithm {
 		yield* new GatherAlgorithm(this.world).execute();
 		//yield* new CompactAlgorithm(this.world).execute();
 		yield* new CompactSortedAlgorithm(this.world).execute();
-		yield* new CanonicalizeAlgorithm(this.world).execute();
+		//yield* new CanonicalizeAlgorithm(this.world).execute();
 	}
 }
 

@@ -22,8 +22,12 @@ class GatherAlgorithm {
 		while (lightSquare = this.findLightSquare(limit)) {
 			printMiniStep(`Gathering light square (${lightSquare.p[0]}, ${lightSquare.p[1]})`);
 
-			const leaf = this.findLeafInDescendants(lightSquare)!;
-			yield* this.walkBoundaryUntil(leaf, lightSquare);
+			const target = this.findGatherTarget(lightSquare);
+			const leaf = this.findLeafInDescendants(lightSquare);
+			if (leaf === null) {
+				break;
+			}
+			yield* this.walkBoundaryUntil(leaf, target);
 		}
 	}
 
@@ -47,11 +51,70 @@ class GatherAlgorithm {
 	}
 
 	/**
+	 * Given a light square c, returns a (4- or 8-) neighboring empty cell n
+	 * of c such that:
+	 *
+	 *  * if c has degree 2 and the neighbors are on a line, then n is a
+	 *    4-neighbor that is inside the bounding box of the configuration
+	 *    (unless the configuration was a line);
+	 *
+	 *  * else, n is an 8-neighbor that is 4-adjacent to two squares
+	 *    neighboring c.
+	 */
+	findGatherTarget(c: Cube): [number, number] {
+		const [x, y] = c.p;
+		const has = this.world.hasNeighbors(c.p);
+		const [minX, minY, , ] = this.world.bounds();
+		const self = this;
+		const checkNeighbor = function (n: [number, number]): boolean {
+			if (self.world.hasCube(n)) {
+				return false;
+			}
+			if (!self.world.hasCube([x, n[1]]) || !self.world.hasCube([n[0], y])) {
+				return false;
+			}
+			const c1 = self.world.getCube([x, n[1]])!;
+			const c2 = self.world.getCube([n[0], y])!;
+			return c1.componentStatus === ComponentStatus.LINK_CUT ||
+					c1.componentStatus === ComponentStatus.LINK_STABLE ||
+					c2.componentStatus === ComponentStatus.LINK_CUT ||
+					c2.componentStatus === ComponentStatus.LINK_STABLE ||
+					c1.chunkId !== c2.chunkId;
+		};
+		if (checkNeighbor([x + 1, y + 1])) {
+			return [x + 1, y + 1];
+		}
+		if (checkNeighbor([x - 1, y + 1])) {
+			return [x - 1, y + 1];
+		}
+		if (checkNeighbor([x - 1, y - 1])) {
+			return [x - 1, y - 1];
+		}
+		if (checkNeighbor([x + 1, y - 1])) {
+			return [x + 1, y - 1];
+		}
+		if (has['N'] && has['S']) {
+			if (x === minX) {
+				return [x + 1, y];
+			} else {
+				return [x - 1, y];
+			}
+		}
+		if (has['W'] && has['E']) {
+			if (y === minY) {
+				return [x, y + 1];
+			} else {
+				return [x, y - 1];
+			}
+		}
+		throw "tried to gather to a cube with degree less than 2";
+	}
+
+	/**
 	 * Given a light square s, return a square from the descendants of s, not
 	 * edge-adjacent to s itself, that can be safely removed to chunkify s.
 	 */
 	findLeafInDescendants(c: Cube): Cube | null {
-
 		let seen = Array(this.world.cubes.length).fill(false);
 		const outside = this.world.outsideCubes();
 		const startIndex = outside.indexOf(c);
@@ -67,15 +130,8 @@ class GatherAlgorithm {
 				stack.push(cubeId);
 
 			} else if (stack.length > 1 && stack[stack.length - 2] === cubeId) {
-				if (stack.length > 2) {
-					// found link stable square
-					return this.world.cubes[stack[stack.length - 1]];
-				} else {
-					// in this case stack[stack.length - 1] is adjacent to c,
-					// so we don't want it... but make sure that we remove
-					// it for the stack so we can continue correctly
-					stack.pop();
-				}
+				// found link stable square
+				return this.world.cubes[stack[stack.length - 1]];
 
 			} else {
 				// found leaf chunk
@@ -103,16 +159,21 @@ class GatherAlgorithm {
 	/**
 	 * Constructs a path over the boundary, starting from the given cube c,
 	 * ending at target (if possible 4-neighbor of target, otherwise
-	 * 8-neighbor). The path is possibly non-simple.
+	 * 8-neighbor). The path is in clockwise direction. If this path would
+	 * pass along the origin, null is returned instead.
 	 */
-	findBoundaryPath(c: Cube, target: Cube): [number, number][] {
+	findClockwiseBoundaryPath(c: Cube, target: [number, number]):
+			[number, number][] | null {
 		const outside = this.world.outsideCubes();
 		let p = new Vector(...c.p);
 		let path: [number, number][] = [[p.x, p.y]];
 		let i = outside.indexOf(c) + 1;
 
-		while (outside[i - 1] !== target && outside[i] !== target) {
+		while (p.x !== target[0] || p.y !== target[1]) {
 
+			if (i > outside.length - 3) {
+				return null;
+			}
 			const p1 = new Vector(...outside[i].p);
 			const p2 = new Vector(...outside[i + 1].p);
 			const p3 = new Vector(...outside[i + 2].p);
@@ -139,8 +200,64 @@ class GatherAlgorithm {
 		return path;
 	}
 
-	*walkBoundaryUntil(c: Cube, target: Cube): Algorithm {
-		let path = this.findBoundaryPath(c, target);
+	/**
+	 * Constructs a path over the boundary, starting from the given cube c,
+	 * ending at target (if possible 4-neighbor of target, otherwise
+	 * 8-neighbor). The path is in counter-clockwise direction. If this path
+	 * would pass along the origin, null is returned instead.
+	 */
+	findCounterClockwiseBoundaryPath(c: Cube, target: [number, number]):
+			[number, number][] | null {
+		const outside = this.world.outsideCubes();
+		outside.reverse();
+		let p = new Vector(...c.p);
+		let path: [number, number][] = [[p.x, p.y]];
+		let i = outside.indexOf(c) + 1;
+
+		while (p.x !== target[0] || p.y !== target[1]) {
+			if (i > outside.length - 3) {
+				return null;
+			}
+			const p1 = new Vector(...outside[i].p);
+			const p2 = new Vector(...outside[i + 1].p);
+			const p3 = new Vector(...outside[i + 2].p);
+			const direction = p2.subtract(p1);
+
+			if (p.add(direction).equals(p3)) {
+				i += 2;  // skip over concave corner
+				continue;
+			}
+
+			if (p.equals(p1.add(direction.rotateRight()))) {
+				p = p.add(direction.invert()).add(direction.rotateLeft());
+				path.push([p.x, p.y]);
+			} else if (p.equals(p1.add(direction.invert()))) {
+				p = p.add(direction).add(direction.rotateLeft());
+				path.push([p.x, p.y]);
+			} else {
+				p = p.add(direction);
+				path.push([p.x, p.y]);
+				i++;
+			}
+		}
+
+		return path;
+	}
+
+	/**
+	 * Runs a series of moves to walk cube c over the boundary of the
+	 * configuration to end up at the given empty cell target, in such a way
+	 * that it does not pass the origin.
+	 */
+	*walkBoundaryUntil(c: Cube, target: [number, number]): Algorithm {
+		let path = this.findClockwiseBoundaryPath(c, target);
+		if (path === null) {
+			path = this.findCounterClockwiseBoundaryPath(c, target);
+		}
+		if (path === null) {
+			throw "cannot find a boundary path in both directions from " +
+					c.p + " to " + target;
+		}
 		for (let i = 0; i < path.length - 1; i++) {
 			const cube = this.world.getCube(path[i]);
 			if (!cube) {

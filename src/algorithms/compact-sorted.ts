@@ -65,6 +65,7 @@ class CompactSortedAlgorithm {
 				const target = move.targetPosition();
 				if (move.isValidIgnoreConnectivity() &&
 						target[0] >= minX && target[1] >= minY &&
+						target[0] <= maxX && target[1] <= maxY &&
 						(!this.CONSTRAIN_TO_CHUNK_BOUNDS || this.withinChunkBounds(cube.chunkId, target)) &&
 						this.preservesChunkiness(cube.p, target)
 				) {
@@ -236,16 +237,21 @@ class CompactSortedAlgorithm {
 				break;
 			}
 		}
-		lastCube = lastCube!;
-		if (lastCube.componentStatus === ComponentStatus.LINK_STABLE ||
+		if (!lastCube ||
+				lastCube.componentStatus === ComponentStatus.LINK_STABLE ||
 				lastCube.componentStatus === ComponentStatus.LINK_CUT) {
-			throw "chain move destination was not in chunk, that shouldn't happen";
+			return;
 		}
+		let movedLooseSquare = false;
 		if (this.world.degree(lastCube) === 1) {
+			movedLooseSquare = true;
 			m.push(new Move(this.world, lastCube.p, MoveDirection.N));
 			lastCube = this.world.getCube([lastCube.p[0] + 1, lastCube.p[1]])!;
 		}
 		if (lastCube === null || lastCube.p[0] === minX) {
+			return;
+		}
+		if (firstCube.p[0] - lastCube.p[0] <= (movedLooseSquare ? 2 : 1)) {
 			return;
 		}
 		m.push(new Move(this.world, firstCube.p, MoveDirection.SW));
@@ -283,16 +289,21 @@ class CompactSortedAlgorithm {
 				break;
 			}
 		}
-		lastCube = lastCube!;
-		if (lastCube.componentStatus === ComponentStatus.LINK_STABLE ||
+		if (!lastCube ||
+				lastCube.componentStatus === ComponentStatus.LINK_STABLE ||
 				lastCube.componentStatus === ComponentStatus.LINK_CUT) {
-			throw "chain move destination was not in chunk, that shouldn't happen";
+			return;
 		}
+		let movedLooseSquare = false;
 		if (this.world.degree(lastCube) === 1) {
+			movedLooseSquare = true;
 			m.push(new Move(this.world, lastCube.p, MoveDirection.E));
 			lastCube = this.world.getCube([lastCube.p[0], lastCube.p[1] + 1])!;
 		}
 		if (lastCube === null || lastCube.p[1] === minY) {
+			return;
+		}
+		if (firstCube.p[1] - lastCube.p[1] <= (movedLooseSquare ? 2 : 1)) {
 			return;
 		}
 		m.push(new Move(this.world, firstCube.p, MoveDirection.WS));
