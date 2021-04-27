@@ -4,7 +4,7 @@ import {Vector} from '../vector';
 
 class GatherAlgorithm {
 
-    constructor(public world: World) {}
+	constructor(public world: World) {}
 
 	*execute(): Algorithm {
 

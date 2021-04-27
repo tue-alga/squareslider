@@ -270,7 +270,6 @@ class CubesSimulator {
 			if (this.editMode === EditMode.SELECT) {
 				this.deselect();
 				const cube = this.world.getCube([Math.round(x), Math.round(y)]);
-				console.log([Math.round(x), Math.round(y)]);
 				if (cube) {
 					this.deselect();
 					this.select(cube);
