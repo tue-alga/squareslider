@@ -170,7 +170,6 @@ class GatherAlgorithm {
 		let i = outside.indexOf(c) + 1;
 
 		while (p.x !== target[0] || p.y !== target[1]) {
-
 			if (i > outside.length - 3) {
 				return null;
 			}
@@ -179,7 +178,7 @@ class GatherAlgorithm {
 			const p3 = new Vector(...outside[i + 2].p);
 			const direction = p2.subtract(p1);
 
-			if (p.add(direction).equals(p3)) {
+			if (!p1.equals(p3) && p.add(direction).equals(p3)) {
 				i += 2;  // skip over concave corner
 				continue;
 			}
