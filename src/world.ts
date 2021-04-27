@@ -1735,7 +1735,7 @@ class World {
 				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
 			neighbors.forEach(function(c) {
-				if (c.cubeId) {
+				if (c.cubeId !== null) {
 					queue.push(c.cubeId);
 				}
 			});
