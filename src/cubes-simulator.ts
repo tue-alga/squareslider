@@ -5,6 +5,7 @@ import {World, Move} from './world';
 import {Button, Separator, Toolbar} from './ui';
 
 import {CompleteAlgorithm} from './algorithms/complete';
+import {CustomAlgorithm} from './algorithms/custom';
 
 enum EditMode {
 	SELECT, ADD_BALL
@@ -292,6 +293,10 @@ class CubesSimulator {
 		}
 	}
 
+	createAlgorithm(): Generator<Move> {
+		return new CustomAlgorithm(this.world).execute();
+	}
+
 	// button handlers
 
 	run(): void {
@@ -309,7 +314,7 @@ class CubesSimulator {
 		}
 
 		if (this.selectButton.isEnabled()) {
-			this.algorithm = new CompleteAlgorithm(this.world).execute();
+			this.algorithm = this.createAlgorithm();
 			this.deselect();
 			this.selectButton.setEnabled(false);
 			this.addCubeButton.setEnabled(false);
@@ -325,7 +330,7 @@ class CubesSimulator {
 		this.runButton.setTooltip("Pause simulation");
 
 		if (this.selectButton.isEnabled()) {
-			this.algorithm = new CompleteAlgorithm(this.world).execute();
+			this.algorithm = this.createAlgorithm();
 			this.deselect();
 			this.selectButton.setEnabled(false);
 			this.addCubeButton.setEnabled(false);
