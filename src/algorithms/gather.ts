@@ -165,17 +165,18 @@ class GatherAlgorithm {
 	findClockwiseBoundaryPath(c: Cube, target: [number, number]):
 			[number, number][] | null {
 		const outside = this.world.outsideCubes();
+		const n = outside.length - 1;
 		let p = new Vector(...c.p);
 		let path: [number, number][] = [[p.x, p.y]];
 		let i = outside.indexOf(c) + 1;
 
 		while (p.x !== target[0] || p.y !== target[1]) {
-			if (i > outside.length - 3) {
+			if (i >= n) {
 				return null;
 			}
-			const p1 = new Vector(...outside[i].p);
-			const p2 = new Vector(...outside[i + 1].p);
-			const p3 = new Vector(...outside[i + 2].p);
+			const p1 = new Vector(...outside[i % n].p);
+			const p2 = new Vector(...outside[(i + 1) % n].p);
+			const p3 = new Vector(...outside[(i + 2) % n].p);
 			const direction = p2.subtract(p1);
 
 			if (!p1.equals(p3) && p.add(direction).equals(p3)) {
@@ -209,17 +210,18 @@ class GatherAlgorithm {
 			[number, number][] | null {
 		const outside = this.world.outsideCubes();
 		outside.reverse();
+		const n = outside.length - 1;
 		let p = new Vector(...c.p);
 		let path: [number, number][] = [[p.x, p.y]];
 		let i = outside.indexOf(c) + 1;
 
 		while (p.x !== target[0] || p.y !== target[1]) {
-			if (i > outside.length - 3) {
+			if (i >= n) {
 				return null;
 			}
-			const p1 = new Vector(...outside[i].p);
-			const p2 = new Vector(...outside[i + 1].p);
-			const p3 = new Vector(...outside[i + 2].p);
+			const p1 = new Vector(...outside[i % n].p);
+			const p2 = new Vector(...outside[(i + 1) % n].p);
+			const p3 = new Vector(...outside[(i + 2) % n].p);
 			const direction = p2.subtract(p1);
 
 			if (!p1.equals(p3) && p.add(direction).equals(p3)) {
