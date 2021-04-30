@@ -22,12 +22,36 @@ class CompactSortedAlgorithm {
 			});
 
 			let moves: Move[][] = [];
-			this.findFreeMove(moves, cubesSorted);
-			this.findSemiFreeMove(moves, cubesSorted);
-			this.findTopCornerMove(moves, cubesSorted);
-			this.findBottomCornerMove(moves, cubesSorted);
-			this.findHorizontalChainMove(moves);
-			this.findVerticalChainMove(moves);
+
+			const freeMove = this.findFreeMove(cubesSorted);
+			if (freeMove !== null) {
+				moves.push(freeMove);
+			} else {
+				const semiFreeMove = this.findSemiFreeMove(cubesSorted);
+				if (semiFreeMove !== null) {
+					moves.push(semiFreeMove);
+				}
+			}
+
+			const topCornerMove = this.findTopCornerMove(cubesSorted);
+			if (topCornerMove !== null) {
+				moves.push(topCornerMove);
+			} else {
+				const bottomCornerMove = this.findBottomCornerMove(cubesSorted);
+				if (bottomCornerMove !== null) {
+					moves.push(bottomCornerMove);
+				}
+			}
+
+			const horizontalChainMove = this.findHorizontalChainMove();
+			if (horizontalChainMove !== null) {
+				moves.push(horizontalChainMove);
+			}
+			const verticalChainMove = this.findVerticalChainMove();
+			if (verticalChainMove !== null) {
+				moves.push(verticalChainMove);
+			}
+
 			if (!moves.length) {
 				break;
 			}
@@ -54,7 +78,7 @@ class CompactSortedAlgorithm {
 		}
 	}
 
-	findFreeMove(moves: Move[][], cubesSorted: Cube[]): void {
+	findFreeMove(cubesSorted: Cube[]): Move[] | null {
 
 		const [minX, minY, maxX, maxY] = this.world.bounds();
 
@@ -78,14 +102,15 @@ class CompactSortedAlgorithm {
 						(!this.CONSTRAIN_TO_CHUNK_BOUNDS || this.withinChunkBounds(cube.chunkId, target)) &&
 						this.preservesChunkiness(cube.p, target)
 				) {
-					moves.push([move]);
-					break;
+					return [move];
 				}
 			}
 		}
+
+		return null;
 	}
 
-	findSemiFreeMove(moves: Move[][], cubesSorted: Cube[]): void {
+	findSemiFreeMove(cubesSorted: Cube[]): Move[] | null {
 
 		const [minX, minY, maxX, maxY] = this.world.bounds();
 
@@ -107,11 +132,12 @@ class CompactSortedAlgorithm {
 						(!this.CONSTRAIN_TO_CHUNK_BOUNDS || this.withinChunkBounds(cube.chunkId, target)) &&
 						this.preservesChunkiness(cube.p, target)
 				) {
-					moves.push([move]);
-					break;
+					return [move];
 				}
 			}
 		}
+
+		return null;
 	}
 
 	withinChunkBounds(chunkId: number, coord: [number, number]): boolean {
@@ -129,7 +155,7 @@ class CompactSortedAlgorithm {
 				coord[1] >= minY && coord[1] <= maxY;
 	}
 
-	findTopCornerMove(moves: Move[][], cubesSorted: Cube[]): void {
+	findTopCornerMove(cubesSorted: Cube[]): Move[] | null {
 
 		for (let cube of cubesSorted) {
 			const [x, y] = cube.p;
@@ -143,11 +169,10 @@ class CompactSortedAlgorithm {
 					neighbor['N'].componentStatus === ComponentStatus.CHUNK_STABLE) {
 
 				if (this.preservesChunkiness(neighbor['N'].p, [x - 1, y])) {
-					moves.push([
+					return [
 						new Move(this.world, cube.p, MoveDirection.W),
 						new Move(this.world, neighbor['N'].p, MoveDirection.S),
-					]);
-					break;
+					];
 				}
 			}
 
@@ -158,17 +183,18 @@ class CompactSortedAlgorithm {
 					neighbor['E'].componentStatus === ComponentStatus.CHUNK_STABLE) {
 
 				if (this.preservesChunkiness(neighbor['E'].p, [x, y - 1])) {
-					moves.push([
+					return [
 						new Move(this.world, cube.p, MoveDirection.S),
 						new Move(this.world, neighbor['E'].p, MoveDirection.W),
-					]);
-					break;
+					];
 				}
 			}
 		}
+
+		return null;
 	}
 
-	findBottomCornerMove(moves: Move[][], cubesSorted: Cube[]): void {
+	findBottomCornerMove(cubesSorted: Cube[]): Move[] | null {
 
 		for (let cube of cubesSorted) {
 			const [x, y] = cube.p;
@@ -182,11 +208,10 @@ class CompactSortedAlgorithm {
 					neighbor['S'].componentStatus === ComponentStatus.CHUNK_STABLE) {
 
 				if (this.preservesChunkiness(neighbor['S'].p, [x - 1, y])) {
-					moves.push([
+					return [
 						new Move(this.world, cube.p, MoveDirection.W),
 						new Move(this.world, neighbor['S'].p, MoveDirection.N),
-					]);
-					break;
+					];
 				}
 			}
 
@@ -197,14 +222,15 @@ class CompactSortedAlgorithm {
 					neighbor['E'].componentStatus === ComponentStatus.CHUNK_STABLE) {
 
 				if (this.preservesChunkiness(neighbor['E'].p, [x, y + 1])) {
-					moves.push([
+					return [
 						new Move(this.world, cube.p, MoveDirection.N),
 						new Move(this.world, neighbor['E'].p, MoveDirection.W),
-					]);
-					break;
+					];
 				}
 			}
 		}
+
+		return null;
 	}
 
 	preservesChunkiness(source: [number, number], target: [number, number]) {
@@ -257,7 +283,7 @@ class CompactSortedAlgorithm {
 		return true;
 	}
 
-	findHorizontalChainMove(moves: Move[][]): void {
+	findHorizontalChainMove(): Move[] | null {
 		let m: Move[] = [];
 		const [minX, minY, maxX, maxY] = this.world.bounds();
 
@@ -273,7 +299,7 @@ class CompactSortedAlgorithm {
 			}
 		}
 		if (firstCube === null) {
-			return;
+			return null;
 		}
 
 		let lastCube: Cube | null = null;
@@ -286,7 +312,7 @@ class CompactSortedAlgorithm {
 		if (!lastCube ||
 				lastCube.componentStatus === ComponentStatus.LINK_STABLE ||
 				lastCube.componentStatus === ComponentStatus.LINK_CUT) {
-			return;
+			return null;
 		}
 		let movedLooseSquare = false;
 		if (this.world.degree(lastCube) === 1) {
@@ -295,10 +321,10 @@ class CompactSortedAlgorithm {
 			lastCube = this.world.getCube([lastCube.p[0] + 1, lastCube.p[1]])!;
 		}
 		if (lastCube === null || lastCube.p[0] === minX) {
-			return;
+			return null;
 		}
 		if (firstCube.p[0] - lastCube.p[0] <= (movedLooseSquare ? 2 : 1)) {
-			return;
+			return null;
 		}
 		m.push(new Move(this.world, firstCube.p, MoveDirection.SW));
 		for (let x = firstCube.p[0] - 1; x > lastCube.p[0]; x--) {
@@ -306,10 +332,10 @@ class CompactSortedAlgorithm {
 		}
 		m.push(new Move(this.world, [lastCube.p[0], minY - 1], MoveDirection.WN));
 
-		moves.push(m);
+		return m;
 	}
 
-	findVerticalChainMove(moves: Move[][]): void {
+	findVerticalChainMove(): Move[] | null {
 		let m: Move[] = [];
 		const [minX, minY, maxX, maxY] = this.world.bounds();
 
@@ -325,7 +351,7 @@ class CompactSortedAlgorithm {
 			}
 		}
 		if (firstCube === null) {
-			return;
+			return null;
 		}
 
 		let lastCube: Cube | null = null;
@@ -338,7 +364,7 @@ class CompactSortedAlgorithm {
 		if (!lastCube ||
 				lastCube.componentStatus === ComponentStatus.LINK_STABLE ||
 				lastCube.componentStatus === ComponentStatus.LINK_CUT) {
-			return;
+			return null;
 		}
 		let movedLooseSquare = false;
 		if (this.world.degree(lastCube) === 1) {
@@ -347,10 +373,10 @@ class CompactSortedAlgorithm {
 			lastCube = this.world.getCube([lastCube.p[0], lastCube.p[1] + 1])!;
 		}
 		if (lastCube === null || lastCube.p[1] === minY) {
-			return;
+			return null;
 		}
 		if (firstCube.p[1] - lastCube.p[1] <= (movedLooseSquare ? 2 : 1)) {
-			return;
+			return null;
 		}
 		m.push(new Move(this.world, firstCube.p, MoveDirection.WS));
 		for (let y = firstCube.p[1] - 1; y > lastCube.p[1]; y--) {
@@ -358,7 +384,7 @@ class CompactSortedAlgorithm {
 		}
 		m.push(new Move(this.world, [minX - 1, lastCube.p[1]], MoveDirection.SE));
 
-		moves.push(m);
+		return m;
 	}
 }
 
