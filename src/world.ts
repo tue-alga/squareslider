@@ -1851,6 +1851,27 @@ class World {
 	}
 
 	/**
+	 * Determines if the configuration is xy-monotone.
+	 */
+	isXYMonotone(): boolean {
+		const [minX, minY, , ] = this.bounds();
+
+		for (const cube of this.cubes) {
+			if (cube.p[0] === minX || cube.p[1] === minY) {
+				continue;
+			}
+			if (!this.hasCube([cube.p[0], cube.p[1] - 1])) {
+				return false;
+			}
+			if (!this.hasCube([cube.p[0] - 1, cube.p[1]])) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
 	 * Generates a JSON string from this world.
 	 */
 	serialize(): string {

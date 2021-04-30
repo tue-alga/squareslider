@@ -12,7 +12,7 @@ class CompactSortedAlgorithm {
 	*execute(): Algorithm {
 		printStep('Compacting');
 
-		while (true) {
+		while (!this.world.isXYMonotone()) {
 			let cubesSorted = [...this.world.cubes];
 			cubesSorted.sort((a: Cube, b: Cube) => {
 				const score = function (c: Cube): number {
@@ -21,58 +21,52 @@ class CompactSortedAlgorithm {
 				return score(b) - score(a);
 			});
 
-			let moves: Move[][] = [];
+			let bestMove: Move[] | null = null;
+			let maxScore = -Infinity;
+			const tryMove = function (m: Move[], moveOrigin: [number, number]) {
+				const s = Math.max(moveOrigin[0], moveOrigin[1]);
+				if (s > maxScore) {
+					maxScore = s;
+					bestMove = m;
+				}
+			}
 
 			const freeMove = this.findFreeMove(cubesSorted);
 			if (freeMove !== null) {
-				moves.push(freeMove);
+				tryMove(freeMove, freeMove[0].sourcePosition());
 			} else {
 				const semiFreeMove = this.findSemiFreeMove(cubesSorted);
 				if (semiFreeMove !== null) {
-					moves.push(semiFreeMove);
+					tryMove(semiFreeMove, semiFreeMove[0].sourcePosition());
 				}
 			}
 
 			const topCornerMove = this.findTopCornerMove(cubesSorted);
 			if (topCornerMove !== null) {
-				moves.push(topCornerMove);
+				tryMove(topCornerMove, topCornerMove[0].sourcePosition());
 			} else {
 				const bottomCornerMove = this.findBottomCornerMove(cubesSorted);
 				if (bottomCornerMove !== null) {
-					moves.push(bottomCornerMove);
+					tryMove(bottomCornerMove, bottomCornerMove[0].sourcePosition());
 				}
 			}
 
 			const horizontalChainMove = this.findHorizontalChainMove();
 			if (horizontalChainMove !== null) {
-				moves.push(horizontalChainMove);
+				tryMove(...horizontalChainMove);
 			}
 			const verticalChainMove = this.findVerticalChainMove();
 			if (verticalChainMove !== null) {
-				moves.push(verticalChainMove);
+				tryMove(...verticalChainMove);
 			}
 
-			if (!moves.length) {
-				break;
+			if (bestMove === null) {
+				throw new Error("No compacting move available while configuration "+
+						"is not yet xy-monotone");
 			}
 
-			// sort on distance of the move from the origin (x + y)
-			moves.sort((a: Move[], b: Move[]) => {
-				const score = function (m: Move[]): number {
-					let s = Math.max(m[0].sourcePosition()[0], m[0].sourcePosition()[1]);
-
-					const last = m[m.length - 1];
-
-					if (last.targetPosition()[1] > m[0].sourcePosition()[1]) {
-						s -= 100000;
-					}
-
-					return s;
-				};
-				return score(b) - score(a);
-			});
-			const move = moves[0];
-			for (let m of move) {
+			// @ts-ignore
+			for (const m of bestMove) {
 				yield m;
 			}
 		}
@@ -283,7 +277,7 @@ class CompactSortedAlgorithm {
 		return true;
 	}
 
-	findHorizontalChainMove(): Move[] | null {
+	findHorizontalChainMove(): [Move[], [number, number]] | null {
 		let m: Move[] = [];
 		const [minX, minY, maxX, maxY] = this.world.bounds();
 
@@ -332,10 +326,10 @@ class CompactSortedAlgorithm {
 		}
 		m.push(new Move(this.world, [lastCube.p[0], minY - 1], MoveDirection.WN));
 
-		return m;
+		return [m, (movedLooseSquare ? m[1] : m[0]).sourcePosition()];
 	}
 
-	findVerticalChainMove(): Move[] | null {
+	findVerticalChainMove(): [Move[], [number, number]] | null {
 		let m: Move[] = [];
 		const [minX, minY, maxX, maxY] = this.world.bounds();
 
@@ -384,7 +378,7 @@ class CompactSortedAlgorithm {
 		}
 		m.push(new Move(this.world, [minX - 1, lastCube.p[1]], MoveDirection.SE));
 
-		return m;
+		return [m, (movedLooseSquare ? m[1] : m[0]).sourcePosition()];
 	}
 }
 
