@@ -24,7 +24,7 @@ class CubesSimulator {
 	runUntil: number = Infinity;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
-	timeSpeed: number = 0.25;
+	timeSpeed: number = 2.5;
 
 	world: World;
 	algorithm: Generator<Move> | null = null;
@@ -294,7 +294,7 @@ class CubesSimulator {
 	}
 
 	createAlgorithm(): Generator<Move> {
-		return new CustomAlgorithm(this.world).execute();
+		return new CompleteAlgorithm(this.world).execute();
 	}
 
 	// button handlers

@@ -7,24 +7,24 @@ class CustomAlgorithm {
 	*execute(): Algorithm {
 		const moveJson = window.prompt('Input move sequence')!;
 		const sequence: any = JSON.parse(moveJson);
+		const [ , , maxX, ] = this.world.bounds();
 
-		for (const a of sequence['movepaths']) {
+		for (let i = 0; i < sequence['movepaths'].length; i++) {
+			const a = sequence['movepaths'][i];
+			printMiniStep(`Running move path ${i}`);
 			for (let i = 0; i < a.length - 1; i++) {
-				const cube = this.world.getCube(this.convert(a[i]));
+				const cube = this.world.getCube(this.convert(a[i], maxX));
 				if (!cube) {
-					throw "Custom move path tried to move a non-existing cube at " + this.convert(a[i]);
+					throw "Custom move path tried to move a non-existing cube at " + this.convert(a[i], maxX);
 				}
-				const move = this.world.getMoveTo(cube, this.convert(a[i + 1]));
-				if (!move) {
-					throw "Custom move path tried to do an impossible move " + this.convert(a[i]) + " -> " + this.convert(a[i + 1]);
-				}
-				yield move;
+				yield* this.world.shortestMovePath(
+					this.convert(a[i], maxX), this.convert(a[i + 1], maxX));
 			}
 		}
 	}
 
-	private convert(c: [number, number]): [number, number] {
-		return [c[1] - 1, 20 - c[0]];
+	private convert(c: [number, number], maxX: number): [number, number] {
+		return [c[1] - 1, maxX - c[0] + 1];
 	}
 }
 

@@ -222,7 +222,7 @@ class GatherAlgorithm {
 			const p3 = new Vector(...outside[i + 2].p);
 			const direction = p2.subtract(p1);
 
-			if (p.add(direction).equals(p3)) {
+			if (!p1.equals(p3) && p.add(direction).equals(p3)) {
 				i += 2;  // skip over concave corner
 				continue;
 			}

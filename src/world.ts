@@ -401,6 +401,14 @@ class World {
 	 * Removes the cube at the given location; throws if no cube exists there.
 	 */
 	removeCube(p: [number, number]): void {
+		this.removeCubeUnmarked(p);
+		this.markComponents();
+	}
+
+	/**
+	 * As removeCube(), but does not update the component status of the cubes.
+	 */
+	removeCubeUnmarked(p: [number, number]): void {
 		if (!this.hasCube(p)) {
 			throw `Tried to remove non-existing cube ` +
 					`at (${p[0]}, ${p[1]})`;
@@ -415,7 +423,6 @@ class World {
 		for (let i = 0; i < this.cubes.length; i++) {
 			this.getCell(this.cubes[i].p).cubeId = i;
 		}
-		this.markComponents();
 	}
 
 	/**
@@ -484,6 +491,16 @@ class World {
 	 * @param to The target coordinate, which should be an empty cell.
 	 */
 	*shortestMovePath(from: [number, number], to: [number, number]): Algorithm {
+		
+		// temporarily remove the origin cube from the configuration, to avoid
+		// invalid moves in the resulting move path (because we could slide
+		// along the origin cube itself)
+		const cube = this.getCube(from);
+		if (cube === null) {
+			throw "Cannot compute move path from non-existing cube" +
+				` (${from[0]}, ${from[1]})`;
+		}
+		this.removeCubeUnmarked(from);
 
 		// do BFS over the move graph
 		let seen: {[key: string]: {'seen': boolean, 'move': Move | null}} = {};
@@ -521,6 +538,12 @@ class World {
 			path.unshift(move);
 			c = move.sourcePosition();
 		}
+
+		// put the origin cube back
+		const newCube = this.addCubeUnmarked(cube.p, cube.color);
+		newCube.componentStatus = cube.componentStatus;
+
+		console.log(path);
 		yield* path;
 	}
 
