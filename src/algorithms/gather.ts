@@ -79,7 +79,7 @@ class GatherAlgorithm {
 					c1.componentStatus === ComponentStatus.LINK_STABLE ||
 					c2.componentStatus === ComponentStatus.LINK_CUT ||
 					c2.componentStatus === ComponentStatus.LINK_STABLE ||
-					c1.chunkId !== c2.chunkId;
+					(c1.chunkId !== c2.chunkId && c1.chunkId !== -1 && c2.chunkId !== -1);
 		};
 		if (checkNeighbor([x + 1, y + 1])) {
 			return [x + 1, y + 1];
