@@ -543,7 +543,6 @@ class World {
 		const newCube = this.addCubeUnmarked(cube.p, cube.color);
 		newCube.componentStatus = cube.componentStatus;
 
-		console.log(path);
 		yield* path;
 	}
 
@@ -1615,8 +1614,6 @@ class World {
 				}*/
 			}
 		}
-
-		console.log(trees.length);
 
 		return trees[0]!;
 	}

@@ -260,7 +260,7 @@ class CompactSortedAlgorithm {
 		const putBack = function () {
 			self.world.moveCubeUnmarked(target, source);
 			for (let i = 0; i < self.world.cubes.length; i++) {
-				self.world.cubes[i].componentStatus = marks[i];
+				self.world.cubes[i].setComponentStatus(marks[i]);
 			}
 		}
 
