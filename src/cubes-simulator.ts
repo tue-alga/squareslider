@@ -294,7 +294,7 @@ class CubesSimulator {
 	}
 
 	createAlgorithm(): Generator<Move> {
-		return new CompleteAlgorithm(this.world).execute();
+		return new CustomAlgorithm(this.world).execute();
 	}
 
 	// button handlers
