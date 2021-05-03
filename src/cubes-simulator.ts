@@ -24,7 +24,7 @@ class CubesSimulator {
 	runUntil: number = Infinity;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
-	timeSpeed: number = 2.5;
+	timeSpeed: number = 0.5;
 
 	world: World;
 	algorithm: Generator<Move> | null = null;
@@ -111,12 +111,12 @@ class CubesSimulator {
 		this.deleteButton.setEnabled(false);
 		this.bottomBar.addChild(this.deleteButton);
 
-		this.bottomBar.addChild(new Separator());
+		//this.bottomBar.addChild(new Separator());
 
 		this.showTreeButton = new Button(
 			"save", "Show tree");
 		this.showTreeButton.onClick(this.showTree.bind(this));
-		this.bottomBar.addChild(this.showTreeButton);
+		//this.bottomBar.addChild(this.showTreeButton);
 
 		this.bottomBar.addChild(new Separator());
 
@@ -128,7 +128,7 @@ class CubesSimulator {
 		this.ipeButton = new Button(
 			"save", "Ipe export");
 		this.ipeButton.onClick(this.ipeExport.bind(this));
-		this.bottomBar.addChild(this.ipeButton);
+		//this.bottomBar.addChild(this.ipeButton);
 
 
 		// set up event handlers for dialog buttons
