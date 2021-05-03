@@ -228,6 +228,20 @@ class CompactSortedAlgorithm {
 	}
 
 	preservesChunkiness(source: [number, number], target: [number, number]) {
+		if (!this.world.hasCube(source)) {
+			throw new Error('tried to determine if moving cube ' +
+					'(' + source[0] + ', ' + source[1] + ') to ' +
+					'(' + target[0] + ', ' + target[1] + ') ' +
+					'preserves chunkiness, but that source cube ' +
+					'does not exist');
+		}
+		if (this.world.hasCube(target)) {
+			throw new Error('tried to determine if moving cube ' +
+					'(' + source[0] + ', ' + source[1] + ') to ' +
+					'(' + target[0] + ', ' + target[1] + ') ' +
+					'preserves chunkiness, but that target cube ' +
+					'already exists');
+		}
 		if (this.world.getCube(source)!.componentStatus !==
 				ComponentStatus.CHUNK_STABLE) {
 			throw 'tried to determine if moving unstable/non-chunk cube ' +
@@ -320,6 +334,10 @@ class CompactSortedAlgorithm {
 		if (firstCube.p[0] - lastCube.p[0] <= (movedLooseSquare ? 2 : 1)) {
 			return null;
 		}
+		if (!this.preservesChunkiness(firstCube.p,
+				[lastCube.p[0] - 1, lastCube.p[1] + (movedLooseSquare ? 1 : 0)])) {
+			return null;
+		}
 		m.push(new Move(this.world, firstCube.p, MoveDirection.SW));
 		for (let x = firstCube.p[0] - 1; x > lastCube.p[0]; x--) {
 			m.push(new Move(this.world, [x, minY - 1], MoveDirection.W));
@@ -370,6 +388,10 @@ class CompactSortedAlgorithm {
 			return null;
 		}
 		if (firstCube.p[1] - lastCube.p[1] <= (movedLooseSquare ? 2 : 1)) {
+			return null;
+		}
+		if (!this.preservesChunkiness(firstCube.p,
+				[lastCube.p[0] + (movedLooseSquare ? 1 : 0), lastCube.p[1] - 1])) {
 			return null;
 		}
 		m.push(new Move(this.world, firstCube.p, MoveDirection.WS));
