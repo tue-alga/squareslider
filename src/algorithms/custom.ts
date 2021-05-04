@@ -24,8 +24,8 @@ class CustomAlgorithm {
 	}
 
 	private convert(c: [number, number], maxX: number): [number, number] {
-		//return [c[1] - 1, maxX - c[0] + 1];
-		return c;
+		return [c[1] - 1, maxX - c[0] + 1];
+		//return c;
 	}
 }
 
