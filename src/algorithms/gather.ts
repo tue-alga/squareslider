@@ -19,7 +19,8 @@ class GatherAlgorithm {
 
 		const limit = this.world.bridgeLimit();
 		let lightSquare: Cube | null;
-		while (lightSquare = this.findLightSquare(limit)) {
+		while (!this.world.isXYMonotone() &&
+				(lightSquare = this.findLightSquare(limit)) !== null) {
 			printMiniStep(`Gathering light square (${lightSquare.p[0]}, ${lightSquare.p[1]})`);
 
 			const target = this.findGatherTarget(lightSquare);
