@@ -331,7 +331,7 @@ class CompactSortedAlgorithm {
 		if (lastCube === null || lastCube.p[0] === minX) {
 			return null;
 		}
-		if (firstCube.p[0] - lastCube.p[0] <= (movedLooseSquare ? 2 : 1)) {
+		if (firstCube.p[0] - lastCube.p[0] <= 1) {
 			return null;
 		}
 		if (!this.preservesChunkiness(firstCube.p,
@@ -387,7 +387,7 @@ class CompactSortedAlgorithm {
 		if (lastCube === null || lastCube.p[1] === minY) {
 			return null;
 		}
-		if (firstCube.p[1] - lastCube.p[1] <= (movedLooseSquare ? 2 : 1)) {
+		if (firstCube.p[1] - lastCube.p[1] <= 1) {
 			return null;
 		}
 		if (!this.preservesChunkiness(firstCube.p,

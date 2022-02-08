@@ -12,7 +12,7 @@ class CompactAlgorithm {
 	*execute(): Algorithm {
 		printStep('Compacting');
 
-		// is there a free move maintaining chunkiness? do it
+		// is there a move maintaining chunkiness? do it
 		let move: Move[] | null;
 		while ((move = this.findFreeMove()) ||
 				(move = this.findCornerMove()) ||
@@ -22,9 +22,6 @@ class CompactAlgorithm {
 				yield m;
 			}
 		}
-
-		// is there a corner move maintaining chunkiness? do it
-		// repeat until nothing possible
 	}
 
 	findFreeMove(): Move[] | null {

@@ -128,7 +128,7 @@ class CubesSimulator {
 		this.ipeButton = new Button(
 			"save", "Ipe export");
 		this.ipeButton.onClick(this.ipeExport.bind(this));
-		//this.bottomBar.addChild(this.ipeButton);
+		this.bottomBar.addChild(this.ipeButton);
 
 
 		// set up event handlers for dialog buttons
@@ -294,7 +294,7 @@ class CubesSimulator {
 	}
 
 	createAlgorithm(): Generator<Move> {
-		return new CustomAlgorithm(this.world).execute();
+		return new CompleteAlgorithm(this.world).execute();
 	}
 
 	// button handlers

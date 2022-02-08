@@ -1854,13 +1854,12 @@ class World {
 		const [minX, minY, , ] = this.bounds();
 
 		for (const cube of this.cubes) {
-			if (cube.p[0] === minX || cube.p[1] === minY) {
-				continue;
-			}
-			if (!this.hasCube([cube.p[0], cube.p[1] - 1])) {
+			if (cube.p[0] !== minX &&
+					!this.hasCube([cube.p[0] - 1, cube.p[1]])) {
 				return false;
 			}
-			if (!this.hasCube([cube.p[0] - 1, cube.p[1]])) {
+			if (cube.p[1] !== minY &&
+					!this.hasCube([cube.p[0], cube.p[1] - 1])) {
 				return false;
 			}
 		}
