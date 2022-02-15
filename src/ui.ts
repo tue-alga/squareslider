@@ -47,6 +47,28 @@ class Button extends Component {
 		if (clickHandler) {
 			this.clickHandler = clickHandler;
 		}
+
+		this.pixi.interactive = true;
+		this.pixi.hitArea = new PIXI.Rectangle(0, 0,
+			Button.BUTTON_SIZE, Button.BUTTON_SIZE);
+		this.pixi.on('click', () => {
+			if (this.enabled && this.clickHandler) {
+				this.clickHandler();
+			}
+		});
+		this.pixi.on('tap', () => {
+			if (this.enabled && this.clickHandler) {
+				this.clickHandler();
+			}
+		});
+		this.pixi.on('mousemove', () => {
+			this.hovered = true;
+			this.balloon.visible = true;
+		});
+		this.pixi.on('mouseout', () => {
+			this.hovered = false;
+			this.balloon.visible = false;
+		});
 	}
 
 	rebuildPixi(): void {
@@ -63,27 +85,6 @@ class Button extends Component {
 			Button.BUTTON_SIZE / 2,
 			Button.BUTTON_SIZE / 2);
 		background.endFill();
-		background.interactive = true;
-		background.hitArea = new PIXI.Rectangle(0, 0,
-			Button.BUTTON_SIZE, Button.BUTTON_SIZE);
-		background.on('click', () => {
-			if (this.enabled && this.clickHandler) {
-				this.clickHandler();
-			}
-		});
-		background.on('tap', () => {
-			if (this.enabled && this.clickHandler) {
-				this.clickHandler();
-			}
-		});
-		background.on('mousemove', () => {
-			this.hovered = true;
-			this.balloon.visible = true;
-		});
-		background.on('mouseout', () => {
-			this.hovered = false;
-			this.balloon.visible = false;
-		});
 		this.pixi.addChild(background);
 
 		const icon = new PIXI.Sprite(
