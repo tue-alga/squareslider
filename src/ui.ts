@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import {Constants} from './cubes-simulator';
+import { Constants } from './cubes-simulator';
 
 abstract class Component {
 	protected readonly pixi = new PIXI.Container();
@@ -39,9 +39,10 @@ class Button extends Component {
 	private hovered: boolean = false;
 
 	constructor(public icon: string,
-			public tooltip: string,
-			public shortcut?: string,
-			clickHandler?: () => void) {
+		public tooltip: string,
+		public tooltipAbove: boolean,
+		public shortcut?: string,
+		clickHandler?: () => void) {
 		super();
 		if (clickHandler) {
 			this.clickHandler = clickHandler;
@@ -107,11 +108,13 @@ class Button extends Component {
 			height += 12;
 		}
 
+		const y = this.tooltipAbove ? -height - 4 : this.getHeight() + 4;
+
 		const balloonShadow = new PIXI.Graphics();
 		balloonShadow.beginFill(0x000000);
 		balloonShadow.drawRoundedRect(
 			(-Button.BALLOON_WIDTH + Button.BUTTON_SIZE) / 2,
-			-height - 4,
+			y,
 			Button.BALLOON_WIDTH,
 			height,
 			height / 2);
@@ -124,7 +127,7 @@ class Button extends Component {
 		balloonBackground.beginFill(0x222222);
 		balloonBackground.drawRoundedRect(
 			(-Button.BALLOON_WIDTH + Button.BUTTON_SIZE) / 2,
-			-height - 4,
+			y,
 			Button.BALLOON_WIDTH,
 			height,
 			height / 2);
@@ -135,7 +138,7 @@ class Button extends Component {
 			Constants.tooltipStyle);
 		balloonText.anchor.set(0.5, 0.5);
 		balloonText.x = Button.BUTTON_SIZE / 2;
-		balloonText.y = -height / 2 - 5;
+		balloonText.y = y + height / 2 - 1;
 		this.balloon.addChild(balloonText);
 
 		if (this.shortcut) {
@@ -143,8 +146,8 @@ class Button extends Component {
 				Constants.tooltipSmallStyle);
 			shortcutText.anchor.set(0.5, 0.5);
 			shortcutText.x = Button.BUTTON_SIZE / 2;
-			balloonText.y = -height / 2 - 12;
-			shortcutText.y = -height / 2 + 6;
+			balloonText.y = y + height / 2 - 9;
+			shortcutText.y = y + height / 2 + 9;
 			this.balloon.addChild(shortcutText);
 		}
 	}
@@ -157,17 +160,12 @@ class Button extends Component {
 		return Button.BUTTON_SIZE;
 	}
 
-	setEnabled(enabled: boolean): void {
-		this.enabled = enabled;
-		this.rebuildPixi();
-	}
-
 	isEnabled(): boolean {
 		return this.enabled;
 	}
 
-	setPressed(pressed: boolean): void {
-		this.pressed = pressed;
+	setEnabled(enabled: boolean): void {
+		this.enabled = enabled;
 		this.rebuildPixi();
 	}
 
@@ -175,13 +173,14 @@ class Button extends Component {
 		return this.pressed;
 	}
 
-	setIcon(icon: string): void {
-		this.icon = icon;
+	setPressed(pressed: boolean): void {
+		this.pressed = pressed;
 		this.rebuildPixi();
 	}
 
-	togglePressed(): void {
-		this.setPressed(!this.pressed);
+	setIcon(icon: string): void {
+		this.icon = icon;
+		this.rebuildPixi();
 	}
 
 	setTooltip(tooltip: string): void {
@@ -234,7 +233,7 @@ class Toolbar extends Component {
 
 	private children: Component[] = [];
 
-	constructor() {
+	constructor(public bottom: boolean) {
 		super();
 	}
 
@@ -248,7 +247,7 @@ class Toolbar extends Component {
 		const background = new PIXI.Graphics();
 		background.beginFill(0xffffff);
 		background.drawRoundedRect(
-			0, 0,
+			0, this.bottom ? 0 : -Toolbar.CORNER_RADIUS,
 			width, height + Toolbar.CORNER_RADIUS,
 			Toolbar.CORNER_RADIUS);
 		background.endFill();
@@ -258,7 +257,7 @@ class Toolbar extends Component {
 		const shadow = new PIXI.Graphics();
 		shadow.beginFill(0x000000);
 		shadow.drawRoundedRect(
-			0, 2,
+			0, this.bottom ? 3 : -Toolbar.CORNER_RADIUS + 3,
 			width, height + Toolbar.CORNER_RADIUS,
 			Toolbar.CORNER_RADIUS);
 		shadow.endFill();
@@ -271,7 +270,7 @@ class Toolbar extends Component {
 		let x = Toolbar.X_MARGIN;
 		for (let i = 0; i < this.children.length; i++) {
 			const child = this.children[i];
-			child.setPosition(x, Toolbar.Y_MARGIN);
+			child.setPosition(x, this.bottom ? Toolbar.Y_MARGIN : Toolbar.BOTTOM_MARGIN);
 			x += child.getWidth() + Toolbar.X_MARGIN;
 			this.pixi.addChild(child.getPixi());
 		}
@@ -297,7 +296,95 @@ class Toolbar extends Component {
 		}
 		return height + Toolbar.Y_MARGIN + Toolbar.BOTTOM_MARGIN;
 	}
+
+	setVisible(visible: boolean): void {
+		this.getPixi().visible = visible;
+	}
 }
 
-export {Button, Separator, Toolbar};
+class StepCountLabel extends Component {
+
+	countText = new PIXI.Text("", Constants.stepCountStyle);
+
+	constructor(public stepCount: number) {
+		super();
+		this.rebuildPixi();
+	}
+
+	override getWidth() {
+		return 80;
+	}
+
+	override getHeight() {
+		return 50;
+	}
+
+	setStepCount(stepCount: number) {
+		this.stepCount = stepCount;
+		this.countText.text = "" + this.stepCount;
+	}
+
+	override rebuildPixi(): void {
+		this.pixi.removeChildren();
+
+		let stepText = new PIXI.Text("STEP", Constants.smallLabelStyle);
+		stepText.anchor.set(0.5, 0.5);
+		stepText.x = this.getWidth() / 2;
+		stepText.y = this.getHeight() / 2 - 22;
+		this.pixi.addChild(stepText);
+
+		this.countText.anchor.set(0.5, 0.5);
+		this.countText.x = this.getWidth() / 2;
+		this.countText.y = this.getHeight() / 2 + 4;
+		this.pixi.addChild(this.countText);
+	}
+}
+
+class PhaseLabel extends Component {
+
+	phaseText = new PIXI.Text("", Constants.phaseLabelStyle);
+	subPhaseText = new PIXI.Text("", Constants.subPhaseLabelStyle);
+
+	constructor() {
+		super();
+		this.rebuildPixi();
+	}
+
+	override getWidth() {
+		return 500;
+	}
+
+	override getHeight() {
+		return 50;
+	}
+
+	setPhase(phase: string) {
+		this.phaseText.text = phase;
+	}
+
+	setSubPhase(subPhase: string) {
+		this.subPhaseText.text = subPhase;
+		if (subPhase == "") {
+			this.phaseText.y = this.getHeight() / 2 - 4;
+		} else {
+			this.phaseText.y = this.getHeight() / 2 - 17;
+		}
+	}
+
+	override rebuildPixi(): void {
+		this.pixi.removeChildren();
+
+		this.phaseText.anchor.set(0, 0.5);
+		this.phaseText.x = 0;
+		this.phaseText.y = this.getHeight() / 2 - 17;
+		this.pixi.addChild(this.phaseText);
+
+		this.subPhaseText.anchor.set(0, 0.5);
+		this.subPhaseText.x = 0;
+		this.subPhaseText.y = this.getHeight() / 2 + 9;
+		this.pixi.addChild(this.subPhaseText);
+	}
+}
+
+export { Button, Separator, Toolbar, StepCountLabel, PhaseLabel };
 

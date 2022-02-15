@@ -1,108 +1,217 @@
 <!doctype html>
 <html>
-	<head>
-		<title>Cubes Simulator</title>
-		<meta name=”viewport” content=”width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no” />
-		<style>
-			* {
-				padding: 0;
-				margin: 0;
-				font-family: "Fira Sans";
-			}
 
-			.dialogs {
-				background-color: rgba(250, 250, 250, 0.5);
-				position: absolute;
-				top: 0;
-				left: 0;
-				right: 0;
-				bottom: 0;
-				padding-top: 50px;
-				display: none;
-			}
+<head>
+	<title>Cubes Simulator</title>
+	<meta name=”viewport” content=”width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no” />
+	<style>
+		* {
+			padding: 0;
+			margin: 0;
+			font-family: "Fira Sans";
+		}
 
-			.dialog {
-				position: relative;
-				width: 50%;
-				min-width: 500px;
-				margin: 0px auto;
-				padding: 20px;
-				background-color: white;
-				border-radius: 5px;
-				box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-			}
+		body {
+			overflow: hidden;
+		}
 
-			.dialog-title {
-				font-size: 28px;
-				font-weight: 700;
+		#cubes-simulator-container {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0;
+			bottom: 0;
+			transition: right .5s;
+		}
 
-				border-bottom: 1px solid #ccc;
-				padding-bottom: 15px;
-				margin-bottom: 15px;
-				text-align: center;
-			}
+		.help-pane-open #cubes-simulator-container {
+			right: 600px;
+		}
 
-			.dialog-footer {
-				padding-top: 15px;
-				text-align: center;
-			}
+		.help-pane-open #bbcs {
+			right: 600px;
+		}
 
-			#save-textarea, #ipe-textarea {
-				width: 100%;
-				height: 200px;
-				margin-top: 20px;
-				resize: vertical;
-			}
+		#help-pane {
+			position: absolute;
+			left: 100%;
+			top: 0;
+			bottom: 0;
+			width: 561px;
+			margin-left: 0;
+			transition: margin .5s;
+			padding: 20px;
+			overflow-y: scroll;
+			background-color: white;
+			line-height: 150%;
+		}
 
-			.button {
-				padding: 9px 15px;
-				border-radius: 50px;
-				border: 1px solid #ccc;
-				cursor: pointer;
-			}
-		</style>
-	</head>
-	<body>
-		<div class="dialogs" id="saveDialog">
-			<div class="dialog">
-				<div class="dialog-title">
-					Save &amp; load
-				</div>
-				<div class="dialog-content">
-					<p>The textbox below contains a JSON representation of your drawing. You can copy and save it, so you can load it again later. To load a saved JSON string, paste it in the textbox below (replacing the existing contents) and click Load.</p>
-					<textarea id="save-textarea"></textarea>
-				</div>
-				<div class="dialog-footer">
-					<a class="button" id="load-button">Load</a>
-					<a class="button" id="close-button">Close</a>
-				</div>
+		.help-pane-open #help-pane {
+			margin-left: -600px;
+			box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+		}
+
+		.dialogs {
+			background-color: rgba(250, 250, 250, 0.5);
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			padding-top: 50px;
+			display: none;
+		}
+
+		.dialog {
+			position: relative;
+			width: 50%;
+			min-width: 500px;
+			margin: 0px auto;
+			padding: 20px;
+			background-color: white;
+			border-radius: 5px;
+			box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+		}
+
+		.dialog-title {
+			font-size: 28px;
+			font-weight: 700;
+
+			border-bottom: 1px solid #ccc;
+			padding-bottom: 15px;
+			margin-bottom: 15px;
+			text-align: center;
+		}
+
+		.dialog-footer {
+			padding-top: 15px;
+			text-align: center;
+		}
+
+		#save-textarea,
+		#ipe-textarea {
+			width: 100%;
+			height: 200px;
+			margin-top: 20px;
+			resize: vertical;
+		}
+
+		.button {
+			padding: 9px 15px;
+			border-radius: 50px;
+			border: 1px solid #ccc;
+			cursor: pointer;
+		}
+
+		#help-pane img {
+			vertical-align: middle;
+			width: 32px;
+		}
+
+		#help-pane img.full-width-image {
+			display: block;
+			width: auto;
+			max-width: 100%;
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		#help-pane p {
+			margin-top: 5px;
+			margin-bottom: 15px;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="cubes-simulator-container">
+		<canvas id="cubes-simulator-canvas"></canvas>
+	</div>
+	<div class="dialogs" id="saveDialog">
+		<div class="dialog">
+			<div class="dialog-title">
+				Save &amp; load
+			</div>
+			<div class="dialog-content">
+				<p>The textbox below contains a JSON representation of your drawing. You can copy and save it, so you
+					can load it again later. To load a saved JSON string, paste it in the textbox below (replacing the
+					existing contents) and click Load.</p>
+				<textarea id="save-textarea"></textarea>
+			</div>
+			<div class="dialog-footer">
+				<a class="button" id="load-button">Load</a>
+				<a class="button" id="close-button">Close</a>
 			</div>
 		</div>
-		<div class="dialogs" id="ipeDialog">
-			<div class="dialog">
-				<div class="dialog-title">
-					Ipe export
-				</div>
-				<div class="dialog-content">
-					<p>Paste the text below into Ipe.</p>
-					<textarea id="ipe-textarea"></textarea>
-				</div>
-				<div class="dialog-footer">
-					<a class="button" id="ipe-close-button">Close</a>
-				</div>
+	</div>
+	<div class="dialogs" id="ipeDialog">
+		<div class="dialog">
+			<div class="dialog-title">
+				Ipe export
+			</div>
+			<div class="dialog-content">
+				<p>Paste the text below into Ipe.</p>
+				<textarea id="ipe-textarea"></textarea>
+			</div>
+			<div class="dialog-footer">
+				<a class="button" id="ipe-close-button">Close</a>
 			</div>
 		</div>
-		<script src="main.js"></script>
-		<script>
-			// ugly hack: declare print functions here in the global scope
-			// to avoid the line numbers changing
-			// (see https://stackoverflow.com/questions/13815640/a-proper-wrapper-for-console-log-with-correct-line-number?noredirect=1&lq=1)
-			let printStep = function() {
-				return console.log.bind(console, "%c%s", "margin-top: 10px; font-size: 150%; font-weight: bold;");
-			}();
-			let printMiniStep = function() {
-				return console.log.bind(console, "%c%s", "font-weight: bold;");
-			}();
-		</script>
-	</body>
+	</div>
+	<div id="help-pane">
+		<div class="dialog-title">
+			Help
+		</div>
+		<div class="dialog-content">
+			<p>This is a visualizer for the Gather&Compact algorithm for modular robot reconfiguration, described in our <a href="https://arxiv.org/abs/2105.07997">paper</a>
+			<blockquote>
+				Irina Kostitsyna, Irene Parada, Willem Sonke, Bettina Speckmann, and Jules Wulms, <i>Compacting Squares: Input-Sensitive In-Place Reconfiguration of Sliding Squares</i> (to appear)
+			</blockquote>
+			</p>
+
+			<h2>Help</h2>
+			<p>The following tools are available for drawing the input configuration:<br>
+				<img src="icons/select.png">: Pan the canvas around or select a square. Click once on a square to select it.<br>
+				<img src="icons/add-cube.png">: Click on an empty grid cell to insert a square in that location. Click on an existing square to delete it.<br>
+				<img src="icons/color.png">: Changes the color of the selected square (cycles through six available colors). Colors do not influence the algorithm, but can be helpful to identify where certain parts of the input configuration end up while the algorithm is running.<br>
+				<img src="icons/delete.png">: Deletes the selected square.<br>
+			</p>
+
+			<p>When you are satisfied with your drawing, click <img src="icons/play.png"> to simulate your construction. The editing toolbar at the bottom of the screen will disappear. To make it reappear, click <img src="icons/reset.png"> to reset the configuration and go back into editing mode. While the algorithm is running, you can pause the visualization using <img src="icons/pause.png">, and run the algorithm for a single step using <img src="icons/step.png">.</p>
+			<p>The dialog opened by <img src="icons/save.png"> allows you to save your configuration to a JSON string, or load a configuration from a JSON string you saved earlier.</p>
+
+			<h2>Example configurations</h2>
+
+			<p>Click the buttons below to load example configurations onto the canvas. (This will overwrite your construction.) This includes the several configurations used in the figures in the paper, and some of the configurations used for the experimental evaluation.</p>
+			<p><a class="button" id="example-button-fig-2">&larr; Figure 2: 40x40 spiral</a></p>
+			<p><a class="button" id="example-button-fig-6">&larr; Figure 6: Small example of chunks</a></p>
+			<p><a class="button" id="example-button-fig-10l">&larr; Figure 10, left: Chain move</a></p>
+			<p><a class="button" id="example-button-fig-10r">&larr; Figure 10, right: Chain move with a loose square</a></p>
+			<p><a class="button" id="example-button-fig-14a">&larr; Figure 14a: 10x10 randomly generated, density 50%</a></p>
+			<p><a class="button" id="example-button-fig-14b">&larr; Figure 14b: 10x10 randomly generated, density 70%</a></p>
+			<p><a class="button" id="example-button-fig-14c">&larr; Figure 14c: 10x10 randomly generated, density 85%</a></p>
+		</div>
+	</div>
+	<script>
+		var phaseLabel = null;
+		// ugly hack: declare print functions here in the global scope
+		// to avoid the line numbers changing
+		// (see https://stackoverflow.com/questions/13815640/a-proper-wrapper-for-console-log-with-correct-line-number?noredirect=1&lq=1)
+		let printStep = function (text) {
+			if (phaseLabel) {
+				phaseLabel.setPhase(text);
+				phaseLabel.setSubPhase("");
+			}
+			console.log("%c%s", "margin-top: 10px; font-size: 150%; font-weight: bold;", text);
+		};
+		let printMiniStep = function (text) {
+			if (phaseLabel) {
+				phaseLabel.setSubPhase(text);
+			}
+			console.log("%c%s", "font-weight: bold;", text);
+		};
+	</script>
+	<script src="main.js"></script>
+</body>
+
 </html>

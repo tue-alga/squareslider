@@ -1,11 +1,11 @@
 import * as PIXI from 'pixi.js';
 
-import {Cube, Color} from './cube';
-import {World, Move} from './world';
-import {Button, Separator, Toolbar} from './ui';
+import { Cube, Color } from './cube';
+import { World, Move } from './world';
+import { Button, Separator, Toolbar, StepCountLabel, PhaseLabel } from './ui';
 
-import {CompleteAlgorithm} from './algorithms/complete';
-import {CustomAlgorithm} from './algorithms/custom';
+import { CompleteAlgorithm } from './algorithms/complete';
+import { CustomAlgorithm } from './algorithms/custom';
 
 enum EditMode {
 	SELECT, ADD_BALL
@@ -24,7 +24,7 @@ class CubesSimulator {
 	runUntil: number = Infinity;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
-	timeSpeed: number = 0.5;
+	timeSpeed: number = 0.05;
 
 	world: World;
 	algorithm: Generator<Move> | null = null;
@@ -37,12 +37,16 @@ class CubesSimulator {
 	private lastColor = Color.GRAY;
 
 	// GUI elements
+	private topBar: Toolbar;
 	private bottomBar: Toolbar;
+	private bottomBarOffset = 0;
+	private statusBar: Toolbar;
 
 	private runButton: Button;
 	private stepButton: Button;
 	private resetButton: Button;
-	
+	private helpButton: Button;
+
 	private selectButton: Button;
 	private addCubeButton: Button;
 	private colorButton: Button;
@@ -52,6 +56,9 @@ class CubesSimulator {
 	private ipeButton: Button;
 	private showTreeButton: Button;
 
+	private stepCounter: StepCountLabel;
+	private phaseLabel: PhaseLabel;
+
 	private textArea = document.getElementById('save-textarea') as HTMLTextAreaElement;
 	private ipeArea = document.getElementById('ipe-textarea') as HTMLTextAreaElement;
 
@@ -60,36 +67,53 @@ class CubesSimulator {
 
 		this.world = new World();
 
-		this.bottomBar = new Toolbar();
+		this.topBar = new Toolbar(false);
 
-		this.runButton = new Button("play", "Run simulation", "Space");
+		this.runButton = new Button("play", "Run simulation", false, "Space");
 		this.runButton.onClick(this.run.bind(this));
-		this.bottomBar.addChild(this.runButton);
+		this.topBar.addChild(this.runButton);
 
-		this.stepButton = new Button("step", "Run one step");
+		this.stepButton = new Button("step", "Run one step", false);
 		this.stepButton.onClick(this.step.bind(this));
-		this.bottomBar.addChild(this.stepButton);
+		this.topBar.addChild(this.stepButton);
 
-		this.resetButton = new Button("reset", "Reset simulation", "R");
+		this.resetButton = new Button("reset", "Reset simulation", false, "R");
 		this.resetButton.onClick(this.reset.bind(this));
 		this.resetButton.setEnabled(false);
-		this.bottomBar.addChild(this.resetButton);
+		this.topBar.addChild(this.resetButton);
 
-		this.bottomBar.addChild(new Separator());
+		this.topBar.addChild(new Separator());
+
+		this.saveButton = new Button(
+			"save", "Save & load", false);
+		this.saveButton.onClick(this.save.bind(this));
+		this.topBar.addChild(this.saveButton);
+
+		this.ipeButton = new Button(
+			"save", "Ipe export", false);
+		this.ipeButton.onClick(this.ipeExport.bind(this));
+		//this.topBar.addChild(this.ipeButton);
+
+		this.helpButton = new Button("help", "Help", false);
+		this.helpButton.onClick(this.help.bind(this));
+		this.topBar.addChild(this.helpButton);
+
+
+		this.bottomBar = new Toolbar(true);
 
 		this.selectButton = new Button(
-			"select", "Select objects", "S");
+			"select", "Select objects", true, "S");
 		this.selectButton.setPressed(true);
 		this.selectButton.onClick(this.selectMode.bind(this));
 		this.bottomBar.addChild(this.selectButton);
 
 		this.addCubeButton = new Button(
-			"add-ball", "Add/remove cubes", "C");
+			"add-cube", "Add/remove cubes", true, "C");
 		this.addCubeButton.onClick(this.addCubesMode.bind(this));
 		this.bottomBar.addChild(this.addCubeButton);
 
 		this.colorButton = new Button(
-			"color", "Change color");
+			"color", "Change color", true);
 		this.colorButton.onClick(
 			() => {
 				this.selection.forEach((cube) => {
@@ -106,7 +130,7 @@ class CubesSimulator {
 		this.bottomBar.addChild(this.colorButton);
 
 		this.deleteButton = new Button(
-			"delete", "Delete selected", "Delete");
+			"delete", "Delete selected", true, "Delete");
 		this.deleteButton.onClick(this.delete.bind(this));
 		this.deleteButton.setEnabled(false);
 		this.bottomBar.addChild(this.deleteButton);
@@ -114,21 +138,21 @@ class CubesSimulator {
 		//this.bottomBar.addChild(new Separator());
 
 		this.showTreeButton = new Button(
-			"save", "Show tree");
+			"save", "Show tree", true);
 		this.showTreeButton.onClick(this.showTree.bind(this));
 		//this.bottomBar.addChild(this.showTreeButton);
 
-		this.bottomBar.addChild(new Separator());
 
-		this.saveButton = new Button(
-			"save", "Save & load");
-		this.saveButton.onClick(this.save.bind(this));
-		this.bottomBar.addChild(this.saveButton);
+		this.statusBar = new Toolbar(true);
 
-		this.ipeButton = new Button(
-			"save", "Ipe export");
-		this.ipeButton.onClick(this.ipeExport.bind(this));
-		this.bottomBar.addChild(this.ipeButton);
+		this.stepCounter = new StepCountLabel(0);
+		this.statusBar.addChild(this.stepCounter);
+
+		this.statusBar.addChild(new Separator());
+
+		this.phaseLabel = new PhaseLabel();
+		phaseLabel = this.phaseLabel;
+		this.statusBar.addChild(this.phaseLabel);
 
 
 		// set up event handlers for dialog buttons
@@ -160,8 +184,14 @@ class CubesSimulator {
 	setup() {
 		this.app.stage.addChild(this.world.viewport);
 
+		this.topBar.rebuildPixi();
+		this.app.stage.addChild(this.topBar.getPixi());
+
 		this.bottomBar.rebuildPixi();
 		this.app.stage.addChild(this.bottomBar.getPixi());
+
+		this.statusBar.rebuildPixi();
+		this.app.stage.addChild(this.statusBar.getPixi());
 
 		// click handler
 		this.world.pixi.interactive = true;
@@ -225,20 +255,20 @@ class CubesSimulator {
 
 		while (this.time > this.timeStep) {
 			this.timeStep++;
-			//try {
+			this.stepCounter.setStepCount(this.timeStep);
+			try {
 				this.world.nextStep(this.algorithm!, this.timeStep);
-			/*} catch (e) {
+			} catch (e) {
 				const cryEmoji = String.fromCodePoint(parseInt('1F622', 16));
 				console.log(`Time step ${this.timeStep}. Threw exception: ${e}. Pausing the simulation ${cryEmoji}`);
 				this.run();  // pause
-				throw e;
-				break;*/
-			//}
+				break;
+			}
 			if (this.world.currentMove) {
 				console.log(`Time step ${this.timeStep}. Move: ${this.world.currentMove.toString()}`);
 			}
 			if (this.simulationMode === SimulationMode.RUNNING &&
-					!this.world.currentMove) {
+				!this.world.currentMove) {
 				console.log(`Time step ${this.timeStep}. No move left, so pausing the simulation.`);
 				this.run();  // pause
 				break;
@@ -254,13 +284,25 @@ class CubesSimulator {
 		this.world.treePixi.x = window.innerWidth / 2;
 		this.world.treePixi.y = window.innerHeight / 2;
 
+		this.topBar.setPosition(
+			this.app.renderer.width / 2 - this.topBar.getWidth() / 2,
+			0);
 		this.bottomBar.setPosition(
-			window.innerWidth / 2 - this.bottomBar.getWidth() / 2,
-			window.innerHeight - this.bottomBar.getHeight());
+			this.app.renderer.width / 2 - this.bottomBar.getWidth() / 2,
+			this.app.renderer.height - this.bottomBar.getHeight() + Math.pow(this.bottomBarOffset, 2));
+		this.statusBar.setPosition(
+			this.app.renderer.width / 2 - this.statusBar.getWidth() / 2,
+			this.app.renderer.height - this.statusBar.getHeight() + Math.pow(15 - this.bottomBarOffset, 2));
+
+		if (this.simulationMode === SimulationMode.RESET) {
+			this.bottomBarOffset = Math.max(this.bottomBarOffset - 0.5 * delta, 0);
+		} else {
+			this.bottomBarOffset = Math.min(this.bottomBarOffset + 0.5 * delta, 15);
+		}
 
 		this.world.updatePositions(this.time, this.timeStep);
 	}
-	
+
 	worldClickHandler(e: PIXI.interaction.InteractionEvent): void {
 		const p = e.data.getLocalPosition(this.world.pixi);
 		let x = p.x / 80;
@@ -306,6 +348,11 @@ class CubesSimulator {
 			this.runButton.setTooltip("Run simulation");
 			this.stepButton.setEnabled(true);
 		} else {
+			if (!this.world.isConnected()) {
+				alert("The configuration is not connected. " +
+					"Make sure to enter a connected configuration before running the algorithm.");
+				return;
+			}
 			this.runUntil = Infinity;
 			this.simulationMode = SimulationMode.RUNNING;
 			this.runButton.setIcon("pause");
@@ -369,7 +416,7 @@ class CubesSimulator {
 		this.selectButton.setPressed(false);
 		this.addCubeButton.setPressed(true);
 	}
-	
+
 	delete(): void {
 		this.selection.forEach((obj) => {
 			if (obj instanceof Cube) {
@@ -380,7 +427,7 @@ class CubesSimulator {
 	}
 
 	showTree(): void {
-		this.showTreeButton.togglePressed();
+		this.showTreeButton.setPressed(!this.showTreeButton.isPressed());
 		this.world.treePixi.visible = this.showTreeButton.isPressed();
 		this.world.backgroundPixi.visible = !this.world.treePixi.visible;
 
@@ -417,6 +464,22 @@ class CubesSimulator {
 		dialogs!.style.display = 'block';
 		this.ipeArea.value = this.world.toIpe();
 	}
+
+	help(): void {
+		const container = document.getElementById('cubes-simulator-container')!;
+		if (this.helpButton.isPressed()) {
+			this.helpButton.setPressed(false);
+			document.body.classList.remove('help-pane-open');
+			this.app.renderer.resize(container.offsetWidth + 600, container.offsetHeight);
+		} else {
+			this.helpButton.setPressed(true);
+			document.body.classList.add('help-pane-open');
+		}
+		const self = this;
+		setTimeout(function () {
+			self.app.renderer.resize(container.offsetWidth, container.offsetHeight);
+		}, 600);
+	}
 }
 
 class Constants {
@@ -430,7 +493,29 @@ class Constants {
 		fontSize: 12,
 		fill: "white"
 	});
+	static readonly stepCountStyle = new PIXI.TextStyle({
+		fontFamily: "Fira Sans",
+		fontSize: 40,
+		fontWeight: "bold",
+		fill: "black"
+	});
+	static readonly smallLabelStyle = new PIXI.TextStyle({
+		fontFamily: "Fira Sans",
+		fontSize: 15,
+		fill: "black"
+	});
+	static readonly phaseLabelStyle = new PIXI.TextStyle({
+		fontFamily: "Fira Sans",
+		fontSize: 18,
+		fontWeight: "bold",
+		fill: "black"
+	});
+	static readonly subPhaseLabelStyle = new PIXI.TextStyle({
+		fontFamily: "Fira Sans",
+		fontSize: 18,
+		fill: "black"
+	});
 }
 
-export {CubesSimulator, Constants};
+export { CubesSimulator, Constants };
 
