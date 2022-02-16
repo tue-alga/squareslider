@@ -1,10 +1,10 @@
-import {Algorithm, World, Move, MoveDirection} from '../world';
-import {Cube, ComponentStatus, Color} from '../cube';
-import {Vector} from '../vector';
+import { Algorithm, World, Move, MoveDirection } from '../world';
+import { Square, ComponentStatus, Color } from '../square';
+import { Vector } from '../vector';
 
 class CanonicalizeAlgorithm {
 
-	constructor(public world: World) {}
+	constructor(public world: World) { }
 
 	*execute(): Algorithm {
 		printStep('Canonicalizing');
@@ -20,23 +20,23 @@ class CanonicalizeAlgorithm {
 
 	*doCanonicalizationMove(): Algorithm {
 		const [xMin, yMin] = this.highestMinPotentialEmptyCell();
-		const [xMax, yMax] = this.lowestMaxPotentialCube();
+		const [xMax, yMax] = this.lowestMaxPotentialSquare();
 
 		if (xMin + yMin > xMax + yMax ||
-				(xMin + yMin === xMax + yMax && yMin < yMax)) {
+			(xMin + yMin === xMax + yMax && yMin < yMax)) {
 			throw "no canonicalization move available";
 		}
 
 		yield* this.world.shortestMovePath([xMax, yMax], [xMin, yMin]);
 	}
 
-	lowestMaxPotentialCube(): [number, number] {
+	lowestMaxPotentialSquare(): [number, number] {
 		let max = -Infinity;
 		let [xMax, yMax] = [-1, -1];
-		for (const c of this.world.cubes) {
+		for (const c of this.world.squares) {
 			const potential = c.p[0] + c.p[1];
 			if (potential > max ||
-					(potential === max && c.p[1] < yMax)) {
+				(potential === max && c.p[1] < yMax)) {
 				max = potential;
 				[xMax, yMax] = [c.p[0], c.p[1]];
 			}
@@ -50,17 +50,17 @@ class CanonicalizeAlgorithm {
 		const check = function (x: number, y: number) {
 			const potential = x + y;
 			if (potential < min ||
-					(potential === min && y > yMin)) {
+				(potential === min && y > yMin)) {
 				min = potential;
 				[xMin, yMin] = [x, y];
 			}
 		}
-		for (const c of this.world.cubes) {
-			if (!this.world.hasCube([c.p[0], c.p[1] + 1])) {
-				check(c.p[0], c.p[1] + 1);
+		for (const square of this.world.squares) {
+			if (!this.world.hasSquare([square.p[0], square.p[1] + 1])) {
+				check(square.p[0], square.p[1] + 1);
 			}
-			if (!this.world.hasCube([c.p[0] + 1, c.p[1]])) {
-				check(c.p[0] + 1, c.p[1]);
+			if (!this.world.hasSquare([square.p[0] + 1, square.p[1]])) {
+				check(square.p[0] + 1, square.p[1]);
 			}
 		}
 
@@ -68,5 +68,5 @@ class CanonicalizeAlgorithm {
 	}
 }
 
-export {CanonicalizeAlgorithm};
+export { CanonicalizeAlgorithm };
 

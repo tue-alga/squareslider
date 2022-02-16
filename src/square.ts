@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 
-import {World, Move} from './world';
+import { World, Move } from './world';
 
 type Position = [number, number];
 
@@ -22,8 +22,8 @@ class Color {
 
 	equals(other: Color): boolean {
 		return this.r === other.r &&
-				this.g === other.g &&
-				this.b === other.b;
+			this.g === other.g &&
+			this.b === other.b;
 	}
 }
 
@@ -31,7 +31,7 @@ enum ComponentStatus {
 	LINK_CUT, LINK_STABLE, CHUNK_CUT, CHUNK_STABLE, CONNECTOR, NONE
 }
 
-class Cube {
+class Square {
 	p: Position;
 	resetPosition: Position;
 	color: Color;
@@ -43,7 +43,6 @@ class Cube {
 	circle = new PIXI.Graphics();
 	componentMark = new PIXI.Graphics();
 	backgroundPixi = new PIXI.Graphics();
-	//textPixi = new PIXI.Text('bla');
 	dots: [number, PIXI.Graphics][] = [];
 	dotsLayer = new PIXI.Container();
 	selected: boolean = false;
@@ -59,7 +58,6 @@ class Cube {
 		this.pixi.addChild(this.selectionCircle);
 		this.pixi.addChild(this.circle);
 		this.pixi.addChild(this.componentMark);
-		//this.pixi.addChild(this.textPixi);
 		this.updatePixi();
 
 		this.updatePosition(0, 0);
@@ -198,5 +196,5 @@ class Cube {
 	}
 }
 
-export {Cube, Color, ComponentStatus, Position};
+export { Square, Color, ComponentStatus, Position };
 

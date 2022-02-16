@@ -1,5 +1,5 @@
 import { Move, World } from './world';
-import { ComponentStatus } from './cube';
+import { ComponentStatus } from './square';
 import { GatherAlgorithm } from './algorithms/gather';
 import { CompactAlgorithm } from './algorithms/compact';
 
@@ -122,9 +122,9 @@ function printWorld(world: World, bounds: [number, number, number, number]) {
 	for (let y = maxY; y >= minY; y--) {
 		let line = "│ ";
 		for (let x = minX; x <= maxX; x++) {
-			if (world.hasCube([x, y])) {
-				const cube = world.getCube([x, y])!;
-				switch (cube.componentStatus) {
+			if (world.hasSquare([x, y])) {
+				const square = world.getSquare([x, y])!;
+				switch (square.componentStatus) {
 					case ComponentStatus.CHUNK_CUT:
 						line += '\x1b[34m□\x1b[0m ';
 						break;
@@ -149,6 +149,6 @@ function printWorld(world: World, bounds: [number, number, number, number]) {
 		console.log(line);
 	}
 	console.log('└' + '─'.repeat(2 * (maxX - minX) + 3) + '┘');
-	//console.log(`(${world.cubes.length} cubes)`);
+	//console.log(`(${world.squares.length} cubes)`);
 }
 

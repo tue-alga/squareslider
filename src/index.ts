@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import { CubesSimulator } from './cubes-simulator'
+import { SquaresSimulator } from './squares-simulator'
 import { PhaseLabel } from './ui';
 
 const container = document.getElementById('cubes-simulator-container')!;
@@ -26,7 +26,7 @@ PIXI.Loader.shared.add([
 	'icons/pause.png',
 	'icons/reset.png',
 	'icons/select.png',
-	'icons/add-cube.png',
+	'icons/add-square.png',
 	'icons/add-wall.png',
 	'icons/rotate-left.png',
 	'icons/rotate-right.png',
@@ -35,7 +35,7 @@ PIXI.Loader.shared.add([
 	'icons/save.png',
 	'icons/help.png'
 ]).load(() => {
-	let simulator = new CubesSimulator(app);
+	let simulator = new SquaresSimulator(app);
 });
 
 declare global {

@@ -1,9 +1,9 @@
-import {expect} from "chai";
+import { expect } from "chai";
 
-import {Cube} from "../src/cube";
+import { Square } from "../src/square";
 
-describe("Direction", function() {
-    it("bounces correctly on the positive diagonal", function() {
+describe("Direction", function () {
+    it("bounces correctly on the positive diagonal", function () {
         /*expect(Direction.UP.bouncePositiveDiagonal)
             .to.equal(Direction.RIGHT);
         expect(Direction.RIGHT.bouncePositiveDiagonal)

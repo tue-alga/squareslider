@@ -1,16 +1,16 @@
-import {Algorithm, World, Move, MoveDirection} from '../world';
-import {Cube, ComponentStatus} from '../cube';
-import {Vector} from '../vector';
+import { Algorithm, World, Move, MoveDirection } from '../world';
+import { Square, ComponentStatus } from '../square';
+import { Vector } from '../vector';
 
 class GatherAlgorithm {
 
-	constructor(public world: World) {}
+	constructor(public world: World) { }
 
 	*execute(): Algorithm {
 
 		printStep('Gathering');
 
-		//console.log(this.findBoundaryPath(this.world.getCube([1, 0])!, this.world.getCube([0, 1])!));
+		//console.log(this.findBoundaryPath(this.world.getSquare([1, 0])!, this.world.getSquare([0, 1])!));
 		// find light square s
 		// find two empty spaces around s to be filled
 		// find extremal stable square to move in the descendants of s
@@ -18,9 +18,9 @@ class GatherAlgorithm {
 		// handle special pocket cases
 
 		const limit = this.world.bridgeLimit();
-		let lightSquare: Cube | null;
+		let lightSquare: Square | null;
 		while (!this.world.isXYMonotone() &&
-				(lightSquare = this.findLightSquare(limit)) !== null) {
+			(lightSquare = this.findLightSquare(limit)) !== null) {
 			printMiniStep(`Gathering light square (${lightSquare.p[0]}, ${lightSquare.p[1]})`);
 
 			const target = this.findGatherTarget(lightSquare);
@@ -36,15 +36,15 @@ class GatherAlgorithm {
 	 * Finds a light square closest to the root, or null if there are no light
 	 * squares in the configuration.
 	 */
-	findLightSquare(limit: number): Cube | null {
-		const outside = this.world.outsideCubes();
+	findLightSquare(limit: number): Square | null {
+		const outside = this.world.outsideSquares();
 		for (let i = 0; i < outside.length; i++) {
-			const cube = outside[i];
-			if (cube.componentStatus === ComponentStatus.CONNECTOR ||
-					cube.componentStatus === ComponentStatus.LINK_CUT) {
-				const capacity = this.world.bridgeCapacity(cube);
+			const square = outside[i];
+			if (square.componentStatus === ComponentStatus.CONNECTOR ||
+				square.componentStatus === ComponentStatus.LINK_CUT) {
+				const capacity = this.world.bridgeCapacity(square);
 				if (capacity < limit) {
-					return cube;
+					return square;
 				}
 			}
 		}
@@ -52,35 +52,35 @@ class GatherAlgorithm {
 	}
 
 	/**
-	 * Given a light square c, returns a (4- or 8-) neighboring empty cell n
-	 * of c such that:
+	 * Given a light square s, returns a (4- or 8-) neighboring empty cell n
+	 * of s such that:
 	 *
-	 *  * if c has degree 2 and the neighbors are on a line, then n is a
+	 *  * if s has degree 2 and the neighbors are on a line, then n is a
 	 *    4-neighbor that is inside the bounding box of the configuration
 	 *    (unless the configuration was a line);
 	 *
 	 *  * else, n is an 8-neighbor that is 4-adjacent to two squares
-	 *    neighboring c.
+	 *    neighboring s.
 	 */
-	findGatherTarget(c: Cube): [number, number] {
-		const [x, y] = c.p;
-		const has = this.world.hasNeighbors(c.p);
-		const [minX, minY, , ] = this.world.bounds();
+	findGatherTarget(square: Square): [number, number] {
+		const [x, y] = square.p;
+		const has = this.world.hasNeighbors(square.p);
+		const [minX, minY, ,] = this.world.bounds();
 		const self = this;
 		const checkNeighbor = function (n: [number, number]): boolean {
-			if (self.world.hasCube(n)) {
+			if (self.world.hasSquare(n)) {
 				return false;
 			}
-			if (!self.world.hasCube([x, n[1]]) || !self.world.hasCube([n[0], y])) {
+			if (!self.world.hasSquare([x, n[1]]) || !self.world.hasSquare([n[0], y])) {
 				return false;
 			}
-			const c1 = self.world.getCube([x, n[1]])!;
-			const c2 = self.world.getCube([n[0], y])!;
+			const c1 = self.world.getSquare([x, n[1]])!;
+			const c2 = self.world.getSquare([n[0], y])!;
 			return c1.componentStatus === ComponentStatus.LINK_CUT ||
-					c1.componentStatus === ComponentStatus.LINK_STABLE ||
-					c2.componentStatus === ComponentStatus.LINK_CUT ||
-					c2.componentStatus === ComponentStatus.LINK_STABLE ||
-					(c1.chunkId !== c2.chunkId && c1.chunkId !== -1 && c2.chunkId !== -1);
+				c1.componentStatus === ComponentStatus.LINK_STABLE ||
+				c2.componentStatus === ComponentStatus.LINK_CUT ||
+				c2.componentStatus === ComponentStatus.LINK_STABLE ||
+				(c1.chunkId !== c2.chunkId && c1.chunkId !== -1 && c2.chunkId !== -1);
 		};
 		if (checkNeighbor([x + 1, y + 1])) {
 			return [x + 1, y + 1];
@@ -108,45 +108,45 @@ class GatherAlgorithm {
 				return [x, y - 1];
 			}
 		}
-		throw "tried to gather to a cube with degree less than 2";
+		throw "tried to gather to a square with degree less than 2";
 	}
 
 	/**
 	 * Given a light square s, return a square from the descendants of s, not
 	 * edge-adjacent to s itself, that can be safely removed to chunkify s.
 	 */
-	findLeafInDescendants(c: Cube): Cube | null {
-		let seen = Array(this.world.cubes.length).fill(false);
-		const outside = this.world.outsideCubes();
-		const startIndex = outside.indexOf(c);
+	findLeafInDescendants(square: Square): Square | null {
+		let seen = Array(this.world.squares.length).fill(false);
+		const outside = this.world.outsideSquares();
+		const startIndex = outside.indexOf(square);
 		let stack = [];
 
 		// walk over the outside
 		for (let i = startIndex; i < outside.length; i++) {
-			let cube = outside[i];
-			const cubeId = this.world.cubes.indexOf(cube);
+			let square = outside[i];
+			const squareId = this.world.squares.indexOf(square);
 
-			if (!seen[cubeId]) {
-				seen[cubeId] = true;
-				stack.push(cubeId);
+			if (!seen[squareId]) {
+				seen[squareId] = true;
+				stack.push(squareId);
 
-			} else if (stack.length > 1 && stack[stack.length - 2] === cubeId) {
+			} else if (stack.length > 1 && stack[stack.length - 2] === squareId) {
 				// found link stable square
-				return this.world.cubes[stack[stack.length - 1]];
+				return this.world.squares[stack[stack.length - 1]];
 
 			} else {
 				// found leaf chunk
 				while (true) {
-					const c1 = this.world.cubes[stack[stack.length - 1]];
-					const c2 = this.world.cubes[stack[stack.length - 2]];
-					const c3 = this.world.cubes[stack[stack.length - 3]];
+					const c1 = this.world.squares[stack[stack.length - 1]];
+					const c2 = this.world.squares[stack[stack.length - 2]];
+					const c3 = this.world.squares[stack[stack.length - 3]];
 					const dx1 = c2.p[0] - c1.p[0];
 					const dy1 = c2.p[1] - c1.p[1];
 					const dx2 = c3.p[0] - c2.p[0];
 					const dy2 = c3.p[1] - c2.p[1];
 					// right turn or U-turn?
 					if ((dx1 === -dy2 && dy1 === dx2) ||
-							(dx1 === -dx2 && dy1 === -dy2)) {
+						(dx1 === -dx2 && dy1 === -dy2)) {
 						return c2;
 					}
 					stack.pop();
@@ -158,18 +158,18 @@ class GatherAlgorithm {
 	}
 
 	/**
-	 * Constructs a path over the boundary, starting from the given cube c,
+	 * Constructs a path over the boundary, starting from the given square,
 	 * ending at target (if possible 4-neighbor of target, otherwise
 	 * 8-neighbor). The path is in clockwise direction. If this path would
 	 * pass along the origin, null is returned instead.
 	 */
-	findClockwiseBoundaryPath(c: Cube, target: [number, number]):
-			[number, number][] | null {
-		const outside = this.world.outsideCubes();
+	findClockwiseBoundaryPath(square: Square, target: [number, number]):
+		[number, number][] | null {
+		const outside = this.world.outsideSquares();
 		const n = outside.length - 1;
-		let p = new Vector(...c.p);
+		let p = new Vector(...square.p);
 		let path: [number, number][] = [[p.x, p.y]];
-		let i = outside.indexOf(c) + 1;
+		let i = outside.indexOf(square) + 1;
 
 		while (p.x !== target[0] || p.y !== target[1]) {
 			if (i >= n) {
@@ -202,19 +202,19 @@ class GatherAlgorithm {
 	}
 
 	/**
-	 * Constructs a path over the boundary, starting from the given cube c,
+	 * Constructs a path over the boundary, starting from the given square,
 	 * ending at target (if possible 4-neighbor of target, otherwise
 	 * 8-neighbor). The path is in counter-clockwise direction. If this path
 	 * would pass along the origin, null is returned instead.
 	 */
-	findCounterClockwiseBoundaryPath(c: Cube, target: [number, number]):
-			[number, number][] | null {
-		const outside = this.world.outsideCubes();
+	findCounterClockwiseBoundaryPath(square: Square, target: [number, number]):
+		[number, number][] | null {
+		const outside = this.world.outsideSquares();
 		outside.reverse();
 		const n = outside.length - 1;
-		let p = new Vector(...c.p);
+		let p = new Vector(...square.p);
 		let path: [number, number][] = [[p.x, p.y]];
-		let i = outside.indexOf(c) + 1;
+		let i = outside.indexOf(square) + 1;
 
 		while (p.x !== target[0] || p.y !== target[1]) {
 			if (i >= n) {
@@ -247,29 +247,29 @@ class GatherAlgorithm {
 	}
 
 	/**
-	 * Runs a series of moves to walk cube c over the boundary of the
+	 * Runs a series of moves to walk square over the boundary of the
 	 * configuration to end up at the given empty cell target, in such a way
 	 * that it does not pass the origin.
 	 */
-	*walkBoundaryUntil(c: Cube, target: [number, number]): Algorithm {
-		let path = this.findClockwiseBoundaryPath(c, target);
+	*walkBoundaryUntil(square: Square, target: [number, number]): Algorithm {
+		let path = this.findClockwiseBoundaryPath(square, target);
 		if (path === null) {
-			path = this.findCounterClockwiseBoundaryPath(c, target);
+			path = this.findCounterClockwiseBoundaryPath(square, target);
 		}
 		if (path === null) {
-			throw "cannot find a boundary path in both directions from " +
-					c.p + " to " + target;
+			throw new Error("cannot find a boundary path in both directions from " +
+				square.p + " to " + target);
 		}
 		for (let i = 0; i < path.length - 1; i++) {
-			const cube = this.world.getCube(path[i]);
-			if (!cube) {
+			const square = this.world.getSquare(path[i]);
+			if (!square) {
 				continue;
 			}
-			const move = this.world.getMoveTo(cube, path[i + 1]);
+			const move = this.world.getMoveTo(square, path[i + 1]);
 			// it may happen that no move is possible to get to path[i + 1],
 			// for example, when we would need to enter a pocket to do so
 			// in this case, we simply do not perform the move to leave the
-			// cube where it is
+			// square where it is
 			if (move) {
 				yield move;
 			}
@@ -277,5 +277,5 @@ class GatherAlgorithm {
 	}
 }
 
-export {GatherAlgorithm};
+export { GatherAlgorithm };
 

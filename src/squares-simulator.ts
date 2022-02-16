@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 
-import { Cube, Color } from './cube';
+import { Square, Color } from './square';
 import { World, Move } from './world';
 import { Button, Separator, Toolbar, StepCountLabel, PhaseLabel } from './ui';
 
@@ -8,14 +8,14 @@ import { CompleteAlgorithm } from './algorithms/complete';
 import { CustomAlgorithm } from './algorithms/custom';
 
 enum EditMode {
-	SELECT, ADD_CUBE
+	SELECT, ADD_SQUARE
 }
 
 enum SimulationMode {
 	RUNNING, PAUSED, RESET
 }
 
-class CubesSimulator {
+class SquaresSimulator {
 	private app: PIXI.Application;
 
 	editMode: EditMode = EditMode.SELECT;
@@ -30,10 +30,10 @@ class CubesSimulator {
 	algorithm: Generator<Move> | null = null;
 
 	// selected objects
-	private selection: Cube[] = [];
+	private selection: Square[] = [];
 
-	// color of last-edited cube
-	// (remembered to insert new cubes with the same color)
+	// color of last-edited square
+	// (remembered to insert new squares with the same color)
 	private lastColor = Color.GRAY;
 
 	// GUI elements
@@ -48,7 +48,7 @@ class CubesSimulator {
 	private helpButton: Button;
 
 	private selectButton: Button;
-	private addCubeButton: Button;
+	private addSquareButton: Button;
 	private colorButton: Button;
 	private deleteButton: Button;
 
@@ -107,20 +107,20 @@ class CubesSimulator {
 		this.selectButton.onClick(this.selectMode.bind(this));
 		this.bottomBar.addChild(this.selectButton);
 
-		this.addCubeButton = new Button(
-			"add-cube", "Add/remove cubes", true, "C");
-		this.addCubeButton.onClick(this.addCubesMode.bind(this));
-		this.bottomBar.addChild(this.addCubeButton);
+		this.addSquareButton = new Button(
+			"add-square", "Add/remove squares", true, "C");
+		this.addSquareButton.onClick(this.addSquaresMode.bind(this));
+		this.bottomBar.addChild(this.addSquareButton);
 
 		this.colorButton = new Button(
 			"color", "Change color", true);
 		this.colorButton.onClick(
 			() => {
-				this.selection.forEach((cube) => {
-					if (cube instanceof Cube) {
-						cube.nextColor();
+				this.selection.forEach((square) => {
+					if (square instanceof Square) {
+						square.nextColor();
 						if (this.selection.length === 1) {
-							this.lastColor = cube.color;
+							this.lastColor = square.color;
 						}
 					}
 				});
@@ -208,7 +208,7 @@ class CubesSimulator {
 			} else if (event.key === "s") {
 				this.selectMode();
 			} else if (event.key === "c") {
-				this.addCubesMode();
+				this.addSquaresMode();
 			} else if (event.key === "Delete") {
 				this.delete();
 			}
@@ -220,15 +220,15 @@ class CubesSimulator {
 	update(): void {
 	}
 
-	select(obj: Cube): void {
-		this.selection.push(obj);
-		obj.selected = true;
+	select(square: Square): void {
+		this.selection.push(square);
+		square.selected = true;
 		this.updateEditButtons();
 	}
 
 	deselect(): void {
-		this.selection.forEach((cube) => {
-			cube.selected = false;
+		this.selection.forEach((square) => {
+			square.selected = false;
 		});
 
 		this.selection = [];
@@ -292,11 +292,11 @@ class CubesSimulator {
 			if (this.world.currentMove) {
 				console.log(`Time step ${this.timeStep}. Move: ${this.world.currentMove.toString()}`);
 
-				// mark components with the moving cube removed
-				const movingCube = this.world.getCube(this.world.currentMove.sourcePosition())!;
-				this.world.removeCubeUnmarked(movingCube);
+				// mark components with the moving square removed
+				const movingSquare = this.world.getSquare(this.world.currentMove.sourcePosition())!;
+				this.world.removeSquareUnmarked(movingSquare);
 				this.world.markComponents();
-				this.world.addCubeUnmarked(movingCube);
+				this.world.addSquareUnmarked(movingSquare);
 			} else if (this.simulationMode === SimulationMode.RUNNING) {
 				console.log(`Time step ${this.timeStep}. No move left, so pausing the simulation.`);
 				this.run();  // pause
@@ -341,25 +341,25 @@ class CubesSimulator {
 
 			if (this.editMode === EditMode.SELECT) {
 				this.deselect();
-				const cube = this.world.getCube([Math.round(x), Math.round(y)]);
-				if (cube) {
+				const square = this.world.getSquare([Math.round(x), Math.round(y)]);
+				if (square) {
 					this.deselect();
-					this.select(cube);
+					this.select(square);
 				}
 			}
 
-			if (this.editMode === EditMode.ADD_CUBE) {
+			if (this.editMode === EditMode.ADD_SQUARE) {
 				x = Math.round(x);
 				y = Math.round(y);
 
-				const cube = this.world.getCube([x, y]);
-				if (!cube) {
-					const newCube = new Cube(this.world, [x, y], this.lastColor);
-					this.world.addCube(newCube);
+				const square = this.world.getSquare([x, y]);
+				if (!square) {
+					const newSquare = new Square(this.world, [x, y], this.lastColor);
+					this.world.addSquare(newSquare);
 					this.deselect();
-					this.select(newCube);
+					this.select(newSquare);
 				} else {
-					this.world.removeCube(cube);
+					this.world.removeSquare(square);
 				}
 			}
 		}
@@ -394,7 +394,7 @@ class CubesSimulator {
 			this.algorithm = this.createAlgorithm();
 			this.deselect();
 			this.selectButton.setEnabled(false);
-			this.addCubeButton.setEnabled(false);
+			this.addSquareButton.setEnabled(false);
 			this.saveButton.setEnabled(false);
 		}
 		this.resetButton.setEnabled(true);
@@ -410,7 +410,7 @@ class CubesSimulator {
 			this.algorithm = this.createAlgorithm();
 			this.deselect();
 			this.selectButton.setEnabled(false);
-			this.addCubeButton.setEnabled(false);
+			this.addSquareButton.setEnabled(false);
 			this.saveButton.setEnabled(false);
 		}
 		this.stepButton.setEnabled(false);
@@ -425,7 +425,7 @@ class CubesSimulator {
 		this.resetButton.setEnabled(false);
 
 		this.selectButton.setEnabled(true);
-		this.addCubeButton.setEnabled(true);
+		this.addSquareButton.setEnabled(true);
 		this.saveButton.setEnabled(true);
 
 		this.world.reset();
@@ -438,18 +438,18 @@ class CubesSimulator {
 	selectMode(): void {
 		this.editMode = EditMode.SELECT;
 		this.selectButton.setPressed(true);
-		this.addCubeButton.setPressed(false);
+		this.addSquareButton.setPressed(false);
 	}
 
-	addCubesMode(): void {
-		this.editMode = EditMode.ADD_CUBE;
+	addSquaresMode(): void {
+		this.editMode = EditMode.ADD_SQUARE;
 		this.selectButton.setPressed(false);
-		this.addCubeButton.setPressed(true);
+		this.addSquareButton.setPressed(true);
 	}
 
 	delete(): void {
-		this.selection.forEach((cube) => {
-			this.world.removeCube(cube);
+		this.selection.forEach((square) => {
+			this.world.removeSquare(square);
 		});
 		this.deselect();
 	}
@@ -494,7 +494,7 @@ class CubesSimulator {
 	}
 
 	help(): void {
-		const container = document.getElementById('cubes-simulator-container')!;
+		const container = document.getElementById('squares-simulator-container')!;
 		if (this.helpButton.isPressed()) {
 			this.helpButton.setPressed(false);
 			document.body.classList.remove('help-pane-open');
@@ -545,5 +545,5 @@ class Constants {
 	});
 }
 
-export { CubesSimulator, Constants };
+export { SquaresSimulator, Constants };
 
