@@ -2,8 +2,8 @@ import * as PIXI from 'pixi.js'
 import { SquaresSimulator } from './squares-simulator'
 import { PhaseLabel } from './ui';
 
-const container = document.getElementById('cubes-simulator-container')!;
-const canvas = <HTMLCanvasElement>document.getElementById('cubes-simulator-canvas');
+const container = document.getElementById('squares-simulator-container')!;
+const canvas = <HTMLCanvasElement>document.getElementById('squares-simulator-canvas');
 let app = new PIXI.Application({
 	antialias: true,
 	backgroundColor: 0xfafafa,

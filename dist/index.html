@@ -2,7 +2,7 @@
 <html>
 
 <head>
-	<title>Cubes Simulator</title>
+	<title>Squares Simulator</title>
 	<meta name=”viewport” content=”width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no” />
 	<style>
 		* {
@@ -15,7 +15,7 @@
 			overflow: hidden;
 		}
 
-		#cubes-simulator-container {
+		#squares-simulator-container {
 			position: absolute;
 			left: 0;
 			right: 0;
@@ -24,7 +24,7 @@
 			transition: right .5s;
 		}
 
-		.help-pane-open #cubes-simulator-container {
+		.help-pane-open #squares-simulator-container {
 			right: 600px;
 		}
 
@@ -124,8 +124,8 @@
 </head>
 
 <body>
-	<div id="cubes-simulator-container">
-		<canvas id="cubes-simulator-canvas"></canvas>
+	<div id="squares-simulator-container">
+		<canvas id="squares-simulator-canvas"></canvas>
 	</div>
 	<div class="dialogs" id="saveDialog">
 		<div class="dialog">
@@ -172,7 +172,7 @@
 			<h2>Help</h2>
 			<p>The following tools are available for drawing the input configuration:<br>
 				<img src="icons/select.png">: Pan the canvas around or select a square. Click once on a square to select it.<br>
-				<img src="icons/add-cube.png">: Click on an empty grid cell to insert a square in that location. Click on an existing square to delete it.<br>
+				<img src="icons/add-square.png">: Click on an empty grid cell to insert a square in that location. Click on an existing square to delete it.<br>
 				<img src="icons/color.png">: Changes the color of the selected square (cycles through six available colors). Colors do not influence the algorithm, but can be helpful to identify where certain parts of the input configuration end up while the algorithm is running.<br>
 				<img src="icons/delete.png">: Deletes the selected square.<br>
 			</p>
