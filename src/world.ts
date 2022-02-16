@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
-import {Viewport} from 'pixi-viewport';
+import { Viewport } from 'pixi-viewport';
 
-import {Cube, Color, ComponentStatus} from './cube';
+import { Cube, Color, ComponentStatus } from './cube';
 
 type WorldCell = {
 	cubeId: number | null;
@@ -110,7 +110,7 @@ class Move {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Computes coordinates of a cube executing this move at the given time
 	 * between 0 and 1.
@@ -139,7 +139,13 @@ class Move {
 	}
 
 	execute(): void {
-		this.world.moveCube(this.position, this.targetPosition());
+		const cube = this.world.getCube(this.position);
+		if (!cube) {
+			throw new Error(`Tried to move non-existing cube ` +
+				`at (${this.position[0]}, ${this.position[1]})`);
+		}
+
+		this.world.moveCube(cube, this.targetPosition());
 	}
 
 	toString(): string {
@@ -341,80 +347,66 @@ class World {
 	}
 
 	/**
-	 * Adds a new cube of the given color at the given location; throws if a
-	 * cube already exists at that location.
+	 * Adds a cube to the world; throws if a cube already exists at that
+	 * location.
 	 */
-	addCube(p: [number, number], color: Color): Cube {
-		const cube = this.addCubeUnmarked(p, color);
+	addCube(cube: Cube): void {
+		this.addCubeUnmarked(cube);
 		this.markComponents();
-		return cube;
 	}
 
 	/**
 	 * As addCube(), but does not update the component status of the cubes.
 	 */
-	addCubeUnmarked(p: [number, number], color: Color): Cube {
-		if (this.hasCube(p)) {
-			throw `Tried to insert cube on top of another cube ` +
-					`at (${p[0]}, ${p[1]})`;
+	addCubeUnmarked(cube: Cube): void {
+		if (this.hasCube(cube.p)) {
+			throw new Error(`Tried to insert cube on top of another cube ` +
+				`at (${cube.p[0]}, ${cube.p[1]})`);
 		}
-		const cube = new Cube(this, p, color);
-		this.getCell(p).cubeId = this.cubes.length;
+		this.getCell(cube.p).cubeId = this.cubes.length;
 		this.cubes.push(cube);
 		this.pixi.addChild(cube.pixi);
 		this.backgroundPixi.addChild(cube.backgroundPixi);
-		return cube;
 	}
 
 	/**
-	 * Moves the cube from the given source location to the given target
-	 * location. Throws if no cube exists at the source or if a cube already
-	 * exists at the target.
+	 * Moves the given cube from its current location to the given target
+	 * location. Throws if a cube already exists at the target.
 	 */
-	moveCube(from: [number, number], to: [number, number]): void {
-		this.moveCubeUnmarked(from, to);
+	moveCube(cube: Cube, to: [number, number]): void {
+		this.moveCubeUnmarked(cube, to);
 		this.markComponents();
 	}
 
 	/**
 	 * As moveCube(), but does not update the component status of the cubes.
 	 */
-	moveCubeUnmarked(from: [number, number], to: [number, number]): void {
-		if (!this.hasCube(from)) {
-			throw `Tried to move non-existing cube at ` +
-					`at (${from[0]}, ${from[1]})`;
-		}
-
+	moveCubeUnmarked(cube: Cube, to: [number, number]): void {
 		if (this.hasCube(to)) {
-			throw `Tried to move cube on top of another cube ` +
-					`at (${to[0]}, ${to[1]})`;
+			throw new Error(`Tried to move cube on top of another cube ` +
+				`at (${to[0]}, ${to[1]})`);
 		}
 
-		const id = this.getCubeId(from)!;
-		this.getCell(from).cubeId = null;
+		const id = this.getCubeId(cube.p)!;
+		this.getCell(cube.p).cubeId = null;
 		this.getCell(to).cubeId = id;
-		this.cubes[id].p = [to[0], to[1]];
-		this.cubes[id].updatePosition(0, 0);
+		cube.p = [to[0], to[1]];
+		cube.updatePosition(0, 0);
 	}
 
 	/**
-	 * Removes the cube at the given location; throws if no cube exists there.
+	 * Removes the cube at the given location.
 	 */
-	removeCube(p: [number, number]): void {
-		this.removeCubeUnmarked(p);
+	removeCube(cube: Cube): void {
+		this.removeCubeUnmarked(cube);
 		this.markComponents();
 	}
 
 	/**
 	 * As removeCube(), but does not update the component status of the cubes.
 	 */
-	removeCubeUnmarked(p: [number, number]): void {
-		if (!this.hasCube(p)) {
-			throw `Tried to remove non-existing cube ` +
-					`at (${p[0]}, ${p[1]})`;
-		}
-		const cube = this.getCube(p)!;
-		this.getCell(p).cubeId = null;
+	removeCubeUnmarked(cube: Cube): void {
+		this.getCell(cube.p).cubeId = null;
 		this.pixi.removeChild(cube.pixi);
 		this.backgroundPixi.removeChild(cube.backgroundPixi);
 		this.cubes = this.cubes.filter((b) => b !== cube);
@@ -429,9 +421,9 @@ class World {
 	 * Returns an object with keys 'N', 'NE', 'E', etc. with booleans
 	 * indicating if the given cell has neighboring cubes in that direction.
 	 */
-	hasNeighbors(p: [number, number]): {[key: string]: boolean} {
+	hasNeighbors(p: [number, number]): { [key: string]: boolean } {
 		const [x, y] = p;
-		let has: {[key: string]: boolean} = {};
+		let has: { [key: string]: boolean } = {};
 		has['N'] = this.hasCube([x, y + 1]);
 		has['NE'] = this.hasCube([x + 1, y + 1]);
 		has['E'] = this.hasCube([x + 1, y]);
@@ -458,7 +450,7 @@ class World {
 		}
 
 		for (const direction of Object.keys(MoveDirection)) {
-			const m = new Move(this, p, MoveDirection[<MoveDirection> direction]);
+			const m = new Move(this, p, MoveDirection[<MoveDirection>direction]);
 			if (m.isValidIgnoreConnectivity()) {
 				// already checked connectivity before (yay, efficiency!)
 				moves.push(m);
@@ -475,7 +467,7 @@ class World {
 		const moves = this.validMovesFrom(source.p);
 		for (let move of moves) {
 			if (move.targetPosition()[0] === target[0] &&
-					move.targetPosition()[1] === target[1]) {
+				move.targetPosition()[1] === target[1]) {
 				return move;
 			}
 		}
@@ -491,19 +483,19 @@ class World {
 	 * @param to The target coordinate, which should be an empty cell.
 	 */
 	*shortestMovePath(from: [number, number], to: [number, number]): Algorithm {
-		
+
 		// temporarily remove the origin cube from the configuration, to avoid
 		// invalid moves in the resulting move path (because we could slide
 		// along the origin cube itself)
 		const cube = this.getCube(from);
 		if (cube === null) {
 			throw "Cannot compute move path from non-existing cube" +
-				` (${from[0]}, ${from[1]})`;
+			` (${from[0]}, ${from[1]})`;
 		}
-		this.removeCubeUnmarked(from);
+		this.removeCubeUnmarked(cube);
 
 		// do BFS over the move graph
-		let seen: {[key: string]: {'seen': boolean, 'move': Move | null}} = {};
+		let seen: { [key: string]: { 'seen': boolean, 'move': Move | null } } = {};
 		let queue: [[number, number], Move | null][] = [[from, null]];
 
 		while (queue.length !== 0) {
@@ -521,7 +513,7 @@ class World {
 			}
 
 			const moves = this.validMovesFrom(location[0]); // FIXME this allows moves that use the from cube...
-			moves.forEach(function(move) {
+			moves.forEach(function (move) {
 				queue.push([move.targetPosition(), move]);
 			});
 		}
@@ -540,31 +532,9 @@ class World {
 		}
 
 		// put the origin cube back
-		const newCube = this.addCubeUnmarked(cube.p, cube.color);
-		newCube.componentStatus = cube.componentStatus;
+		this.addCube(cube);
 
 		yield* path;
-	}
-
-	nextStep(algorithm: Algorithm, step: number): void {
-
-		// first actually execute the current move
-		if (this.currentMove) {
-			this.currentMove.execute();
-		}
-		this.markComponents();
-
-		// now figure out the next move
-		const output = algorithm.next();
-		if (output.done) {
-			this.currentMove = null;
-			return;
-		}
-		if (!output.value.isValid()) {
-			throw "Invalid move detected: " + output.value.toString();
-		}
-
-		this.currentMove = output.value;
 	}
 
 	/**
@@ -578,13 +548,13 @@ class World {
 		const outside = this.outsideCubes();
 		for (let i = 1; i < outside.length - 1; i++) {
 			if (outside[i - 1] === outside[i + 1] &&
-					outside[i - 1].componentStatus === ComponentStatus.CONNECTOR) {
+				outside[i - 1].componentStatus === ComponentStatus.CONNECTOR) {
 				parityCubes.push(outside[i]);
 			}
 		}
 		if (outside.length > 1 &&
-				outside[outside.length - 2] === outside[1] &&
-				outside[1].componentStatus === ComponentStatus.CONNECTOR) {
+			outside[outside.length - 2] === outside[1] &&
+			outside[1].componentStatus === ComponentStatus.CONNECTOR) {
 			parityCubes.push(outside[0]);
 		}
 
@@ -648,7 +618,7 @@ class World {
 			if (seen[cubeId]) {
 				continue;
 			}
-			
+
 			const cube = this.cubes[cubeId];
 			seen[cubeId] = true;
 			seenCount++;
@@ -657,7 +627,7 @@ class World {
 				this.getCell([cube.p[0] + 1, cube.p[1]]),
 				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
-			topRightNeighbors.forEach(function(c) {
+			topRightNeighbors.forEach(function (c) {
 				if (c.cubeId) {
 					queue.push(c.cubeId);
 				}
@@ -813,8 +783,8 @@ class World {
 		// if it goes left; if we're following the left boundary, it is against
 		// direction if it goes down
 		let againstDirection = viaLeft ?
-				((i: number) => boundary[i][1] < boundary[i - 1][1]) :
-				((i: number) => boundary[i][0] < boundary[i - 1][0]);
+			((i: number) => boundary[i][1] < boundary[i - 1][1]) :
+			((i: number) => boundary[i][0] < boundary[i - 1][0]);
 
 		for (let i = startIndex; i < boundary.length; i++) {
 			if (againstDirection(i)) {
@@ -836,22 +806,22 @@ class World {
 		// S-neighbor itself
 		const potentialNearCube = boundary[targetIndex - 1];
 		if (potentialNearCube[0] === target[0] - (viaLeft ? 1 : 0) &&
-				potentialNearCube[1] === target[1] - (viaLeft ? 0 : 1) &&
-				!this.hasCube([potentialNearCube[0] - (viaLeft ? 1 : 0), potentialNearCube[1] - (viaLeft ? 0 : 1)])) {
+			potentialNearCube[1] === target[1] - (viaLeft ? 0 : 1) &&
+			!this.hasCube([potentialNearCube[0] - (viaLeft ? 1 : 0), potentialNearCube[1] - (viaLeft ? 0 : 1)])) {
 			printMiniStep(`Fill ${goal} again with a ${direction} boundary ` +
-					`to (${boundary[targetIndex - 1][0]}, ` +
-					`${boundary[targetIndex - 1][1]}) ` +
-					`(not to (${target[0]}, ${target[1]}) ` +
-					`because that would make ` +
-					`(${boundary[targetIndex - 1][0]}, ` +
-					`${boundary[targetIndex - 1][1]}) ` +
-					`an unresolvable parity cube)`);
+				`to (${boundary[targetIndex - 1][0]}, ` +
+				`${boundary[targetIndex - 1][1]}) ` +
+				`(not to (${target[0]}, ${target[1]}) ` +
+				`because that would make ` +
+				`(${boundary[targetIndex - 1][0]}, ` +
+				`${boundary[targetIndex - 1][1]}) ` +
+				`an unresolvable parity cube)`);
 			target = boundary[targetIndex - 1];
 			targetIndex--;
 			detectedNearParityCube = true;
 		} else {
 			printMiniStep(`Fill ${goal} again with a ${direction} boundary ` +
-					`siphoning path to (${target[0]}, ${target[1]})`);
+				`siphoning path to (${target[0]}, ${target[1]})`);
 		}
 
 		// step 3: actually perform the move to eliminate the target
@@ -860,7 +830,7 @@ class World {
 		// at (1, 0) we just created, and we need to walk around that to avoid
 		// that (2, 1) -> (2, 0) is used (it being a non-monotone boundary
 		// edge)
-		
+
 		// so add 4 to the start index to start with (2, 0) (or if (2, 0)
 		// doesn't exist, add 2 to start with (1, 1))
 
@@ -881,12 +851,12 @@ class World {
 			// in the end of the path and we cannot do that with the regular
 			// move path because it would disconnect the parity cube)
 			if (i === targetIndex - 1 &&
-					emptySpace[0] === boundary[i + 1][0] - 1 &&
-					emptySpace[1] === boundary[i + 1][1] - 1 &&
-					!this.hasCube([boundary[i + 1][0] - (viaLeft ? 1 : 0) , boundary[i + 1][1] - (viaLeft ? 0 : 1)])) {
+				emptySpace[0] === boundary[i + 1][0] - 1 &&
+				emptySpace[1] === boundary[i + 1][1] - 1 &&
+				!this.hasCube([boundary[i + 1][0] - (viaLeft ? 1 : 0), boundary[i + 1][1] - (viaLeft ? 0 : 1)])) {
 				printMiniStep(`Fix parity cube ` +
-						`(${boundary[i + 1][0]}, ${boundary[i + 1][1]}) ` +
-						`made in the previous siphoning step by a corner move`);
+					`(${boundary[i + 1][0]}, ${boundary[i + 1][1]}) ` +
+					`made in the previous siphoning step by a corner move`);
 				if (viaLeft) {
 					yield new Move(this, boundary[i + 1], MoveDirection.WS);
 				} else {
@@ -908,11 +878,11 @@ class World {
 		if (this.hasOneNeighbor(this.getCube(potentialFarCube)!)) {
 			if (detectedNearParityCube) {
 				printMiniStep(`We made a parity cube ` +
-						`(${potentialFarCube[0]}, ${potentialFarCube[1]}), ` +
-						`but we will fix it in the next siphoning step`);
+					`(${potentialFarCube[0]}, ${potentialFarCube[1]}), ` +
+					`but we will fix it in the next siphoning step`);
 			} else {
 				printMiniStep(`Do monotone moves to remove parity cube ` +
-						`(${potentialFarCube[0]}, ${potentialFarCube[1]})`);
+					`(${potentialFarCube[0]}, ${potentialFarCube[1]})`);
 				yield* this.doFreeMoves(potentialFarCube);
 			}
 		}
@@ -1037,8 +1007,8 @@ class World {
 	 * Returns all neighbors of the given grid coordinate, as a dictionary
 	 * mapping compass directions to Cubes.
 	 */
-	getNeighborMap([x, y]: [number, number]): {[direction: string]: Cube | null} {
-		let neighbors: {[direction: string]: Cube | null} = {};
+	getNeighborMap([x, y]: [number, number]): { [direction: string]: Cube | null } {
+		let neighbors: { [direction: string]: Cube | null } = {};
 		neighbors['N'] = this.getCube([x, y + 1]);
 		neighbors['E'] = this.getCube([x + 1, y]);
 		neighbors['W'] = this.getCube([x - 1, y]);
@@ -1058,7 +1028,7 @@ class World {
 
 		// TODO fix this to be our new definition of a gap
 
-		const [minX, minY, , ] = this.bounds();
+		const [minX, minY, ,] = this.bounds();
 
 		// find all empty cells (empty cell: cell without a cube that has E and NE neighbors)
 		return this.cubes
@@ -1075,7 +1045,7 @@ class World {
 
 	isDeflatable([x, y]: [number, number]): boolean {
 		return this.isEmptyCell([x, y]) &&
-				this.isInside([x, y]);
+			this.isInside([x, y]);
 	}
 
 	isInflatable([x, y]: [number, number]): boolean {
@@ -1193,6 +1163,7 @@ class World {
 			cube.dotsLayer.removeChildren();
 			this.getCell(cube.p).cubeId = i;
 		}
+		this.currentMove = null;
 		this.markComponents();
 	}
 
@@ -1234,7 +1205,7 @@ class World {
 			if (seen[cubeId]) {
 				continue;
 			}
-			
+
 			const cube = this.cubes[cubeId];
 			seen[cubeId] = true;
 			seenCount++;
@@ -1245,7 +1216,7 @@ class World {
 				this.getCell([cube.p[0], cube.p[1] - 1]),
 				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
-			neighbors.forEach(function(c) {
+			neighbors.forEach(function (c) {
 				if (c.cubeId) {
 					queue.push(c.cubeId);
 				}
@@ -1266,13 +1237,13 @@ class World {
 
 		// do a BFS from the origin, to see if we can find p
 		// (FIXME: this is stupid, can probably be done better...)
-		let seen: {[key: string]: boolean} = {};
+		let seen: { [key: string]: boolean } = {};
 		let queue: [number, number][] = [origin];
 
 		while (queue.length !== 0) {
 			const location = queue.shift()!;
 			if (location[0] < bounds[0] - 1 || location[1] < bounds[1] - 1 ||
-					location[0] > bounds[2] + 1 || location[1] > bounds[3] + 1) {
+				location[0] > bounds[2] + 1 || location[1] > bounds[3] + 1) {
 				continue;
 			}
 			if (seen[location[0] + "," + location[1]]) {
@@ -1291,7 +1262,7 @@ class World {
 				[location[0], location[1] + 1]
 			];
 			const self = this;
-			neighbors.forEach(function(c) {
+			neighbors.forEach(function (c) {
 				if (!self.hasCube(c)) {
 					queue.push(c);
 				}
@@ -1453,7 +1424,7 @@ class World {
 		// mark loose squares as part of a chunk
 		for (let i = 0; i < components.length; i++) {
 			if (components[i] === 1 &&
-					this.degree(this.cubes[i]) === 1) {
+				this.degree(this.cubes[i]) === 1) {
 				const neighbor = this.getOneNeighbor(this.cubes[i])!;
 				const neighborIndex = this.getCubeId(neighbor.p)!;
 				if (components[neighborIndex] === 3) {
@@ -1504,9 +1475,9 @@ class World {
 	}
 
 	private findCubeStabilityRecursive(i: number, d: number,
-			seen: boolean[], parent: (number | null)[],
-			depth: number[], low: number[],
-			stable: boolean[]): void {
+		seen: boolean[], parent: (number | null)[],
+		depth: number[], low: number[],
+		stable: boolean[]): void {
 
 		seen[i] = true;
 		depth[i] = d;
@@ -1522,11 +1493,11 @@ class World {
 		const self = this;
 		let cutCube = false;
 		let childCount = 0;
-		neighbors.forEach(function(c) {
+		neighbors.forEach(function (c) {
 			if (c.cubeId !== null && !seen[c.cubeId]) {
 				parent[c.cubeId] = i;
 				self.findCubeStabilityRecursive(c.cubeId, d + 1,
-						seen, parent, depth, low, stable);
+					seen, parent, depth, low, stable);
 				childCount++;
 				if (low[c.cubeId] >= depth[i]) {
 					cutCube = true;
@@ -1707,7 +1678,7 @@ class World {
 	 */
 	private nextOnOutside(p: [number, number], direction: string): string | null {
 		const has = this.hasNeighbors(p);
-		const bends: {[key: string]: string[]} = {
+		const bends: { [key: string]: string[] } = {
 			'N': ['E', 'N', 'W', 'S'],
 			'E': ['S', 'E', 'N', 'W'],
 			'S': ['W', 'S', 'E', 'N'],
@@ -1754,7 +1725,7 @@ class World {
 				this.getCell([cube.p[0], cube.p[1] - 1]),
 				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
-			neighbors.forEach(function(c) {
+			neighbors.forEach(function (c) {
 				if (c.cubeId !== null) {
 					queue.push(c.cubeId);
 				}
@@ -1780,7 +1751,7 @@ class World {
 			if (seen[cubeId]) {
 				continue;
 			}
-			
+
 			const cube = this.cubes[cubeId];
 			seen[cubeId] = true;
 			parent[cubeId] = p;
@@ -1791,7 +1762,7 @@ class World {
 				this.getCell([cube.p[0], cube.p[1] - 1]),
 				this.getCell([cube.p[0], cube.p[1] + 1])
 			];
-			neighbors.forEach(function(c) {
+			neighbors.forEach(function (c) {
 				if (c.cubeId) {
 					queue.push([c.cubeId, cube]);
 				}
@@ -1851,15 +1822,15 @@ class World {
 	 * Determines if the configuration is xy-monotone.
 	 */
 	isXYMonotone(): boolean {
-		const [minX, minY, , ] = this.bounds();
+		const [minX, minY, ,] = this.bounds();
 
 		for (const cube of this.cubes) {
 			if (cube.p[0] !== minX &&
-					!this.hasCube([cube.p[0] - 1, cube.p[1]])) {
+				!this.hasCube([cube.p[0] - 1, cube.p[1]])) {
 				return false;
 			}
 			if (cube.p[1] !== minY &&
-					!this.hasCube([cube.p[0], cube.p[1] - 1])) {
+				!this.hasCube([cube.p[0], cube.p[1] - 1])) {
 				return false;
 			}
 		}
@@ -1904,7 +1875,7 @@ class World {
 				color = new Color(cube['color'][0],
 					cube['color'][1], cube['color'][2]);
 			}
-			this.addCube([cube['x'], cube['y']], color);
+			this.addCube(new Cube(this, [cube['x'], cube['y']], color));
 		});
 	}
 
@@ -1963,10 +1934,10 @@ h
 					break;
 			}
 		});
-		
+
 		return header + elements + footer;
 	}
 }
 
-export {Algorithm, World, Move, MoveDirection};
+export { Algorithm, World, Move, MoveDirection };
 

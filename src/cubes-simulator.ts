@@ -8,7 +8,7 @@ import { CompleteAlgorithm } from './algorithms/complete';
 import { CustomAlgorithm } from './algorithms/custom';
 
 enum EditMode {
-	SELECT, ADD_BALL
+	SELECT, ADD_CUBE
 }
 
 enum SimulationMode {
@@ -19,12 +19,12 @@ class CubesSimulator {
 	private app: PIXI.Application;
 
 	editMode: EditMode = EditMode.SELECT;
-	time: number = 0.0;
+	time: number = 0;
 	timeStep: number = 0;
 	runUntil: number = Infinity;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
-	timeSpeed: number = 0.05;
+	timeSpeed: number = 0.1;
 
 	world: World;
 	algorithm: Generator<Move> | null = null;
@@ -253,11 +253,36 @@ class CubesSimulator {
 			}
 		}
 
-		while (this.time > this.timeStep) {
+		console.log(this.time, this.timeStep);
+
+		while (this.time >= this.timeStep) {
+			// first actually execute the current move
+			if (this.world.currentMove) {
+				console.log('execute move');
+				this.world.currentMove.execute();
+				this.world.currentMove = null;
+			}
+			this.world.markComponents();
+
+			if (this.time === this.timeStep) {
+				break;
+			}
+
 			this.timeStep++;
 			this.stepCounter.setStepCount(this.timeStep);
+
 			try {
-				this.world.nextStep(this.algorithm!, this.timeStep);
+				const proposedMove = this.algorithm!.next();
+				if (proposedMove.done) {
+					this.world.currentMove = null;
+					return;
+				}
+				if (!proposedMove.value.isValid()) {
+					throw new Error("Invalid move detected: " + proposedMove.value.toString());
+				}
+
+				this.world.currentMove = proposedMove.value;
+
 			} catch (e) {
 				const cryEmoji = String.fromCodePoint(parseInt('1F622', 16));
 				console.log(`Time step ${this.timeStep}. Threw exception: ${e}. Pausing the simulation ${cryEmoji}`);
@@ -266,9 +291,13 @@ class CubesSimulator {
 			}
 			if (this.world.currentMove) {
 				console.log(`Time step ${this.timeStep}. Move: ${this.world.currentMove.toString()}`);
-			}
-			if (this.simulationMode === SimulationMode.RUNNING &&
-				!this.world.currentMove) {
+
+				// mark components with the moving cube removed
+				const movingCube = this.world.getCube(this.world.currentMove.sourcePosition())!;
+				this.world.removeCubeUnmarked(movingCube);
+				this.world.markComponents();
+				this.world.addCubeUnmarked(movingCube);
+			} else if (this.simulationMode === SimulationMode.RUNNING) {
 				console.log(`Time step ${this.timeStep}. No move left, so pausing the simulation.`);
 				this.run();  // pause
 				break;
@@ -319,17 +348,18 @@ class CubesSimulator {
 				}
 			}
 
-			if (this.editMode === EditMode.ADD_BALL) {
+			if (this.editMode === EditMode.ADD_CUBE) {
 				x = Math.round(x);
 				y = Math.round(y);
 
 				const cube = this.world.getCube([x, y]);
 				if (!cube) {
-					const newCube = this.world.addCube([x, y], this.lastColor);
+					const newCube = new Cube(this.world, [x, y], this.lastColor);
+					this.world.addCube(newCube);
 					this.deselect();
 					this.select(newCube);
 				} else {
-					this.world.removeCube(cube.p);
+					this.world.removeCube(cube);
 				}
 			}
 		}
@@ -412,18 +442,16 @@ class CubesSimulator {
 	}
 
 	addCubesMode(): void {
-		this.editMode = EditMode.ADD_BALL;
+		this.editMode = EditMode.ADD_CUBE;
 		this.selectButton.setPressed(false);
 		this.addCubeButton.setPressed(true);
 	}
 
 	delete(): void {
-		this.selection.forEach((obj) => {
-			if (obj instanceof Cube) {
-				this.world.removeCube(obj.p);
-			}
-			this.deselect();
+		this.selection.forEach((cube) => {
+			this.world.removeCube(cube);
 		});
+		this.deselect();
 	}
 
 	showTree(): void {

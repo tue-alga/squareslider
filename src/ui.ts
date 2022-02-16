@@ -310,6 +310,7 @@ class StepCountLabel extends Component {
 	constructor(public stepCount: number) {
 		super();
 		this.rebuildPixi();
+		this.setStepCount(stepCount);
 	}
 
 	override getWidth() {

@@ -1,7 +1,7 @@
-import {World} from './world';
-import {ComponentStatus} from './cube';
-import {GatherAlgorithm} from './algorithms/gather';
-import {CompactSortedAlgorithm} from './algorithms/compact-sorted';
+import { Move, World } from './world';
+import { ComponentStatus } from './cube';
+import { GatherAlgorithm } from './algorithms/gather';
+import { CompactAlgorithm } from './algorithms/compact';
 
 const fs = require('fs');
 
@@ -22,7 +22,7 @@ declare global {
 	function printMiniStep(text: string): void;
 }
 
-Array.prototype.min = function<T extends number>(): number {
+Array.prototype.min = function <T extends number>(): number {
 	let minimum = Infinity;
 	for (let i = 0; i < this.length; i++) {
 		minimum = Math.min(minimum, this[i]);
@@ -30,12 +30,25 @@ Array.prototype.min = function<T extends number>(): number {
 	return minimum;
 }
 
-Array.prototype.max = function<T extends number>(): number {
+Array.prototype.max = function <T extends number>(): number {
 	let maximum = -Infinity;
 	for (let i = 0; i < this.length; i++) {
 		maximum = Math.max(maximum, this[i]);
 	}
 	return maximum;
+}
+
+function nextStep(world: World, algorithm: Generator<Move>) {
+	const proposedMove = algorithm!.next();
+	if (proposedMove.done) {
+		world.currentMove = null;
+		return;
+	}
+	if (!proposedMove.value.isValid()) {
+		throw new Error("Invalid move detected: " + proposedMove.value.toString());
+	}
+
+	world.currentMove = proposedMove.value;
 }
 
 if (process.argv.length !== 3) {
@@ -57,7 +70,7 @@ let algorithm = new GatherAlgorithm(world).execute();
 while (true) {
 	step++;
 	try {
-		world.nextStep(algorithm, step);
+		nextStep(world, algorithm);
 	} catch (e) {
 		console.error(`\x1b[31m\x1b[1mError in algorithm code:\x1b[0m`);
 		printWorld(world, bounds);
@@ -77,10 +90,10 @@ let gatherSteps = step;
 
 printWorld(world, bounds);
 
-algorithm = new CompactSortedAlgorithm(world).execute();
+algorithm = new CompactAlgorithm(world).execute();
 while (true) {
 	step++;
-	world.nextStep(algorithm, step);
+	nextStep(world, algorithm);
 	if (world.currentMove) {
 		// @ts-ignore
 		moves.push([world.currentMove.sourcePosition(), world.currentMove.targetPosition()]);
@@ -97,14 +110,14 @@ let compactSteps = step - gatherSteps;
 printWorld(world, bounds);
 
 console.log(`Algorithm execution took ${step} moves ` +
-		`(of which ${gatherSteps} gathering, ${step - gatherSteps} compaction)`);
+	`(of which ${gatherSteps} gathering, ${step - gatherSteps} compaction)`);
 
-fs.writeFileSync('out.json', JSON.stringify({'movepaths': moves}));
+fs.writeFileSync('out.json', JSON.stringify({ 'movepaths': moves }));
 
 
 function printWorld(world: World, bounds: [number, number, number, number]) {
 	const [minX, minY, maxX, maxY] = bounds;
-	
+
 	console.log('┌' + '─'.repeat(2 * (maxX - minX) + 3) + '┐');
 	for (let y = maxY; y >= minY; y--) {
 		let line = "│ ";
