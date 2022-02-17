@@ -163,33 +163,31 @@
 			Help
 		</div>
 		<div class="dialog-content">
-			<p>This is a visualizer for the Gather&Compact algorithm for modular robot reconfiguration, described in our <a href="https://arxiv.org/abs/2105.07997">paper</a>
-			<blockquote>
-				Irina Kostitsyna, Irene Parada, Willem Sonke, Bettina Speckmann, and Jules Wulms, <i>Compacting Squares: Input-Sensitive In-Place Reconfiguration of Sliding Squares</i> (to appear)
-			</blockquote>
+			<p>This is the web-based interface for leukenaam, a framework for modular robot reconfiguration in the sliding square model.
+			
 			</p>
 
-			<h2>Help</h2>
-			<p>The following tools are available for drawing the input configuration:<br>
+			<h2>Building an input configuration</h2>
+			<p>In the lower toolbar the following tools are available for drawing an input configuration:<br>
 				<img src="icons/select.png">: Pan the canvas around or select a square. Click once on a square to select it.<br>
 				<img src="icons/add-square.png">: Click on an empty grid cell to insert a square in that location. Click on an existing square to delete it.<br>
 				<img src="icons/color.png">: Changes the color of the selected square (cycles through six available colors). Colors do not influence the algorithm, but can be helpful to identify where certain parts of the input configuration end up while the algorithm is running.<br>
 				<img src="icons/delete.png">: Deletes the selected square.<br>
+				<img src="icons/save.png">: Opens a dialog that allows you to save your configuration to a JSON string, or load a configuration from a JSON string you saved earlier.
 			</p>
 
-			<p>When you are satisfied with your drawing, click <img src="icons/play.png"> to simulate your construction. The editing toolbar at the bottom of the screen will disappear. To make it reappear, click <img src="icons/reset.png"> to reset the configuration and go back into editing mode. While the algorithm is running, you can pause the visualization using <img src="icons/pause.png">, and run the algorithm for a single step using <img src="icons/step.png">.</p>
-			<p>The dialog opened by <img src="icons/save.png"> allows you to save your configuration to a JSON string, or load a configuration from a JSON string you saved earlier.</p>
-
-			<h2>Example configurations</h2>
-
-			<p>Click the buttons below to load example configurations onto the canvas. (This will overwrite your construction.) This includes the several configurations used in the figures in the paper, and some of the configurations used for the experimental evaluation.</p>
-			<p><a class="button" id="example-button-fig-2">&larr; Figure 2: 40x40 spiral</a></p>
-			<p><a class="button" id="example-button-fig-6">&larr; Figure 6: Small example of chunks</a></p>
-			<p><a class="button" id="example-button-fig-10l">&larr; Figure 10, left: Chain move</a></p>
-			<p><a class="button" id="example-button-fig-10r">&larr; Figure 10, right: Chain move with a loose square</a></p>
-			<p><a class="button" id="example-button-fig-14a">&larr; Figure 14a: 10x10 randomly generated, density 50%</a></p>
-			<p><a class="button" id="example-button-fig-14b">&larr; Figure 14b: 10x10 randomly generated, density 70%</a></p>
-			<p><a class="button" id="example-button-fig-14c">&larr; Figure 14c: 10x10 randomly generated, density 85%</a></p>
+			<h2>Animating a reconfiguration</h2>
+			<p>The upper toolbar provides tools for selecting and animating reconfiguration algorithms:<br>
+				<img src="icons/play.png">: Starts the animation of the selected reconfiguration algorithm on the input configuration. While an algorithm is running, the lower toolbar will show the number of performed steps and details on the current step. You can pause the animation using <img src="icons/pause.png">, and slow it down or speed it up in the lower toolbar using <img src="icons/slower.png"> or <img src="icons/faster.png"> respectively.<br>
+				<img src="icons/step.png">: Performs a single step of the selected reconfiguration algorithm.<br>
+				<img src="icons/reset.png">: Resets the configuration back to the state before starting a reconfiguration algorithm. This also resets the lower toolbar to show configuration editing tools.<br>
+				<img src="icons/show-connectivity.png">: Toggles the marks that show connectivity information, see below for more information. 
+			</p>
+			
+			<h2>Connectivity</h2>
+			<p>
+			We allow for the visualization of the connectivity information used in our <a href="https://arxiv.org/abs/2105.07997">paper</a>. Firstly, a square has a filled (blue or red) mark if it can perform moves without disconnecting the configuration, while a non-filled mark indicates that moving the square disconnects the configuration (i.e., this square forms a cut vertex in the adjacency graph of the configuration). Secondly, the color and shape of the marks indicates a partitioning of the configuration into (roughly) 2-connected components. Blue square marks indicate squares in a <i>chunk</i>, a special 2-connected components defined in our <a href="https://arxiv.org/abs/2105.07997">paper</a>. A chunk is defined by an inclusion-maximal cycle <i>C</i> along with all its degree-1 neighbors and any squares inside <i>C</i>. Red circle marks indicate squares that are not part of a chunk. A special crossed mark shows where components connect to each other. 
+			</p>
 		</div>
 	</div>
 	<script>
