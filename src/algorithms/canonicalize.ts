@@ -24,7 +24,7 @@ class CanonicalizeAlgorithm {
 
 		if (xMin + yMin > xMax + yMax ||
 			(xMin + yMin === xMax + yMax && yMin < yMax)) {
-			throw "no canonicalization move available";
+			throw new Error("No canonicalization move available");
 		}
 
 		yield* this.world.shortestMovePath([xMax, yMax], [xMin, yMin]);
