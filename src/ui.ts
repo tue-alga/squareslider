@@ -47,8 +47,6 @@ abstract class Button extends Component {
 		}
 
 		this.pixi.interactive = true;
-		this.pixi.hitArea = new PIXI.Rectangle(0, 0,
-			Button.BUTTON_HEIGHT, Button.BUTTON_HEIGHT);
 		this.pixi.on('click', () => {
 			if (this.enabled && this.clickHandler) {
 				this.clickHandler();
@@ -76,7 +74,9 @@ abstract class Button extends Component {
 		this.pixi.addChild(background);
 
 		const foreground = this.getForeground();
-		if (!this.enabled) {
+		if (this.enabled) {
+			foreground.alpha = 1;
+		} else {
 			foreground.alpha = 0.3;
 		}
 		this.pixi.addChild(foreground);
@@ -101,7 +101,7 @@ abstract class Button extends Component {
 		const balloonShadow = new PIXI.Graphics();
 		balloonShadow.beginFill(0x000000);
 		balloonShadow.drawRoundedRect(
-			(-balloonWidth + Button.BUTTON_HEIGHT) / 2,
+			(-balloonWidth + this.getWidth()) / 2,
 			y,
 			balloonWidth,
 			height,
@@ -114,7 +114,7 @@ abstract class Button extends Component {
 		const balloonBackground = new PIXI.Graphics();
 		balloonBackground.beginFill(0x222222);
 		balloonBackground.drawRoundedRect(
-			(-balloonWidth + Button.BUTTON_HEIGHT) / 2,
+			(-balloonWidth + this.getWidth()) / 2,
 			y,
 			balloonWidth,
 			height,
@@ -125,7 +125,7 @@ abstract class Button extends Component {
 		const balloonText = new PIXI.Text(this.tooltip,
 			Constants.tooltipStyle);
 		balloonText.anchor.set(0.5, 0.5);
-		balloonText.x = Button.BUTTON_HEIGHT / 2;
+		balloonText.x = this.getWidth() / 2;
 		balloonText.y = y + height / 2 - 1;
 		this.balloon.addChild(balloonText);
 
@@ -133,11 +133,14 @@ abstract class Button extends Component {
 			const shortcutText = new PIXI.Text("[" + this.shortcut + "]",
 				Constants.tooltipSmallStyle);
 			shortcutText.anchor.set(0.5, 0.5);
-			shortcutText.x = Button.BUTTON_HEIGHT / 2;
+			shortcutText.x = this.getWidth() / 2;
 			balloonText.y = y + height / 2 - 9;
 			shortcutText.y = y + height / 2 + 9;
 			this.balloon.addChild(shortcutText);
 		}
+
+		this.pixi.hitArea = new PIXI.Rectangle(0, 0,
+			this.getWidth(), this.getHeight());
 	}
 
 	abstract getBackground(): PIXI.DisplayObject;
