@@ -70,6 +70,12 @@ abstract class Button extends Component {
 	rebuildPixi(): void {
 		this.pixi.removeChildren();
 
+		if (this.enabled) {
+			this.pixi.cursor = 'pointer';
+		} else {
+			this.pixi.cursor = 'default';
+		}
+
 		const background = this.getBackground();
 		this.pixi.addChild(background);
 

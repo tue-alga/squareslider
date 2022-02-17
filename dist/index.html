@@ -101,6 +101,7 @@
 			border-bottom: 1px solid #ccc;
 			padding: 20px;
 			font-weight: 700;
+			cursor: pointer;
 		}
 
 		.algorithm-button:last-child {
@@ -188,7 +189,7 @@
 		</div>
 		<div class="dialog-content">
 			<p>This is the web-based interface for leukenaam, a framework for modular robot reconfiguration in the sliding square model.
-			
+
 			</p>
 
 			<h2>Building an input configuration</h2>
@@ -205,12 +206,12 @@
 				<img src="icons/play.png">: Starts the animation of the selected reconfiguration algorithm on the input configuration. While an algorithm is running, the lower toolbar will show the number of performed steps and details on the current step. You can pause the animation using <img src="icons/pause.png">, and slow it down or speed it up in the lower toolbar using <img src="icons/slower.png"> or <img src="icons/faster.png"> respectively.<br>
 				<img src="icons/step.png">: Performs a single step of the selected reconfiguration algorithm.<br>
 				<img src="icons/reset.png">: Resets the configuration back to the state before starting a reconfiguration algorithm. This also resets the lower toolbar to show configuration editing tools.<br>
-				<img src="icons/show-connectivity.png">: Toggles the marks that show connectivity information, see below for more information. 
+				<img src="icons/show-connectivity.png">: Toggles the marks that show connectivity information, see below for more information.
 			</p>
-			
+
 			<h2>Connectivity</h2>
 			<p>
-			We allow for the visualization of the connectivity information used in our <a href="https://arxiv.org/abs/2105.07997">paper</a>. Firstly, a square has a filled (blue or red) mark if it can perform moves without disconnecting the configuration, while a non-filled mark indicates that moving the square disconnects the configuration (i.e., this square forms a cut vertex in the adjacency graph of the configuration). Secondly, the color and shape of the marks indicates a partitioning of the configuration into (roughly) 2-connected components. Blue square marks indicate squares in a <i>chunk</i>, a special 2-connected components defined in our <a href="https://arxiv.org/abs/2105.07997">paper</a>. A chunk is defined by an inclusion-maximal cycle <i>C</i> along with all its degree-1 neighbors and any squares inside <i>C</i>. Red circle marks indicate squares that are not part of a chunk. A special crossed mark shows where components connect to each other. 
+				We allow for the visualization of the connectivity information used in our <a href="https://arxiv.org/abs/2105.07997">paper</a>. Firstly, a square has a filled (blue or red) mark if it can perform moves without disconnecting the configuration, while a non-filled mark indicates that moving the square disconnects the configuration (i.e., this square forms a cut vertex in the adjacency graph of the configuration). Secondly, the color and shape of the marks indicates a partitioning of the configuration into (roughly) 2-connected components. Blue square marks indicate squares in a <i>chunk</i>, a special 2-connected components defined in our <a href="https://arxiv.org/abs/2105.07997">paper</a>. A chunk is defined by an inclusion-maximal cycle <i>C</i> along with all its degree-1 neighbors and any squares inside <i>C</i>. Red circle marks indicate squares that are not part of a chunk. A special crossed mark shows where components connect to each other.
 			</p>
 		</div>
 	</div>
