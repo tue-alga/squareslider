@@ -5,6 +5,9 @@ import { World, Move } from './world';
 import { IconButton, TextButton, Label, Separator, Toolbar, StepCountLabel, PhaseLabel } from './ui';
 
 import { GatherAndCompactAlgorithm } from './algorithms/gather-and-compact';
+import { GatherAlgorithm } from './algorithms/gather';
+import { CompactAlgorithm } from './algorithms/compact';
+import { CanonicalizeAlgorithm } from './algorithms/canonicalize';
 import { CustomAlgorithm } from './algorithms/custom';
 
 enum EditMode {
@@ -19,6 +22,8 @@ class SquaresSimulator {
 
 	readonly AVAILABLE_ALGORITHMS: { [name: string]: new (world: World) => { execute(): Generator<Move, void, undefined> } } = {
 		"Gather & Compact": GatherAndCompactAlgorithm,
+		"Gather": GatherAlgorithm,
+		"Compact": CompactAlgorithm,
 		"Custom move sequence": CustomAlgorithm
 	};
 	selectedAlgorithm = "Gather & Compact";
@@ -94,7 +99,7 @@ class SquaresSimulator {
 
 		this.topBar.addChild(new Label("Algorithm:"));
 
-		this.algorithmButton = new TextButton(this.selectedAlgorithm, 150, "Select algorithm to run", false);
+		this.algorithmButton = new TextButton(this.selectedAlgorithm, 220, "Select algorithm to run", false);
 		this.algorithmButton.onClick(this.toggleAlgorithm.bind(this));
 		this.topBar.addChild(this.algorithmButton);
 
@@ -397,7 +402,7 @@ class SquaresSimulator {
 	}
 
 	createAlgorithm(): Generator<Move> {
-		return new this.AVAILABLE_ALGORITHMS['Gather & Compact'](this.world).execute();
+		return new this.AVAILABLE_ALGORITHMS[this.selectedAlgorithm](this.world).execute();
 	}
 
 	// button handlers
@@ -427,6 +432,7 @@ class SquaresSimulator {
 			this.selectButton.setEnabled(false);
 			this.addSquareButton.setEnabled(false);
 			this.saveButton.setEnabled(false);
+			this.algorithmButton.setEnabled(false);
 		}
 		this.resetButton.setEnabled(true);
 	}
@@ -443,6 +449,7 @@ class SquaresSimulator {
 			this.selectButton.setEnabled(false);
 			this.addSquareButton.setEnabled(false);
 			this.saveButton.setEnabled(false);
+			this.algorithmButton.setEnabled(false);
 		}
 		this.stepButton.setEnabled(false);
 		this.resetButton.setEnabled(true);
@@ -459,6 +466,7 @@ class SquaresSimulator {
 		this.selectButton.setEnabled(true);
 		this.addSquareButton.setEnabled(true);
 		this.saveButton.setEnabled(true);
+		this.algorithmButton.setEnabled(true);
 
 		this.world.reset();
 		this.time = 0;
@@ -556,6 +564,23 @@ class SquaresSimulator {
 	}
 
 	toggleAlgorithm(): void {
+		const dialogs = document.getElementById('algorithmDialog')!;
+		dialogs.style.display = 'block';
+
+		const container = document.getElementById('algorithmDialogContainer')!;
+		container.innerHTML = '';
+		for (let algorithmName in this.AVAILABLE_ALGORITHMS) {
+			let item = document.createElement('a');
+			item.innerHTML = algorithmName;
+			item.classList.add('algorithm-button');
+			let self = this;
+			item.onclick = function () {
+				self.selectedAlgorithm = algorithmName;
+				self.algorithmButton.setText(algorithmName);
+				dialogs.style.display = 'none';
+			};
+			container?.appendChild(item);
+		}
 	}
 }
 
