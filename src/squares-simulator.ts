@@ -45,19 +45,19 @@ class SquaresSimulator {
 	private runButton: Button;
 	private stepButton: Button;
 	private resetButton: Button;
+	private showConnectivityButton: Button;
 	private helpButton: Button;
 
 	private selectButton: Button;
 	private addSquareButton: Button;
 	private colorButton: Button;
 	private deleteButton: Button;
-
 	private saveButton: Button;
-	private ipeButton: Button;
-	private showTreeButton: Button;
 
 	private stepCounter: StepCountLabel;
 	private phaseLabel: PhaseLabel;
+	private slowerButton: Button;
+	private fasterButton: Button;
 
 	private textArea = document.getElementById('save-textarea') as HTMLTextAreaElement;
 	private ipeArea = document.getElementById('ipe-textarea') as HTMLTextAreaElement;
@@ -84,15 +84,11 @@ class SquaresSimulator {
 
 		this.topBar.addChild(new Separator());
 
-		this.saveButton = new Button(
-			"save", "Save & load", false);
-		this.saveButton.onClick(this.save.bind(this));
-		this.topBar.addChild(this.saveButton);
+		this.showConnectivityButton = new Button("help", "Show connectivity", false);
+		this.showConnectivityButton.onClick(this.showConnectivity.bind(this));
+		this.topBar.addChild(this.showConnectivityButton);
 
-		this.ipeButton = new Button(
-			"save", "Ipe export", false);
-		this.ipeButton.onClick(this.ipeExport.bind(this));
-		//this.topBar.addChild(this.ipeButton);
+		this.topBar.addChild(new Separator());
 
 		this.helpButton = new Button("help", "Help", false);
 		this.helpButton.onClick(this.help.bind(this));
@@ -135,12 +131,12 @@ class SquaresSimulator {
 		this.deleteButton.setEnabled(false);
 		this.bottomBar.addChild(this.deleteButton);
 
-		//this.bottomBar.addChild(new Separator());
+		this.bottomBar.addChild(new Separator());
 
-		this.showTreeButton = new Button(
-			"save", "Show tree", true);
-		this.showTreeButton.onClick(this.showTree.bind(this));
-		//this.bottomBar.addChild(this.showTreeButton);
+		this.saveButton = new Button(
+			"save", "Save & load", false);
+		this.saveButton.onClick(this.save.bind(this));
+		this.bottomBar.addChild(this.saveButton);
 
 
 		this.statusBar = new Toolbar(true);
@@ -153,6 +149,16 @@ class SquaresSimulator {
 		this.phaseLabel = new PhaseLabel();
 		phaseLabel = this.phaseLabel;
 		this.statusBar.addChild(this.phaseLabel);
+
+		this.slowerButton = new Button(
+			"help", "Slower", true);
+		this.slowerButton.onClick(this.slower.bind(this));
+		this.statusBar.addChild(this.slowerButton);
+
+		this.fasterButton = new Button(
+			"help", "Faster", true);
+		this.fasterButton.onClick(this.faster.bind(this));
+		this.statusBar.addChild(this.fasterButton);
 
 
 		// set up event handlers for dialog buttons
@@ -454,18 +460,6 @@ class SquaresSimulator {
 		this.deselect();
 	}
 
-	showTree(): void {
-		this.showTreeButton.setPressed(!this.showTreeButton.isPressed());
-		this.world.treePixi.visible = this.showTreeButton.isPressed();
-		this.world.backgroundPixi.visible = !this.world.treePixi.visible;
-
-		if (this.world.treePixi.visible) {
-			this.world.pixi.filters = [new PIXI.filters.AlphaFilter(0.3)];
-		} else {
-			this.world.pixi.filters = [];
-		}
-	}
-
 	save(): void {
 		const file = this.world.serialize();
 		const dialogs = document.getElementById('saveDialog');
@@ -493,6 +487,14 @@ class SquaresSimulator {
 		this.ipeArea.value = this.world.toIpe();
 	}
 
+	showConnectivity(): void {
+		this.showConnectivityButton.setPressed(!this.showConnectivityButton.isPressed());
+		this.world.showComponentMarks = this.showConnectivityButton.isPressed();
+		for (let square of this.world.squares) {
+			square.updatePixi();
+		}
+	}
+
 	help(): void {
 		const container = document.getElementById('squares-simulator-container')!;
 		if (this.helpButton.isPressed()) {
@@ -507,6 +509,14 @@ class SquaresSimulator {
 		setTimeout(function () {
 			self.app.renderer.resize(container.offsetWidth, container.offsetHeight);
 		}, 600);
+	}
+
+	slower(): void {
+		this.timeSpeed /= 2;
+	}
+
+	faster(): void {
+		this.timeSpeed *= 2;
 	}
 }
 

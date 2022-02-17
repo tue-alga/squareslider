@@ -1,4 +1,6 @@
 import * as PIXI from 'pixi.js'
+import { Viewport } from 'pixi-viewport';
+
 import { SquaresSimulator } from './squares-simulator'
 import { PhaseLabel } from './ui';
 
@@ -11,9 +13,6 @@ let app = new PIXI.Application({
 	view: canvas,
 	resizeTo: container
 });
-//app.renderer.view.style.position = "absolute";
-//app.renderer.view.style.display = "block";
-//app.renderer.resize(window.innerWidth, window.innerHeight);
 app.renderer.resize(container.offsetWidth, container.offsetHeight);
 
 // set up the interaction manager such that it fires mousemove events only

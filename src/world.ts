@@ -223,6 +223,7 @@ class World {
 	world: WorldCell[][] = [];
 
 	viewport = new Viewport();
+
 	pixi = new PIXI.Container();
 	backgroundPixi = new PIXI.Container();
 	gridPixi = new PIXI.Container();
@@ -233,10 +234,17 @@ class World {
 
 	currentMove: Move | null = null;
 
+	showComponentMarks = false;
+
 	/**
 	 * Creates the world and initializes its PIXI elements (viewport and grid).
 	 */
 	constructor() {
+		const container = document.getElementById('squares-simulator-container')!;
+
+		this.viewport = new Viewport({
+			'divWheel': container
+		});
 		this.viewport.addChild(this.gridPixi);
 		this.viewport.addChild(this.backgroundPixi);
 

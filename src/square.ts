@@ -84,45 +84,47 @@ class Square {
 		this.circle.endFill();
 
 		this.componentMark.clear();
-		switch (this.componentStatus) {
-			case ComponentStatus.CONNECTOR:
-				this.componentMark.lineStyle(6, 0x0066CB);
-				this.componentMark.moveTo(-15, -15);
-				this.componentMark.lineTo(15, -15);
-				this.componentMark.lineTo(15, 15);
-				this.componentMark.lineTo(-15, 15);
-				this.componentMark.closePath();
-				this.componentMark.moveTo(-15, -15);
-				this.componentMark.lineTo(15, 15);
-				this.componentMark.moveTo(15, -15);
-				this.componentMark.lineTo(-15, 15);
-				break;
-			case ComponentStatus.CHUNK_STABLE:
-				this.componentMark.beginFill(0x0066CB);
-				this.componentMark.moveTo(-18, -18);
-				this.componentMark.lineTo(18, -18);
-				this.componentMark.lineTo(18, 18);
-				this.componentMark.lineTo(-18, 18);
-				this.componentMark.closePath();
-				this.componentMark.endFill();
-				break;
-			case ComponentStatus.CHUNK_CUT:
-				this.componentMark.lineStyle(6, 0x0066CB);
-				this.componentMark.moveTo(-15, -15);
-				this.componentMark.lineTo(15, -15);
-				this.componentMark.lineTo(15, 15);
-				this.componentMark.lineTo(-15, 15);
-				this.componentMark.closePath();
-				break;
-			case ComponentStatus.LINK_STABLE:
-				this.componentMark.beginFill(0xD5004A);
-				this.componentMark.drawCircle(0, 0, 19);
-				this.componentMark.endFill();
-				break;
-			case ComponentStatus.LINK_CUT:
-				this.componentMark.lineStyle(6, 0xD5004A);
-				this.componentMark.drawCircle(0, 0, 16);
-				break;
+		if (this.world.showComponentMarks) {
+			switch (this.componentStatus) {
+				case ComponentStatus.CONNECTOR:
+					this.componentMark.lineStyle(6, 0x0066CB);
+					this.componentMark.moveTo(-15, -15);
+					this.componentMark.lineTo(15, -15);
+					this.componentMark.lineTo(15, 15);
+					this.componentMark.lineTo(-15, 15);
+					this.componentMark.closePath();
+					this.componentMark.moveTo(-15, -15);
+					this.componentMark.lineTo(15, 15);
+					this.componentMark.moveTo(15, -15);
+					this.componentMark.lineTo(-15, 15);
+					break;
+				case ComponentStatus.CHUNK_STABLE:
+					this.componentMark.beginFill(0x0066CB);
+					this.componentMark.moveTo(-18, -18);
+					this.componentMark.lineTo(18, -18);
+					this.componentMark.lineTo(18, 18);
+					this.componentMark.lineTo(-18, 18);
+					this.componentMark.closePath();
+					this.componentMark.endFill();
+					break;
+				case ComponentStatus.CHUNK_CUT:
+					this.componentMark.lineStyle(6, 0x0066CB);
+					this.componentMark.moveTo(-15, -15);
+					this.componentMark.lineTo(15, -15);
+					this.componentMark.lineTo(15, 15);
+					this.componentMark.lineTo(-15, 15);
+					this.componentMark.closePath();
+					break;
+				case ComponentStatus.LINK_STABLE:
+					this.componentMark.beginFill(0xD5004A);
+					this.componentMark.drawCircle(0, 0, 19);
+					this.componentMark.endFill();
+					break;
+				case ComponentStatus.LINK_CUT:
+					this.componentMark.lineStyle(6, 0xD5004A);
+					this.componentMark.drawCircle(0, 0, 16);
+					break;
+			}
 		}
 
 		this.backgroundPixi.clear();
