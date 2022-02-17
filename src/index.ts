@@ -32,7 +32,10 @@ PIXI.Loader.shared.add([
 	'icons/color.png',
 	'icons/delete.png',
 	'icons/save.png',
-	'icons/help.png'
+	'icons/help.png',
+	'icons/slower.png',
+	'icons/faster.png',
+	'icons/show-connectivity.png'
 ]).load(() => {
 	let simulator = new SquaresSimulator(app);
 });

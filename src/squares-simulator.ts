@@ -2,9 +2,9 @@ import * as PIXI from 'pixi.js';
 
 import { Square, Color } from './square';
 import { World, Move } from './world';
-import { Button, Separator, Toolbar, StepCountLabel, PhaseLabel } from './ui';
+import { IconButton, TextButton, Label, Separator, Toolbar, StepCountLabel, PhaseLabel } from './ui';
 
-import { CompleteAlgorithm } from './algorithms/complete';
+import { GatherAndCompactAlgorithm } from './algorithms/gather-and-compact';
 import { CustomAlgorithm } from './algorithms/custom';
 
 enum EditMode {
@@ -16,6 +16,13 @@ enum SimulationMode {
 }
 
 class SquaresSimulator {
+
+	readonly AVAILABLE_ALGORITHMS: { [name: string]: new (world: World) => { execute(): Generator<Move, void, undefined> } } = {
+		"Gather & Compact": GatherAndCompactAlgorithm,
+		"Custom move sequence": CustomAlgorithm
+	};
+	selectedAlgorithm = "Gather & Compact";
+
 	private app: PIXI.Application;
 
 	editMode: EditMode = EditMode.SELECT;
@@ -42,22 +49,23 @@ class SquaresSimulator {
 	private bottomBarOffset = 0;
 	private statusBar: Toolbar;
 
-	private runButton: Button;
-	private stepButton: Button;
-	private resetButton: Button;
-	private showConnectivityButton: Button;
-	private helpButton: Button;
+	private runButton: IconButton;
+	private stepButton: IconButton;
+	private resetButton: IconButton;
+	private algorithmButton: TextButton;
+	private showConnectivityButton: IconButton;
+	private helpButton: IconButton;
 
-	private selectButton: Button;
-	private addSquareButton: Button;
-	private colorButton: Button;
-	private deleteButton: Button;
-	private saveButton: Button;
+	private selectButton: IconButton;
+	private addSquareButton: IconButton;
+	private colorButton: IconButton;
+	private deleteButton: IconButton;
+	private saveButton: IconButton;
 
 	private stepCounter: StepCountLabel;
 	private phaseLabel: PhaseLabel;
-	private slowerButton: Button;
-	private fasterButton: Button;
+	private slowerButton: IconButton;
+	private fasterButton: IconButton;
 
 	private textArea = document.getElementById('save-textarea') as HTMLTextAreaElement;
 	private ipeArea = document.getElementById('ipe-textarea') as HTMLTextAreaElement;
@@ -69,46 +77,54 @@ class SquaresSimulator {
 
 		this.topBar = new Toolbar(false);
 
-		this.runButton = new Button("play", "Run simulation", false, "Space");
+		this.runButton = new IconButton("play", "Run simulation", false, "Space");
 		this.runButton.onClick(this.run.bind(this));
 		this.topBar.addChild(this.runButton);
 
-		this.stepButton = new Button("step", "Run one step", false);
+		this.stepButton = new IconButton("step", "Run one step", false);
 		this.stepButton.onClick(this.step.bind(this));
 		this.topBar.addChild(this.stepButton);
 
-		this.resetButton = new Button("reset", "Reset simulation", false, "R");
+		this.resetButton = new IconButton("reset", "Reset simulation", false, "R");
 		this.resetButton.onClick(this.reset.bind(this));
 		this.resetButton.setEnabled(false);
 		this.topBar.addChild(this.resetButton);
 
 		this.topBar.addChild(new Separator());
 
-		this.showConnectivityButton = new Button("help", "Show connectivity", false);
+		this.topBar.addChild(new Label("Algorithm:"));
+
+		this.algorithmButton = new TextButton(this.selectedAlgorithm, 150, "Select algorithm to run", false);
+		this.algorithmButton.onClick(this.toggleAlgorithm.bind(this));
+		this.topBar.addChild(this.algorithmButton);
+
+		this.topBar.addChild(new Separator());
+
+		this.showConnectivityButton = new IconButton("show-connectivity", "Show connectivity", false);
 		this.showConnectivityButton.onClick(this.showConnectivity.bind(this));
 		this.topBar.addChild(this.showConnectivityButton);
 
 		this.topBar.addChild(new Separator());
 
-		this.helpButton = new Button("help", "Help", false);
+		this.helpButton = new IconButton("help", "Help", false);
 		this.helpButton.onClick(this.help.bind(this));
 		this.topBar.addChild(this.helpButton);
 
 
 		this.bottomBar = new Toolbar(true);
 
-		this.selectButton = new Button(
+		this.selectButton = new IconButton(
 			"select", "Select objects", true, "S");
 		this.selectButton.setPressed(true);
 		this.selectButton.onClick(this.selectMode.bind(this));
 		this.bottomBar.addChild(this.selectButton);
 
-		this.addSquareButton = new Button(
+		this.addSquareButton = new IconButton(
 			"add-square", "Add/remove squares", true, "C");
 		this.addSquareButton.onClick(this.addSquaresMode.bind(this));
 		this.bottomBar.addChild(this.addSquareButton);
 
-		this.colorButton = new Button(
+		this.colorButton = new IconButton(
 			"color", "Change color", true);
 		this.colorButton.onClick(
 			() => {
@@ -125,7 +141,7 @@ class SquaresSimulator {
 		this.colorButton.setEnabled(false);
 		this.bottomBar.addChild(this.colorButton);
 
-		this.deleteButton = new Button(
+		this.deleteButton = new IconButton(
 			"delete", "Delete selected", true, "Delete");
 		this.deleteButton.onClick(this.delete.bind(this));
 		this.deleteButton.setEnabled(false);
@@ -133,8 +149,8 @@ class SquaresSimulator {
 
 		this.bottomBar.addChild(new Separator());
 
-		this.saveButton = new Button(
-			"save", "Save & load", false);
+		this.saveButton = new IconButton(
+			"save", "Save & load", true);
 		this.saveButton.onClick(this.save.bind(this));
 		this.bottomBar.addChild(this.saveButton);
 
@@ -150,13 +166,15 @@ class SquaresSimulator {
 		phaseLabel = this.phaseLabel;
 		this.statusBar.addChild(this.phaseLabel);
 
-		this.slowerButton = new Button(
-			"help", "Slower", true);
+		this.statusBar.addChild(new Separator());
+
+		this.slowerButton = new IconButton(
+			"slower", "Slower", true);
 		this.slowerButton.onClick(this.slower.bind(this));
 		this.statusBar.addChild(this.slowerButton);
 
-		this.fasterButton = new Button(
-			"help", "Faster", true);
+		this.fasterButton = new IconButton(
+			"faster", "Faster", true);
 		this.fasterButton.onClick(this.faster.bind(this));
 		this.statusBar.addChild(this.fasterButton);
 
@@ -259,12 +277,9 @@ class SquaresSimulator {
 			}
 		}
 
-		console.log(this.time, this.timeStep);
-
 		while (this.time >= this.timeStep) {
 			// first actually execute the current move
 			if (this.world.currentMove) {
-				console.log('execute move');
 				this.world.currentMove.execute();
 				this.world.currentMove = null;
 			}
@@ -280,8 +295,13 @@ class SquaresSimulator {
 			try {
 				const proposedMove = this.algorithm!.next();
 				if (proposedMove.done) {
+					console.log(`Time step ${this.timeStep}. No move left, so pausing the simulation.`);
 					this.world.currentMove = null;
-					return;
+					this.run();  // pause
+					this.runButton.setEnabled(false);
+					this.stepButton.setEnabled(false);
+					this.time = this.timeStep;
+					break;
 				}
 				if (!proposedMove.value.isValid()) {
 					throw new Error("Invalid move detected: " + proposedMove.value.toString());
@@ -292,7 +312,16 @@ class SquaresSimulator {
 			} catch (e) {
 				const cryEmoji = String.fromCodePoint(parseInt('1F622', 16));
 				console.log(`Time step ${this.timeStep}. Threw exception: ${e}. Pausing the simulation ${cryEmoji}`);
+				this.phaseLabel.setPhase('Algorithm threw an exception (see console for details)');
+				let message = '' + e;
+				if (message.length > 50) {
+					message = message.substring(0, 49) + '...';
+				}
+				this.phaseLabel.setSubPhase(message);
 				this.run();  // pause
+				this.runButton.setEnabled(false);
+				this.stepButton.setEnabled(false);
+				this.time = this.timeStep;
 				break;
 			}
 			if (this.world.currentMove) {
@@ -303,10 +332,6 @@ class SquaresSimulator {
 				this.world.removeSquareUnmarked(movingSquare);
 				this.world.markComponents();
 				this.world.addSquareUnmarked(movingSquare);
-			} else if (this.simulationMode === SimulationMode.RUNNING) {
-				console.log(`Time step ${this.timeStep}. No move left, so pausing the simulation.`);
-				this.run();  // pause
-				break;
 			}
 		}
 
@@ -372,7 +397,7 @@ class SquaresSimulator {
 	}
 
 	createAlgorithm(): Generator<Move> {
-		return new CompleteAlgorithm(this.world).execute();
+		return new this.AVAILABLE_ALGORITHMS['Gather & Compact'](this.world).execute();
 	}
 
 	// button handlers
@@ -427,6 +452,7 @@ class SquaresSimulator {
 		this.simulationMode = SimulationMode.RESET;
 		this.runButton.setIcon("play");
 		this.runButton.setTooltip("Run simulation");
+		this.runButton.setEnabled(true);
 		this.stepButton.setEnabled(true);
 		this.resetButton.setEnabled(false);
 
@@ -513,10 +539,23 @@ class SquaresSimulator {
 
 	slower(): void {
 		this.timeSpeed /= 2;
+		if (this.timeSpeed < 0.0125) {
+			this.timeSpeed = 0.0125;
+			this.slowerButton.setEnabled(false);
+		}
+		this.fasterButton.setEnabled(true);
 	}
 
 	faster(): void {
 		this.timeSpeed *= 2;
+		if (this.timeSpeed > 1.6) {
+			this.timeSpeed = 1.6;
+			this.fasterButton.setEnabled(false);
+		}
+		this.slowerButton.setEnabled(true);
+	}
+
+	toggleAlgorithm(): void {
 	}
 }
 

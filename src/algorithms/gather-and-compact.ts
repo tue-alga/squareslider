@@ -4,7 +4,7 @@ import { GatherAlgorithm } from './gather';
 import { CompactAlgorithm } from './compact';
 import { CanonicalizeAlgorithm } from './canonicalize';
 
-class CompleteAlgorithm {
+class GatherAndCompactAlgorithm {
 
 	constructor(public world: World) { }
 
@@ -16,5 +16,5 @@ class CompleteAlgorithm {
 	}
 }
 
-export { CompleteAlgorithm };
+export { GatherAndCompactAlgorithm };
 

@@ -25,21 +25,19 @@ abstract class Component {
 	abstract getHeight(): number;
 }
 
-class Button extends Component {
-	static readonly BUTTON_SIZE = 48;
-	static readonly BALLOON_WIDTH = 150;
+abstract class Button extends Component {
+	static readonly BUTTON_HEIGHT = 48;
 	static readonly BALLOON_HEIGHT = 34;
 
 	clickHandler: (() => void) | null = null;
 
-	private enabled: boolean = true;
-	private pressed: boolean = false;
+	protected enabled: boolean = true;
+	protected pressed: boolean = false;
 
-	private balloon = new PIXI.Container();
-	private hovered: boolean = false;
+	protected balloon = new PIXI.Container();
+	protected hovered: boolean = false;
 
-	constructor(public icon: string,
-		public tooltip: string,
+	constructor(public tooltip: string,
 		public tooltipAbove: boolean,
 		public shortcut?: string,
 		clickHandler?: () => void) {
@@ -50,7 +48,7 @@ class Button extends Component {
 
 		this.pixi.interactive = true;
 		this.pixi.hitArea = new PIXI.Rectangle(0, 0,
-			Button.BUTTON_SIZE, Button.BUTTON_SIZE);
+			Button.BUTTON_HEIGHT, Button.BUTTON_HEIGHT);
 		this.pixi.on('click', () => {
 			if (this.enabled && this.clickHandler) {
 				this.clickHandler();
@@ -74,28 +72,14 @@ class Button extends Component {
 	rebuildPixi(): void {
 		this.pixi.removeChildren();
 
-		const background = new PIXI.Graphics();
-		if (this.pressed) {
-			background.beginFill(0xdddddd);
-		} else {
-			background.beginFill(0xffffff);
-		}
-		background.drawCircle(
-			Button.BUTTON_SIZE / 2,
-			Button.BUTTON_SIZE / 2,
-			Button.BUTTON_SIZE / 2);
-		background.endFill();
+		const background = this.getBackground();
 		this.pixi.addChild(background);
 
-		const icon = new PIXI.Sprite(
-			PIXI.Loader.shared.
-				resources['icons/' + this.icon + '.png'].texture);
-		icon.width = Button.BUTTON_SIZE;
-		icon.height = Button.BUTTON_SIZE;
+		const foreground = this.getForeground();
 		if (!this.enabled) {
-			icon.alpha = 0.3;
+			foreground.alpha = 0.3;
 		}
-		this.pixi.addChild(icon);
+		this.pixi.addChild(foreground);
 
 		this.balloon = new PIXI.Container();
 		this.pixi.addChild(this.balloon);
@@ -111,12 +95,15 @@ class Button extends Component {
 
 		const y = this.tooltipAbove ? -height - 4 : this.getHeight() + 4;
 
+		const balloonMetrics = PIXI.TextMetrics.measureText(this.tooltip, Constants.tooltipStyle);
+		let balloonWidth = balloonMetrics.width + 28;
+
 		const balloonShadow = new PIXI.Graphics();
 		balloonShadow.beginFill(0x000000);
 		balloonShadow.drawRoundedRect(
-			(-Button.BALLOON_WIDTH + Button.BUTTON_SIZE) / 2,
+			(-balloonWidth + Button.BUTTON_HEIGHT) / 2,
 			y,
-			Button.BALLOON_WIDTH,
+			balloonWidth,
 			height,
 			height / 2);
 		balloonShadow.endFill();
@@ -127,9 +114,9 @@ class Button extends Component {
 		const balloonBackground = new PIXI.Graphics();
 		balloonBackground.beginFill(0x222222);
 		balloonBackground.drawRoundedRect(
-			(-Button.BALLOON_WIDTH + Button.BUTTON_SIZE) / 2,
+			(-balloonWidth + Button.BUTTON_HEIGHT) / 2,
 			y,
-			Button.BALLOON_WIDTH,
+			balloonWidth,
 			height,
 			height / 2);
 		balloonBackground.endFill();
@@ -138,7 +125,7 @@ class Button extends Component {
 		const balloonText = new PIXI.Text(this.tooltip,
 			Constants.tooltipStyle);
 		balloonText.anchor.set(0.5, 0.5);
-		balloonText.x = Button.BUTTON_SIZE / 2;
+		balloonText.x = Button.BUTTON_HEIGHT / 2;
 		balloonText.y = y + height / 2 - 1;
 		this.balloon.addChild(balloonText);
 
@@ -146,19 +133,18 @@ class Button extends Component {
 			const shortcutText = new PIXI.Text("[" + this.shortcut + "]",
 				Constants.tooltipSmallStyle);
 			shortcutText.anchor.set(0.5, 0.5);
-			shortcutText.x = Button.BUTTON_SIZE / 2;
+			shortcutText.x = Button.BUTTON_HEIGHT / 2;
 			balloonText.y = y + height / 2 - 9;
 			shortcutText.y = y + height / 2 + 9;
 			this.balloon.addChild(shortcutText);
 		}
 	}
 
-	getWidth(): number {
-		return Button.BUTTON_SIZE;
-	}
+	abstract getBackground(): PIXI.DisplayObject;
+	abstract getForeground(): PIXI.DisplayObject;
 
 	getHeight(): number {
-		return Button.BUTTON_SIZE;
+		return Button.BUTTON_HEIGHT;
 	}
 
 	isEnabled(): boolean {
@@ -179,11 +165,6 @@ class Button extends Component {
 		this.rebuildPixi();
 	}
 
-	setIcon(icon: string): void {
-		this.icon = icon;
-		this.rebuildPixi();
-	}
-
 	setTooltip(tooltip: string): void {
 		this.tooltip = tooltip;
 		this.rebuildPixi();
@@ -200,6 +181,96 @@ class Button extends Component {
 	}
 }
 
+class IconButton extends Button {
+
+	constructor(public icon: string,
+		public tooltip: string,
+		public tooltipAbove: boolean,
+		public shortcut?: string,
+		clickHandler?: () => void) {
+		super(tooltip, tooltipAbove, shortcut, clickHandler);
+	}
+
+	override getBackground() {
+		const background = new PIXI.Graphics();
+		if (this.pressed) {
+			background.beginFill(0xdddddd);
+		} else {
+			background.beginFill(0xffffff);
+		}
+		background.drawCircle(
+			IconButton.BUTTON_HEIGHT / 2,
+			IconButton.BUTTON_HEIGHT / 2,
+			IconButton.BUTTON_HEIGHT / 2);
+		background.endFill();
+		return background;
+	}
+
+	override getForeground() {
+		const icon = new PIXI.Sprite(
+			PIXI.Loader.shared.
+				resources['icons/' + this.icon + '.png'].texture);
+		icon.width = IconButton.BUTTON_HEIGHT;
+		icon.height = IconButton.BUTTON_HEIGHT;
+		return icon;
+	}
+
+	getWidth(): number {
+		return IconButton.BUTTON_HEIGHT;
+	}
+
+	setIcon(icon: string): void {
+		this.icon = icon;
+		this.rebuildPixi();
+	}
+}
+
+class TextButton extends Button {
+
+	label = new PIXI.Text("", Constants.phaseLabelStyle);
+
+	constructor(public text: string,
+		public width: number,
+		public tooltip: string,
+		public tooltipAbove: boolean,
+		public shortcut?: string,
+		clickHandler?: () => void) {
+		super(tooltip, tooltipAbove, shortcut, clickHandler);
+	}
+
+	override getBackground() {
+		const background = new PIXI.Graphics();
+		if (this.pressed) {
+			background.beginFill(0xdddddd);
+		} else {
+			background.beginFill(0xffffff);
+		}
+		background.drawCircle(
+			IconButton.BUTTON_HEIGHT / 2,
+			IconButton.BUTTON_HEIGHT / 2,
+			IconButton.BUTTON_HEIGHT / 2);
+		background.endFill();
+		return background;
+	}
+
+	override getForeground() {
+		this.setText(this.text);
+		this.label.anchor.set(0, 0.5);
+		this.label.x = 0;
+		this.label.y = this.getHeight() / 2;
+		return this.label;
+	}
+
+	getWidth(): number {
+		return this.width;
+	}
+
+	setText(text: string): void {
+		this.text = text;
+		this.label.text = text;
+	}
+}
+
 class Separator extends Component {
 	static readonly BUTTON_SIZE = 48;
 
@@ -211,7 +282,7 @@ class Separator extends Component {
 		line.drawRect(
 			10, 0,
 			2,
-			Button.BUTTON_SIZE);
+			IconButton.BUTTON_HEIGHT);
 		line.endFill();
 		this.pixi.addChild(line);
 	}
@@ -221,7 +292,7 @@ class Separator extends Component {
 	}
 
 	getHeight(): number {
-		return Button.BUTTON_SIZE;
+		return IconButton.BUTTON_HEIGHT;
 	}
 }
 
@@ -388,5 +459,34 @@ class PhaseLabel extends Component {
 	}
 }
 
-export { Button, Separator, Toolbar, StepCountLabel, PhaseLabel };
+class Label extends Component {
+
+	label = new PIXI.Text("", Constants.subPhaseLabelStyle);
+
+	constructor(public text: string) {
+		super();
+		this.rebuildPixi();
+	}
+
+	override getWidth() {
+		const labelMetrics = PIXI.TextMetrics.measureText(this.text, Constants.subPhaseLabelStyle);
+		return labelMetrics.width;
+	}
+
+	override getHeight() {
+		return Button.BUTTON_HEIGHT;
+	}
+
+	override rebuildPixi(): void {
+		this.pixi.removeChildren();
+
+		this.label.text = this.text;
+		this.label.anchor.set(0, 0.5);
+		this.label.x = 0;
+		this.label.y = this.getHeight() / 2;
+		this.pixi.addChild(this.label);
+	}
+}
+
+export { IconButton, TextButton, Label, Separator, Toolbar, StepCountLabel, PhaseLabel };
 
