@@ -94,7 +94,7 @@ class SquaresSimulator {
 
 		this.topBar.addChild(new Label("Algorithm:"));
 
-		this.algorithmButton = new TextButton(this.selectedAlgorithm, 150, "Select algorithm to run", false);
+		this.algorithmButton = new TextButton(this.selectedAlgorithm, 170, "Select algorithm to run", false);
 		this.algorithmButton.onClick(this.toggleAlgorithm.bind(this));
 		this.topBar.addChild(this.algorithmButton);
 
