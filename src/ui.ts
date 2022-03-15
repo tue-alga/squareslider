@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { Color } from './square';
 import { Constants } from './squares-simulator';
 
 abstract class Component {
@@ -230,6 +231,35 @@ class IconButton extends Button {
 
 	setIcon(icon: string): void {
 		this.icon = icon;
+		this.rebuildPixi();
+	}
+}
+
+class IconColorButton extends IconButton {
+
+	constructor(public icon: string,
+		public color: Color,
+		public tooltip: string,
+		public tooltipAbove: boolean,
+		public shortcut?: string,
+		clickHandler?: () => void) {
+		super(icon, tooltip, tooltipAbove, shortcut, clickHandler);
+	}
+
+	override getForeground() {
+		const foreground = super.getForeground();
+		const colorDot = new PIXI.Graphics();
+		colorDot.beginFill(this.color.toHexColor());
+		colorDot.drawCircle(0, 0, 8);
+		colorDot.endFill();
+		colorDot.x = 8;
+		colorDot.y = IconButton.BUTTON_HEIGHT - 8;
+		foreground.addChild(colorDot);
+		return foreground;
+	}
+
+	setColor(color: Color): void {
+		this.color = color;
 		this.rebuildPixi();
 	}
 }
@@ -497,5 +527,5 @@ class Label extends Component {
 	}
 }
 
-export { IconButton, TextButton, Label, Separator, Toolbar, StepCountLabel, PhaseLabel };
+export { IconButton, IconColorButton, TextButton, Label, Separator, Toolbar, StepCountLabel, PhaseLabel };
 

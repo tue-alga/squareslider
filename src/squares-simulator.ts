@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 
 import { Square, Color } from './square';
 import { World, Move } from './world';
-import { IconButton, TextButton, Label, Separator, Toolbar, StepCountLabel, PhaseLabel } from './ui';
+import { IconButton, IconColorButton, TextButton, Label, Separator, Toolbar, StepCountLabel, PhaseLabel } from './ui';
 
 import { GatherAndCompactAlgorithm } from './algorithms/gather-and-compact';
 import { GatherAlgorithm } from './algorithms/gather';
@@ -63,7 +63,7 @@ class SquaresSimulator {
 
 	private selectButton: IconButton;
 	private addSquareButton: IconButton;
-	private colorButton: IconButton;
+	private colorButton: IconColorButton;
 	private deleteButton: IconButton;
 	private saveButton: IconButton;
 
@@ -129,8 +129,8 @@ class SquaresSimulator {
 		this.addSquareButton.onClick(this.addSquaresMode.bind(this));
 		this.bottomBar.addChild(this.addSquareButton);
 
-		this.colorButton = new IconButton(
-			"color", "Change color", true);
+		this.colorButton = new IconColorButton(
+			"color", this.lastColor, "Change color", true);
 		this.colorButton.onClick(
 			() => {
 				this.selection.forEach((square) => {
@@ -138,6 +138,7 @@ class SquaresSimulator {
 						square.nextColor();
 						if (this.selection.length === 1) {
 							this.lastColor = square.color;
+							this.colorButton.setColor(this.lastColor);
 						}
 					}
 				});
