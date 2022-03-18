@@ -226,6 +226,7 @@ class World {
 
 	pixi = new PIXI.Container();
 	backgroundPixi = new PIXI.Container();
+	foregroundPixi = new PIXI.Container();
 	gridPixi = new PIXI.Container();
 	treePixi = new PIXI.Graphics();
 	grid: PIXI.Mesh;
@@ -245,11 +246,13 @@ class World {
 		this.viewport = new Viewport({
 			'divWheel': container
 		});
-		this.viewport.addChild(this.gridPixi);
+		//this.viewport.addChild(this.gridPixi);
 		this.viewport.addChild(this.backgroundPixi);
 
 		this.backgroundPixi.filters = [new PIXI.filters.AlphaFilter(0.3)];
 		this.viewport.addChild(this.pixi);
+
+		this.viewport.addChild(this.foregroundPixi);
 
 		this.treePixi.visible = false;
 		this.viewport.addChild(this.treePixi);
@@ -375,6 +378,7 @@ class World {
 		this.squares.push(square);
 		this.pixi.addChild(square.pixi);
 		this.backgroundPixi.addChild(square.backgroundPixi);
+		this.foregroundPixi.addChild(square.foregroundPixi);
 	}
 
 	/**
@@ -417,6 +421,7 @@ class World {
 		this.getCell(square.p).squareId = null;
 		this.pixi.removeChild(square.pixi);
 		this.backgroundPixi.removeChild(square.backgroundPixi);
+		this.foregroundPixi.removeChild(square.foregroundPixi);
 		this.squares = this.squares.filter((b) => b !== square);
 		// because removing the square from this.squares changes the indices, we
 		// need to update the squareIds as well
@@ -1168,7 +1173,6 @@ class World {
 			const square = this.squares[i];
 			square.p = [square.resetPosition[0], square.resetPosition[1]];
 			square.dots = [];
-			square.dotsLayer.removeChildren();
 			this.getCell(square.p).squareId = i;
 		}
 		this.currentMove = null;

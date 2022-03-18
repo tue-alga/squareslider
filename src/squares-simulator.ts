@@ -11,7 +11,7 @@ import { CanonicalizeAlgorithm } from './algorithms/canonicalize';
 import { CustomAlgorithm } from './algorithms/custom';
 
 enum EditMode {
-	SELECT, ADD_SQUARE
+	PAN, SELECT, ADD_SQUARE
 }
 
 enum SimulationMode {
@@ -30,10 +30,14 @@ class SquaresSimulator {
 
 	private app: PIXI.Application;
 
-	editMode: EditMode = EditMode.SELECT;
+	editMode: EditMode = EditMode.PAN;
+	dragging = false;
+	addingSquares = true;
+	ctrlHeld = false;
 	time: number = 0;
 	timeStep: number = 0;
 	runUntil: number = Infinity;
+	uiTime: number = 0;
 
 	simulationMode: SimulationMode = SimulationMode.RESET;
 	timeSpeed: number = 0.1;
@@ -61,6 +65,7 @@ class SquaresSimulator {
 	private showConnectivityButton: IconButton;
 	private helpButton: IconButton;
 
+	private panButton: IconButton;
 	private selectButton: IconButton;
 	private addSquareButton: IconButton;
 	private colorButton: IconColorButton;
@@ -118,9 +123,14 @@ class SquaresSimulator {
 
 		this.bottomBar = new Toolbar(true);
 
+		this.panButton = new IconButton(
+			"pan", "Pan the canvas", true, "P");
+		this.panButton.setPressed(true);
+		this.panButton.onClick(this.panMode.bind(this));
+		this.bottomBar.addChild(this.panButton);
+
 		this.selectButton = new IconButton(
 			"select", "Select objects", true, "S");
-		this.selectButton.setPressed(true);
 		this.selectButton.onClick(this.selectMode.bind(this));
 		this.bottomBar.addChild(this.selectButton);
 
@@ -128,6 +138,8 @@ class SquaresSimulator {
 			"add-square", "Add/remove squares", true, "C");
 		this.addSquareButton.onClick(this.addSquaresMode.bind(this));
 		this.bottomBar.addChild(this.addSquareButton);
+
+		this.bottomBar.addChild(new Separator());
 
 		this.colorButton = new IconColorButton(
 			"color", this.lastColor, "Change color", true);
@@ -202,6 +214,17 @@ class SquaresSimulator {
 			document.getElementById('ipeDialog')!.style.display = 'none';
 		});
 
+		const welcomeLoadButton = document.getElementById('welcome-load-button');
+		welcomeLoadButton!.addEventListener('click', () => {
+			this.load('{"_version":2,"squares":[{"x":0,"y":0,"color":[230,230,230]},{"x":0,"y":1,"color":[230,230,230]},{"x":0,"y":2,"color":[230,230,230]},{"x":0,"y":3,"color":[230,230,230]},{"x":2,"y":3,"color":[230,230,230]},{"x":1,"y":3,"color":[230,230,230]},{"x":2,"y":5,"color":[230,230,230]},{"x":2,"y":4,"color":[230,230,230]},{"x":1,"y":6,"color":[230,230,230]},{"x":2,"y":6,"color":[230,230,230]},{"x":2,"y":7,"color":[230,230,230]},{"x":2,"y":8,"color":[230,230,230]},{"x":1,"y":8,"color":[230,230,230]},{"x":0,"y":8,"color":[230,230,230]},{"x":0,"y":7,"color":[230,230,230]},{"x":0,"y":6,"color":[230,230,230]},{"x":1,"y":7,"color":[230,230,230]},{"x":-1,"y":2,"color":[230,230,230]},{"x":-2,"y":2,"color":[230,230,230]},{"x":-3,"y":2,"color":[230,230,230]},{"x":-4,"y":2,"color":[230,230,230]},{"x":-4,"y":3,"color":[230,230,230]},{"x":-4,"y":4,"color":[230,230,230]},{"x":-4,"y":5,"color":[230,230,230]},{"x":-3,"y":6,"color":[230,230,230]},{"x":-4,"y":7,"color":[230,230,230]},{"x":-4,"y":6,"color":[230,230,230]},{"x":-2,"y":7,"color":[230,230,230]},{"x":-3,"y":7,"color":[230,230,230]},{"x":-2,"y":6,"color":[230,230,230]},{"x":5,"y":4,"color":[230,230,230]},{"x":4,"y":4,"color":[230,230,230]},{"x":3,"y":4,"color":[230,230,230]},{"x":-3,"y":1,"color":[230,230,230]},{"x":-3,"y":0,"color":[230,230,230]},{"x":-3,"y":-1,"color":[230,230,230]},{"x":-3,"y":-2,"color":[230,230,230]},{"x":-4,"y":-2,"color":[230,230,230]},{"x":-5,"y":-2,"color":[230,230,230]},{"x":-6,"y":-2,"color":[230,230,230]},{"x":-7,"y":-2,"color":[230,230,230]},{"x":1,"y":0,"color":[230,230,230]},{"x":3,"y":0,"color":[230,230,230]},{"x":2,"y":-1,"color":[230,230,230]},{"x":2,"y":-2,"color":[230,230,230]},{"x":2,"y":0,"color":[230,230,230]},{"x":4,"y":0,"color":[230,230,230]},{"x":5,"y":0,"color":[230,230,230]},{"x":5,"y":1,"color":[230,230,230]},{"x":6,"y":2,"color":[230,230,230]},{"x":5,"y":2,"color":[230,230,230]},{"x":6,"y":1,"color":[230,230,230]},{"x":6,"y":0,"color":[230,230,230]},{"x":7,"y":0,"color":[230,230,230]},{"x":7,"y":1,"color":[230,230,230]},{"x":7,"y":2,"color":[230,230,230]},{"x":5,"y":6,"color":[230,230,230]},{"x":5,"y":5,"color":[230,230,230]},{"x":6,"y":6,"color":[230,230,230]},{"x":7,"y":6,"color":[230,230,230]},{"x":5,"y":7,"color":[230,230,230]},{"x":6,"y":8,"color":[230,230,230]},{"x":7,"y":7,"color":[230,230,230]},{"x":6,"y":7,"color":[230,230,230]},{"x":7,"y":8,"color":[230,230,230]},{"x":5,"y":8,"color":[230,230,230]},{"x":2,"y":-3,"color":[230,230,230]},{"x":3,"y":-3,"color":[230,230,230]},{"x":4,"y":-3,"color":[230,230,230]},{"x":4,"y":-4,"color":[230,230,230]},{"x":4,"y":-5,"color":[230,230,230]},{"x":3,"y":-5,"color":[230,230,230]},{"x":2,"y":-5,"color":[230,230,230]},{"x":2,"y":-4,"color":[230,230,230]},{"x":3,"y":-4,"color":[230,230,230]},{"x":-4,"y":-3,"color":[230,230,230]},{"x":-4,"y":-4,"color":[230,230,230]},{"x":-4,"y":-6,"color":[230,230,230]},{"x":-4,"y":-5,"color":[230,230,230]},{"x":-3,"y":-6,"color":[230,230,230]},{"x":-2,"y":-6,"color":[230,230,230]},{"x":-2,"y":-7,"color":[230,230,230]},{"x":-2,"y":-8,"color":[230,230,230]},{"x":-1,"y":-8,"color":[230,230,230]},{"x":0,"y":-8,"color":[230,230,230]},{"x":0,"y":-7,"color":[230,230,230]},{"x":0,"y":-6,"color":[230,230,230]},{"x":-1,"y":-6,"color":[230,230,230]},{"x":-1,"y":-7,"color":[230,230,230]},{"x":-1,"y":-2,"color":[230,230,230]},{"x":-1,"y":-3,"color":[230,230,230]},{"x":-7,"y":-1,"color":[230,230,230]},{"x":-7,"y":0,"color":[230,230,230]},{"x":-7,"y":1,"color":[230,230,230]},{"x":-8,"y":1,"color":[230,230,230]},{"x":-9,"y":0,"color":[230,230,230]},{"x":-9,"y":1,"color":[230,230,230]},{"x":-8,"y":0,"color":[230,230,230]},{"x":-9,"y":2,"color":[230,230,230]},{"x":-8,"y":2,"color":[230,230,230]},{"x":-7,"y":2,"color":[230,230,230]},{"x":-8,"y":-2,"color":[230,230,230]},{"x":-8,"y":-3,"color":[230,230,230]},{"x":-8,"y":-4,"color":[230,230,230]},{"x":-8,"y":-5,"color":[230,230,230]},{"x":-7,"y":-5,"color":[230,230,230]},{"x":-7,"y":-6,"color":[230,230,230]},{"x":-7,"y":-7,"color":[230,230,230]},{"x":-8,"y":-7,"color":[230,230,230]},{"x":-9,"y":-7,"color":[230,230,230]},{"x":-5,"y":4,"color":[230,230,230]},{"x":-6,"y":4,"color":[230,230,230]},{"x":-6,"y":5,"color":[230,230,230]},{"x":-7,"y":5,"color":[230,230,230]},{"x":-8,"y":5,"color":[230,230,230]},{"x":-8,"y":6,"color":[230,230,230]},{"x":-8,"y":7,"color":[230,230,230]},{"x":-8,"y":8,"color":[230,230,230]},{"x":-4,"y":8,"color":[230,230,230]},{"x":-3,"y":8,"color":[230,230,230]},{"x":-2,"y":8,"color":[230,230,230]},{"x":-3,"y":-4,"color":[230,230,230]},{"x":-2,"y":-4,"color":[230,230,230]},{"x":-1,"y":-4,"color":[230,230,230]}]}');
+			document.getElementById('welcomeDialog')!.style.display = 'none';
+		});
+
+		const welcomeCloseButton = document.getElementById('welcome-close-button');
+		welcomeCloseButton!.addEventListener('click', () => {
+			document.getElementById('welcomeDialog')!.style.display = 'none';
+		});
+
 
 		this.app.ticker.add((delta) => {
 			this.renderFrame(delta);
@@ -209,6 +232,11 @@ class SquaresSimulator {
 
 
 		this.setup();
+
+
+		// open the welcome dialog
+		const dialogs = document.getElementById('welcomeDialog');
+		dialogs!.style.display = 'block';
 	}
 
 	setup() {
@@ -228,6 +256,9 @@ class SquaresSimulator {
 		this.world.pixi.hitArea = new PIXI.Rectangle(-100000, -100000, 200000, 200000);  // TODO should be infinite ...
 		this.world.pixi.on('click', this.worldClickHandler.bind(this));
 		this.world.pixi.on('tap', this.worldClickHandler.bind(this));
+		this.world.pixi.on('mousemove', this.worldMoveHandler.bind(this));
+		this.world.pixi.on('mousedown', this.worldPressHandler.bind(this));
+		this.world.pixi.on('mouseup', this.worldReleaseHandler.bind(this));
 
 		// key handlers
 		window.addEventListener("keydown", (event: KeyboardEvent) => {
@@ -235,12 +266,21 @@ class SquaresSimulator {
 				this.run();
 			} else if (event.key === "r") {
 				this.reset();
+			} else if (event.key === "p") {
+				this.panMode();
 			} else if (event.key === "s") {
 				this.selectMode();
 			} else if (event.key === "c") {
 				this.addSquaresMode();
 			} else if (event.key === "Delete") {
 				this.delete();
+			} else if (event.key === "Control") {
+				this.ctrlHeld = true;
+			}
+		});
+		window.addEventListener("keyup", (event: KeyboardEvent) => {
+			if (event.key === "Control") {
+				this.ctrlHeld = false;
 			}
 		});
 
@@ -256,7 +296,13 @@ class SquaresSimulator {
 		this.updateEditButtons();
 	}
 
-	deselect(): void {
+	deselect(square: Square): void {
+		square.selected = false;
+		this.selection.filter((s) => s !== square);
+		this.updateEditButtons();
+	}
+
+	deselectAll(): void {
 		this.selection.forEach((square) => {
 			square.selected = false;
 		});
@@ -271,6 +317,8 @@ class SquaresSimulator {
 	}
 
 	renderFrame(delta: number): void {
+		this.uiTime += delta;
+
 		if (this.simulationMode === SimulationMode.RUNNING) {
 			this.time += this.timeSpeed * delta;
 
@@ -318,7 +366,7 @@ class SquaresSimulator {
 			} catch (e) {
 				const cryEmoji = String.fromCodePoint(parseInt('1F622', 16));
 				console.log(`Time step ${this.timeStep}. Threw exception: ${e}. Pausing the simulation ${cryEmoji}`);
-				this.phaseLabel.setPhase('Algorithm threw an exception (see console for details)');
+				this.phaseLabel.setPhase('Algorithm threw an exception (see browser console for details)');
 				let message = '' + e;
 				if (message.length > 50) {
 					message = message.substring(0, 49) + '...';
@@ -345,6 +393,9 @@ class SquaresSimulator {
 		this.world.pixi.y = window.innerHeight / 2;
 		this.world.backgroundPixi.x = window.innerWidth / 2;
 		this.world.backgroundPixi.y = window.innerHeight / 2;
+		this.world.foregroundPixi.x = window.innerWidth / 2;
+		this.world.foregroundPixi.y = window.innerHeight / 2;
+		this.world.foregroundPixi.filters = [new PIXI.filters.AlphaFilter(Math.sin(this.uiTime / 10) * 0.2 + 0.8)];
 		this.world.gridPixi.x = window.innerWidth / 2;
 		this.world.gridPixi.y = window.innerHeight / 2;
 		this.world.treePixi.x = window.innerWidth / 2;
@@ -377,26 +428,73 @@ class SquaresSimulator {
 		if (this.simulationMode === SimulationMode.RESET) {
 
 			if (this.editMode === EditMode.SELECT) {
-				this.deselect();
 				const square = this.world.getSquare([Math.round(x), Math.round(y)]);
-				if (square) {
-					this.deselect();
-					this.select(square);
+				if (this.ctrlHeld) {
+					if (square) {
+						if (square.selected) {
+							this.deselect(square);
+						} else {
+							this.select(square);
+						}
+					}
+				} else {
+					this.deselectAll();
+					if (square) {
+						this.select(square);
+					}
 				}
 			}
+		}
+	}
 
+	worldPressHandler(e: PIXI.interaction.InteractionEvent): void {
+		this.dragging = true;
+
+		const p = e.data.getLocalPosition(this.world.pixi);
+		let x = p.x / 80;
+		let y = -p.y / 80;
+
+		if (this.simulationMode === SimulationMode.RESET) {
+			if (this.editMode === EditMode.ADD_SQUARE) {
+				x = Math.round(x);
+				y = Math.round(y);
+				const square = this.world.getSquare([x, y]);
+				this.addingSquares = square === null;
+			}
+		}
+	}
+
+	worldReleaseHandler(e: PIXI.interaction.InteractionEvent): void {
+		this.worldMoveHandler(e);
+		this.dragging = false;
+	}
+
+	worldMoveHandler(e: PIXI.interaction.InteractionEvent): void {
+		if (!this.dragging) {
+			return;
+		}
+		const p = e.data.getLocalPosition(this.world.pixi);
+		let x = p.x / 80;
+		let y = -p.y / 80;
+
+		if (this.simulationMode === SimulationMode.RESET) {
 			if (this.editMode === EditMode.ADD_SQUARE) {
 				x = Math.round(x);
 				y = Math.round(y);
 
 				const square = this.world.getSquare([x, y]);
-				if (!square) {
-					const newSquare = new Square(this.world, [x, y], this.lastColor);
-					this.world.addSquare(newSquare);
-					this.deselect();
-					this.select(newSquare);
+				if (this.addingSquares) {
+					if (square === null) {
+						this.deselectAll();
+						const newSquare = new Square(this.world, [x, y], this.lastColor);
+						this.world.addSquare(newSquare);
+						this.select(newSquare);
+					}
 				} else {
-					this.world.removeSquare(square);
+					if (square !== null) {
+						this.deselectAll();
+						this.world.removeSquare(square);
+					}
 				}
 			}
 		}
@@ -429,7 +527,7 @@ class SquaresSimulator {
 
 		if (this.selectButton.isEnabled()) {
 			this.algorithm = this.createAlgorithm();
-			this.deselect();
+			this.deselectAll();
 			this.selectButton.setEnabled(false);
 			this.addSquareButton.setEnabled(false);
 			this.saveButton.setEnabled(false);
@@ -446,7 +544,7 @@ class SquaresSimulator {
 
 		if (this.selectButton.isEnabled()) {
 			this.algorithm = this.createAlgorithm();
-			this.deselect();
+			this.deselectAll();
 			this.selectButton.setEnabled(false);
 			this.addSquareButton.setEnabled(false);
 			this.saveButton.setEnabled(false);
@@ -476,14 +574,26 @@ class SquaresSimulator {
 		this.algorithm = null;
 	}
 
+	panMode(): void {
+		this.editMode = EditMode.PAN;
+		this.world.viewport.plugins.resume('drag');
+		this.panButton.setPressed(true);
+		this.selectButton.setPressed(false);
+		this.addSquareButton.setPressed(false);
+	}
+
 	selectMode(): void {
 		this.editMode = EditMode.SELECT;
+		this.world.viewport.plugins.pause('drag');
+		this.panButton.setPressed(false);
 		this.selectButton.setPressed(true);
 		this.addSquareButton.setPressed(false);
 	}
 
 	addSquaresMode(): void {
 		this.editMode = EditMode.ADD_SQUARE;
+		this.world.viewport.plugins.pause('drag');
+		this.panButton.setPressed(false);
 		this.selectButton.setPressed(false);
 		this.addSquareButton.setPressed(true);
 	}
@@ -492,7 +602,7 @@ class SquaresSimulator {
 		this.selection.forEach((square) => {
 			this.world.removeSquare(square);
 		});
-		this.deselect();
+		this.deselectAll();
 	}
 
 	save(): void {

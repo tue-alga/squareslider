@@ -43,8 +43,8 @@ class Square {
 	circle = new PIXI.Graphics();
 	componentMark = new PIXI.Graphics();
 	backgroundPixi = new PIXI.Graphics();
+	foregroundPixi = new PIXI.Graphics();
 	dots: [number, PIXI.Graphics][] = [];
-	dotsLayer = new PIXI.Container();
 	selected: boolean = false;
 
 	constructor(private world: World, p: [number, number], color: Color) {
@@ -54,8 +54,7 @@ class Square {
 		this.componentStatus = ComponentStatus.NONE;
 		this.chunkId = -1;
 
-		this.pixi.addChild(this.dotsLayer);
-		this.pixi.addChild(this.selectionCircle);
+		this.foregroundPixi.addChild(this.selectionCircle);
 		this.pixi.addChild(this.circle);
 		this.pixi.addChild(this.componentMark);
 		this.updatePixi();
@@ -65,13 +64,12 @@ class Square {
 
 	updatePixi(): void {
 		this.selectionCircle.clear();
-		this.selectionCircle.beginFill(0x2277bb);
-		this.selectionCircle.moveTo(-50, -50);
-		this.selectionCircle.lineTo(50, -50);
-		this.selectionCircle.lineTo(50, 50);
-		this.selectionCircle.lineTo(-50, 50);
+		this.selectionCircle.lineStyle(15, 0x2277dd);
+		this.selectionCircle.moveTo(-40, -40);
+		this.selectionCircle.lineTo(40, -40);
+		this.selectionCircle.lineTo(40, 40);
+		this.selectionCircle.lineTo(-40, 40);
 		this.selectionCircle.closePath();
-		this.selectionCircle.endFill();
 
 		this.circle.clear();
 		this.circle.beginFill(this.color.toHexColor());

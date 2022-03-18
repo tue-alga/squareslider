@@ -8,7 +8,7 @@ const container = document.getElementById('squares-simulator-container')!;
 const canvas = <HTMLCanvasElement>document.getElementById('squares-simulator-canvas');
 let app = new PIXI.Application({
 	antialias: true,
-	backgroundColor: 0xfafafa,
+	backgroundColor: 0xffffff,
 	autoDensity: true,
 	view: canvas,
 	resizeTo: container
@@ -24,6 +24,7 @@ PIXI.Loader.shared.add([
 	'icons/step.png',
 	'icons/pause.png',
 	'icons/reset.png',
+	'icons/pan.png',
 	'icons/select.png',
 	'icons/add-square.png',
 	'icons/add-wall.png',
