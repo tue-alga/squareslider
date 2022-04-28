@@ -246,7 +246,7 @@ class World {
 		this.viewport = new Viewport({
 			'divWheel': container
 		});
-		//this.viewport.addChild(this.gridPixi);
+		this.viewport.addChild(this.gridPixi);
 		this.viewport.addChild(this.backgroundPixi);
 
 		this.backgroundPixi.filters = [new PIXI.filters.AlphaFilter(0.3)];
