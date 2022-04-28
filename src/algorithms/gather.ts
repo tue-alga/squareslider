@@ -131,8 +131,15 @@ class GatherAlgorithm {
 				stack.push(squareId);
 
 			} else if (stack.length > 1 && stack[stack.length - 2] === squareId) {
-				// found link stable square
-				return this.world.squares[stack[stack.length - 1]];
+				if (stack.length > 2) {
+					// found link stable square
+					return this.world.squares[stack[stack.length - 1]];
+				} else {
+					// in this case stack[stack.length - 1] is adjacent to c,
+					// so we don't want it... but make sure that we remove
+					// it for the stack so we can continue correctly
+					stack.pop();
+				}
 
 			} else {
 				// found leaf chunk
