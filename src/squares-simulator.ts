@@ -697,34 +697,34 @@ class SquaresSimulator {
 
 class Constants {
 	static readonly tooltipStyle = new PIXI.TextStyle({
-		fontFamily: "Fira Sans, Segoe UI, Tahoma, sans-serif",
+		fontFamily: "Fira Sans, Segoe UI, Ubuntu, Noto Sans, Tahoma, sans-serif",
 		fontSize: 16,
 		fill: "white"
 	});
 	static readonly tooltipSmallStyle = new PIXI.TextStyle({
-		fontFamily: "Fira Sans, Segoe UI, Tahoma, sans-serif",
+		fontFamily: "Fira Sans, Segoe UI, Ubuntu, Noto Sans, Tahoma, sans-serif",
 		fontSize: 12,
 		fill: "white"
 	});
 	static readonly stepCountStyle = new PIXI.TextStyle({
-		fontFamily: "Fira Sans, Segoe UI, Tahoma, sans-serif",
+		fontFamily: "Fira Sans, Segoe UI, Ubuntu, Noto Sans, Tahoma, sans-serif",
 		fontSize: 40,
 		fontWeight: "bold",
 		fill: "black"
 	});
 	static readonly smallLabelStyle = new PIXI.TextStyle({
-		fontFamily: "Fira Sans, Segoe UI, Tahoma, sans-serif",
+		fontFamily: "Fira Sans, Segoe UI, Ubuntu, Noto Sans, Tahoma, sans-serif",
 		fontSize: 15,
 		fill: "black"
 	});
 	static readonly phaseLabelStyle = new PIXI.TextStyle({
-		fontFamily: "Fira Sans, Segoe UI, Tahoma, sans-serif",
+		fontFamily: "Fira Sans, Segoe UI, Ubuntu, Noto Sans, Tahoma, sans-serif",
 		fontSize: 18,
 		fontWeight: "bold",
 		fill: "black"
 	});
 	static readonly subPhaseLabelStyle = new PIXI.TextStyle({
-		fontFamily: "Fira Sans, Segoe UI, Tahoma, sans-serif",
+		fontFamily: "Fira Sans, Segoe UI, Ubuntu, Noto Sans, Tahoma, sans-serif",
 		fontSize: 18,
 		fill: "black"
 	});
