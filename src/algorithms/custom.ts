@@ -6,7 +6,12 @@ class CustomAlgorithm {
 
 	*execute(): Algorithm {
 		const moveJson = window.prompt('Input a move sequence (as a JSON array containing moves of the form [x1, y1, x2, y2]):')!;
-		const sequence: any = JSON.parse(moveJson);
+		let sequence: any;
+		try {
+			sequence = JSON.parse(moveJson);
+		} catch (e) {
+			throw new Error('JSON string was invalid');
+		}
 
 		printStep(`Running custom move sequence`);
 
