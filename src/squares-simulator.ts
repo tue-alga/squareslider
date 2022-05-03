@@ -366,7 +366,7 @@ class SquaresSimulator {
 			} catch (e) {
 				const cryEmoji = String.fromCodePoint(parseInt('1F622', 16));
 				console.log(`Time step ${this.timeStep}. Threw exception: ${e}. Pausing the simulation ${cryEmoji}`);
-				this.phaseLabel.setPhase('Algorithm threw an exception (see browser console for details)');
+				this.phaseLabel.setPhase('Algorithm threw exception (see browser console for details)');
 				let message = '' + e;
 				if (message.length > 50) {
 					message = message.substring(0, 49) + '...';
