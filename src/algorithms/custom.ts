@@ -38,4 +38,3 @@ class CustomAlgorithm {
 }
 
 export { CustomAlgorithm };
-

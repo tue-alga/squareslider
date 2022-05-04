@@ -136,10 +136,6 @@ class Square {
 		this.backgroundPixi.lineTo(-40, -40);
 		this.backgroundPixi.closePath();
 		this.backgroundPixi.endFill();
-
-		/*this.textPixi.text = this.chunkId + '';
-		this.textPixi.position.x = 80 * this.p[0];
-		this.textPixi.position.y = -80 * this.p[1];*/
 	}
 
 	updatePosition(time: number, timeStep: number, move?: Move): void {
@@ -197,4 +193,3 @@ class Square {
 }
 
 export { Square, Color, ComponentStatus, Position };
-

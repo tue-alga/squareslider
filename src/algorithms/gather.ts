@@ -10,14 +10,7 @@ class GatherAlgorithm {
 
 		printStep('Gathering');
 
-		//console.log(this.findBoundaryPath(this.world.getSquare([1, 0])!, this.world.getSquare([0, 1])!));
-		// find light square s
-		// find two empty spaces around s to be filled
-		// find extremal stable square to move in the descendants of s
-		// move it
-		// handle special pocket cases
-
-		const limit = this.world.bridgeLimit();
+		const limit = this.world.boundingBoxPerimeterLength();
 		let lightSquare: Square | null;
 		while (!this.world.isXYMonotone() &&
 			(lightSquare = this.findLightSquare(limit)) !== null) {
@@ -42,7 +35,7 @@ class GatherAlgorithm {
 			const square = outside[i];
 			if (square.componentStatus === ComponentStatus.CONNECTOR ||
 				square.componentStatus === ComponentStatus.LINK_CUT) {
-				const capacity = this.world.bridgeCapacity(square);
+				const capacity = this.world.capacity(square);
 				if (capacity < limit) {
 					return square;
 				}
@@ -108,7 +101,7 @@ class GatherAlgorithm {
 				return [x, y - 1];
 			}
 		}
-		throw "tried to gather to a square with degree less than 2";
+		throw new Error("Tried to gather to a square with degree less than 2");
 	}
 
 	/**
@@ -264,7 +257,7 @@ class GatherAlgorithm {
 			path = this.findCounterClockwiseBoundaryPath(square, target);
 		}
 		if (path === null) {
-			throw new Error("cannot find a boundary path in both directions from " +
+			throw new Error("Cannot find a boundary path in both directions from " +
 				square.p + " to " + target);
 		}
 		for (let i = 0; i < path.length - 1; i++) {

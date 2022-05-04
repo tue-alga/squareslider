@@ -1,6 +1,4 @@
-import { Algorithm, World, Move, MoveDirection } from '../world';
-import { Square, ComponentStatus, Color } from '../square';
-import { Vector } from '../vector';
+import { Algorithm, World } from '../world';
 
 class CanonicalizeAlgorithm {
 
@@ -14,7 +12,11 @@ class CanonicalizeAlgorithm {
 				yield* this.doCanonicalizationMove();
 			}
 		} catch (e) {
-			// do nothing
+			if (e === "done") {
+				printStep("Execution finished");
+				return;
+			}
+			throw e;
 		}
 	}
 
@@ -24,7 +26,7 @@ class CanonicalizeAlgorithm {
 
 		if (xMin + yMin > xMax + yMax ||
 			(xMin + yMin === xMax + yMax && yMin < yMax)) {
-			throw new Error("No canonicalization move available");
+			throw "done";
 		}
 
 		yield* this.world.shortestMovePath([xMax, yMax], [xMin, yMin]);
@@ -69,4 +71,3 @@ class CanonicalizeAlgorithm {
 }
 
 export { CanonicalizeAlgorithm };
-

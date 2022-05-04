@@ -2,7 +2,7 @@
 <html>
 
 <head>
-	<title>Squares Simulator</title>
+	<title>SquareSlider</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 	<style>
 		* {
@@ -218,7 +218,7 @@
 				<img src="icons/save.png">: Opens a dialog that allows you to save your configuration to a JSON string, or load a configuration from a JSON string you saved earlier.
 			</p>
 			<h2>Selecting an algorithm</h2>
-			<p> The upper tool shows the selected reconfiguration algorithm. Clicking on the name of the currently selected algorithm opens a drop-down menu to select one of the following algorithms:<br>
+			<p>The upper tool shows the selected reconfiguration algorithm. Clicking on the name of the currently selected algorithm opens a drop-down menu to select one of the following algorithms:<br>
 			<b>Gather & Compact</b>: The main algorithm presented in this <a href="https://arxiv.org/abs/2105.07997">paper</a>. It consists of two phases, which can also be executed separately. The resulting configuration is an <i>xy</i>-monotone configuration in the bottom left corner of the bounding box of the configuration at the start.<br>
 			<b>Gather</b>: A reconfiguration algorithm that ensures that almost all squares become part of (roughly) 2-connected components.<br>
 			<b>Compact</b>: A reconfiguration algorithm that pushes squares to the bottom left corner of the bounding box of the configuration, to form an <i>xy</i>-monotone configuration. This algorithm should be preceded by <b>Gather</b> to ensure that it functions as intended. Running <b>Gather&Compact</b> is therefore advised.<br>
@@ -232,7 +232,7 @@
 				<img src="icons/reset.png">: Resets the configuration back to the state before starting a reconfiguration algorithm. This also resets the lower toolbar to show configuration editing tools.<br>
 				<img src="icons/show-connectivity.png">: Toggles the marks that show connectivity information, see below for more information.
 			</p>
-			<p> The lower toolbar provides an overview of an ongoing animation, by showing how many moves have been executed, as well as information about the current phase of the algorithm and the currently animated move. The following tools are provided to customize the animation:<br>
+			<p>The lower toolbar provides an overview of an ongoing animation, by showing how many moves have been executed, as well as information about the current phase of the algorithm and the currently animated move. The following tools are provided to customize the animation:<br>
 				<img src="icons/slower.png">: Decreases the speed of the animation.<br>
 				<img src="icons/faster.png">: Increases the speed of the animation.<br>
 			</p>

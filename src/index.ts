@@ -1,5 +1,4 @@
 import * as PIXI from 'pixi.js'
-import { Viewport } from 'pixi-viewport';
 
 import { SquaresSimulator } from './squares-simulator'
 import { PhaseLabel } from './ui';
@@ -27,9 +26,6 @@ PIXI.Loader.shared.add([
 	'icons/pan.png',
 	'icons/select.png',
 	'icons/add-square.png',
-	'icons/add-wall.png',
-	'icons/rotate-left.png',
-	'icons/rotate-right.png',
 	'icons/color.png',
 	'icons/delete.png',
 	'icons/save.png',

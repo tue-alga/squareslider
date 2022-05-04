@@ -261,20 +261,20 @@ class CompactAlgorithm {
 	preservesChunkiness(source: [number, number], target: [number, number]) {
 		const sourceSquare = this.world.getSquare(source);
 		if (sourceSquare === null) {
-			throw new Error('tried to determine if moving square ' +
+			throw new Error('Tried to determine if moving square ' +
 				'(' + source[0] + ', ' + source[1] + ') to ' +
 				'(' + target[0] + ', ' + target[1] + ') ' +
 				'preserves chunkiness, but that source square ' +
 				'does not exist');
 		}
 		if (sourceSquare.componentStatus !== ComponentStatus.CHUNK_STABLE) {
-			throw new Error('tried to determine if moving unstable/non-chunk square ' +
+			throw new Error('Tried to determine if moving unstable/non-chunk square ' +
 				'(' + source[0] + ', ' + source[1] + ') to ' +
 				'(' + target[0] + ', ' + target[1] + ') ' +
 				'preserves chunkiness');
 		}
 		if (this.world.hasSquare(target)) {
-			throw new Error('tried to determine if moving square ' +
+			throw new Error('Tried to determine if moving square ' +
 				'(' + source[0] + ', ' + source[1] + ') to ' +
 				'(' + target[0] + ', ' + target[1] + ') ' +
 				'preserves chunkiness, but that target square ' +
@@ -444,4 +444,3 @@ class CompactAlgorithm {
 }
 
 export { CompactAlgorithm };
-

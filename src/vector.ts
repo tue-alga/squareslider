@@ -35,4 +35,3 @@ Vector.prototype.toString = function () {
 };
 
 export {Vector};
-

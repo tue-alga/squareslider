@@ -528,4 +528,3 @@ class Label extends Component {
 }
 
 export { IconButton, IconColorButton, TextButton, Label, Separator, Toolbar, StepCountLabel, PhaseLabel };
-

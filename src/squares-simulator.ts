@@ -18,12 +18,16 @@ enum SimulationMode {
 	RUNNING, PAUSED, RESET
 }
 
+/**
+ * The main class of SquareSlider.
+ */
 class SquaresSimulator {
 
 	readonly AVAILABLE_ALGORITHMS: { [name: string]: new (world: World) => { execute(): Generator<Move, void, undefined> } } = {
 		"Gather & Compact": GatherAndCompactAlgorithm,
 		"Gather": GatherAlgorithm,
 		"Compact": CompactAlgorithm,
+		"Canonicalize": CanonicalizeAlgorithm,
 		"Custom move sequence": CustomAlgorithm
 	};
 	selectedAlgorithm = "Gather & Compact";
