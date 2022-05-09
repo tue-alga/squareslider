@@ -66,8 +66,7 @@ class CompactAlgorithm {
 			}
 
 			if (bestMove === null) {
-				throw new Error("No compacting move available while configuration " +
-					"is not yet xy-monotone");
+				return;
 			}
 
 			// @ts-ignore
