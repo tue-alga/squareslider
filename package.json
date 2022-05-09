@@ -1,5 +1,5 @@
 {
-  "name": "cubes-simulator",
+  "name": "squareslider",
   "version": "0.0.1",
   "description": "Simulator for reconfiguration algorithms in the sliding squares model",
   "main": "index.js",
@@ -9,7 +9,7 @@
     "start": "webpack-dev-server --open",
     "test": "TESTBUILD=true webpack && mocha test-dist/cubes-simulator.js --require source-map-support/register && rm -rf test-dist"
   },
-  "author": "Willem Sonke",
+  "author": "Willem Sonke and Jules Wulms",
   "license": "GPL-3.0",
   "dependencies": {
     "pixi-filters": "3.1.1",
