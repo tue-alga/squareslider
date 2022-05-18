@@ -6,8 +6,7 @@
   "scripts": {
     "build": "webpack",
     "watch": "webpack --watch",
-    "start": "webpack-dev-server --open",
-    "test": "TESTBUILD=true webpack && mocha test-dist/cubes-simulator.js --require source-map-support/register && rm -rf test-dist"
+    "start": "webpack-dev-server --open"
   },
   "author": "Willem Sonke and Jules Wulms",
   "license": "GPL-3.0",
