@@ -364,6 +364,9 @@ class CompactAlgorithm {
 		if (firstSquare.p[0] - lastSquare.p[0] <= 1) {
 			return null;
 		}
+		if (firstSquare.componentStatus !== ComponentStatus.CHUNK_STABLE) {
+			return null;
+		}
 		if (!this.preservesChunkiness(firstSquare.p,
 			[lastSquare.p[0] - 1, lastSquare.p[1] + (movedLooseSquare ? 1 : 0)])) {
 			return null;
@@ -422,6 +425,9 @@ class CompactAlgorithm {
 			return null;
 		}
 		if (firstSquare.p[1] - lastSquare.p[1] <= 1) {
+			return null;
+		}
+		if (firstSquare.componentStatus !== ComponentStatus.CHUNK_STABLE) {
 			return null;
 		}
 		if (!this.preservesChunkiness(firstSquare.p,
